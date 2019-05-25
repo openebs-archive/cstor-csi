@@ -27,14 +27,21 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 )
 
+// TD: @amitd
+// This entire code needs to be structured & designed.
+// It is far far away from SOLID principles !!!!
+
 // NonBlockingGRPCServer defines Non blocking GRPC server interfaces
 type NonBlockingGRPCServer interface {
 	// Start services at the endpoint
 	Start(endpoint string, ids csi.IdentityServer, cs csi.ControllerServer, ns csi.NodeServer)
+
 	// Waits for the service to stop
 	Wait()
+
 	// Stops the service gracefully
 	Stop()
+
 	// Stops the service forcefully
 	ForceStop()
 }

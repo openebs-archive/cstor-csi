@@ -1,16 +1,29 @@
+/*
+Copyright © 2018-2019 The OpenEBS Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package driver
 
 import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/golang/glog"
+	"github.com/container-storage-interface/spec/lib/go/csi"
 	iscsi "github.com/openebs/csi/pkg/iscsi/v1alpha1"
 	"github.com/openebs/csi/pkg/utils/v1alpha1"
-
 	"golang.org/x/net/context"
-
-	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -206,7 +219,7 @@ func (ns *NodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.Internal,
 			err.Error())
 	}
-	glog.V(4).Infof("hostpath: volume %s/%s has been unmounted.",
+	logrus.Infof("hostpath: volume %s/%s has been unmounted.",
 		targetPath, volumeID)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
@@ -240,7 +253,7 @@ func (ns *NodeServer) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 
 // NodeGetCapabilities returns the capabilities supported by the node
 func (ns *NodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
-	glog.V(5).Infof("Using default NodeGetCapabilities")
+	logrus.Infof("Using default NodeGetCapabilities")
 
 	return &csi.NodeGetCapabilitiesResponse{
 		Capabilities: []*csi.NodeServiceCapability{

@@ -19,7 +19,7 @@ required = [
 
 [[override]]
   name = "k8s.io/apiserver"
- version = "kubernetes-1.14.0"
+  version = "kubernetes-1.14.0"
 
 [[override]]
   name = "k8s.io/apiextensions-apiserver"
@@ -33,10 +33,6 @@ required = [
   name = "k8s.io/code-generator"
   version = "kubernetes-1.14.0"
 
-[[constraint]]
-  name = "github.com/prometheus/client_golang"
-  version = "v0.9.0"
-
 # Apply workaround from https://github.com/golang/dep/issues/1799
 [[override]]
   source = "https://github.com/fsnotify/fsnotify/archive/v1.4.7.tar.gz"
@@ -45,12 +41,3 @@ required = [
 [prune]
   unused-packages = true
   go-tests = true
-
-[[constraint]]
-  name = "github.com/jpillora/go-ogle-analytics"
-  source = "github.com/openebs/go-ogle-analytics"
-  revision = "694492144d734d1500dfb877b47fb2f32a4ec53f"
-
-[[constraint]]
-  name = "github.com/docker/go-units"
-version = "0.3.3"

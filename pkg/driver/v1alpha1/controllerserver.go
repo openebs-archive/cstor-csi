@@ -1,3 +1,19 @@
+/*
+Copyright © 2018-2019 The OpenEBS Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package driver
 
 import (
@@ -14,23 +30,21 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 )
 
-// ControllerServer defines the data structure of the controller driver
+// ControllerServer defines a controller driver
 type ControllerServer struct {
 	driver *CSIDriver
 	cscap  []*csi.ControllerServiceCapability
 }
 
-var (
-	// supportedAccessMode specifies the AccessModes that can
-	// be supported by the volume
-	supportedAccessMode = &csi.VolumeCapability_AccessMode{
-		// Volume can only be published once as read/write on a single node, at
-		// any given time.
-		Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
-	}
-)
+// volume can only be published once as
+// read/write on a single node, at any
+// given time
+var supportedAccessMode = &csi.VolumeCapability_AccessMode{
+	Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+}
 
-// NewControllerServer returns a new instance of controller server
+// NewControllerServer returns a new instance
+// of controller server
 func NewControllerServer(d *CSIDriver) *ControllerServer {
 	return &ControllerServer{
 		driver: d,
@@ -64,31 +78,33 @@ func AddControllerServiceCaps() []*csi.ControllerServiceCapability {
 }
 
 // CreateVolume dynamically provisions a volume on demand
-func (cs *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
-	logrus.Infof("Create Volume")
-	if err := cs.ValidateControllerServiceRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME); err != nil {
-		logrus.Infof("invalid create volume req: %v", req)
+func (cs *ControllerServer) CreateVolume(
+	ctx context.Context,
+	req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
+
+	logrus.Infof("received create volume request")
+	err := cs.ValidateControllerServiceRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME)
+	if err != nil {
 		return nil, err
 	}
-	volName := req.GetName()
 
+	volName := req.GetName()
 	if len(volName) == 0 {
-		return nil, status.Error(codes.InvalidArgument,
-			"Name missing in request")
+		return nil, status.Error(codes.InvalidArgument, "missing volume name")
 	}
+
 	caps := req.GetVolumeCapabilities()
 	if caps == nil {
-		return nil, status.Error(codes.InvalidArgument,
-			"Volume Capabilities missing in request")
+		return nil, status.Error(codes.InvalidArgument, "missing volume capabilities")
 	}
+
 	for _, cap := range caps {
 		if cap.GetBlock() != nil {
-			return nil, status.Error(codes.Unimplemented,
-				"Block Volume not supported")
+			return nil, status.Error(codes.Unimplemented, "block volume is not supported")
 		}
 	}
 
-	// Verify if the volume has already been created
+	// verify if the volume has already been created
 	if exVol, err := utils.GetVolumeByName(volName); err == nil {
 		capacity, _ := strconv.ParseInt(exVol.Spec.Volume.Capacity, 10, 64)
 		if capacity >= int64(req.GetCapacityRange().GetRequiredBytes()) {
