@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/openebs/maya/pkg/apis/openebs.io/v1alpha1"
+	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
 	"k8s.io/kubernetes/pkg/util/mount"
 	"k8s.io/kubernetes/pkg/volume/util"
 )
 
-func getISCSIInfo(vol *v1alpha1.CSIVolume) (*iscsiDisk, error) {
+func getISCSIInfo(vol *apis.CSIVolume) (*iscsiDisk, error) {
 	portal := portalMounter(vol.Spec.ISCSI.TargetPortal)
 	var portals []string
 	portals = append(portals, portal)
@@ -69,7 +69,7 @@ func getISCSIInfoFromPV(req *csi.NodePublishVolumeRequest) (*iscsiDisk, error) {
 		InitiatorName: initiatorName}, nil
 }
 
-func getISCSIDiskMounter(iscsiInfo *iscsiDisk, vol *v1alpha1.CSIVolume) *iscsiDiskMounter {
+func getISCSIDiskMounter(iscsiInfo *iscsiDisk, vol *apis.CSIVolume) *iscsiDiskMounter {
 
 	return &iscsiDiskMounter{
 		iscsiDisk:    iscsiInfo,

@@ -12,9 +12,9 @@ DIR="$( cd -P "$( dirname "$SOURCE" )/../" && pwd )"
 cd "$DIR"
 
 # Get the git commit
-if [ -f $GOPATH/src/github.com/openebs/maya/GITCOMMIT ];
+if [ -f $GOPATH/src/github.com/openebs/csi/GITCOMMIT ];
 then
-    GIT_COMMIT="$(cat $GOPATH/src/github.com/openebs/maya/GITCOMMIT)"
+    GIT_COMMIT="$(cat $GOPATH/src/github.com/openebs/csi/GITCOMMIT)"
 else
     GIT_COMMIT="$(git rev-parse HEAD)"
 fi
@@ -25,8 +25,8 @@ if [[ -n "$TRAVIS_TAG" ]] && [[ $TRAVIS_TAG != *"RC"* ]]; then
 fi
 
 # Get the version details
-VERSION="$(cat $GOPATH/src/github.com/openebs/maya/VERSION)"
-VERSION_META="$(cat $GOPATH/src/github.com/openebs/maya/BUILDMETA)"
+VERSION="$(cat $GOPATH/src/github.com/openebs/csi/VERSION)"
+VERSION_META="$(cat $GOPATH/src/github.com/openebs/csi/BUILDMETA)"
 
 # Determine the arch/os combos we're building for
 UNAME=$(uname)
@@ -86,10 +86,10 @@ if [ $GOOS = "windows" ]; then
     output_name+='.exe'
 fi
 env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags \
-    "-X github.com/openebs/maya/pkg/version.GitCommit=${GIT_COMMIT} \
+    "-X github.com/openebs/csi/pkg/version.GitCommit=${GIT_COMMIT} \
     -X main.CtlName='${CTLNAME}' \
-    -X github.com/openebs/maya/pkg/version.Version=${VERSION} \
-    -X github.com/openebs/maya/pkg/version.VersionMeta=${VERSION_META}"\
+    -X github.com/openebs/csi/pkg/version.Version=${VERSION} \
+    -X github.com/openebs/csi/pkg/version.VersionMeta=${VERSION_META}"\
     -o $output_name\
     ./cmd/${CTLNAME}
 

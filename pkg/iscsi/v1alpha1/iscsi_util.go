@@ -28,7 +28,6 @@ import (
 
 	"github.com/golang/glog"
 	"k8s.io/kubernetes/pkg/util/mount"
-	volumeutil "k8s.io/kubernetes/pkg/volume/util"
 )
 
 var (
@@ -332,12 +331,13 @@ func (util *ISCSIUtil) DetachDisk(c iscsiDiskUnmounter, targetPath string) error
 		return err
 	}
 
-	if pathExists, pathErr := volumeutil.PathExists(targetPath); pathErr != nil {
+	if pathExists, pathErr := mount.PathExists(targetPath); pathErr != nil {
 		return fmt.Errorf("Error checking if path exists: %v", pathErr)
 	} else if !pathExists {
 		glog.Warningf("Warning: Unmount skipped because path does not exist: %v", targetPath)
 		return nil
 	}
+
 	if err = c.mounter.Unmount(targetPath); err != nil {
 		glog.Errorf("iscsi detach disk: failed to unmount: %s\nError: %v", targetPath, err)
 		return err

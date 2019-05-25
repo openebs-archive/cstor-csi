@@ -12,13 +12,13 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/golang/glog"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
+	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
+	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
+	service "github.com/openebs/csi/pkg/generated/maya/kubernetes/service/v1alpha1"
 	iscsi "github.com/openebs/csi/pkg/iscsi/v1alpha1"
-	"github.com/openebs/maya/pkg/apis/openebs.io/v1alpha1"
-	m_k8s_client "github.com/openebs/maya/pkg/client/k8s"
 	"google.golang.org/grpc"
-	api_core_v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/util/mount"
 )
@@ -26,25 +26,26 @@ import (
 const (
 	// TODO make VolumeWaitTimeout as env
 	VolumeWaitTimeout = 2
+
 	// TODO make VolumeWaitRetryCount as env
 	VolumeWaitRetryCount = 6
+
 	// TODO make MonitorMountRetryTimeout as env
 	MonitorMountRetryTimeout = 5
 )
 
 var (
-	// MAPIServerEndpoint is the address to connect to m-apiserver to send
-	// volume related requests
+	// MAPIServerEndpoint is the address to connect
+	// to maya apiserver
 	MAPIServerEndpoint string
 
-	// OpenEBSNamespace is where all the OpenEBS related pods are running and
-	// CSIVolInfo as to be placed
+	// OpenEBSNamespace is openebs system namespace
 	OpenEBSNamespace string
 
 	// Volumes contains the list of volumes created in case of controller plugin
 	// and list of volumes attached to this node in node plugin
 	// This list is protected by VolumesListLock
-	Volumes map[string]*v1alpha1.CSIVolume
+	Volumes map[string]*apis.CSIVolume
 
 	// VolumesListLock is required to protect the above Volumes list
 	VolumesListLock sync.RWMutex
@@ -78,11 +79,9 @@ func init() {
 		logrus.Fatalf("OPENEBS_MAPI_SVC environment variable not set")
 	}
 
-	kc, err := m_k8s_client.NewK8sClient(OpenEBSNamespace)
-	if err != nil {
-		logrus.Fatalf(err.Error())
-	}
-	svc, err := kc.GetService(MAPIServiceName, metav1.GetOptions{})
+	svc, err := service.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Get(MAPIServiceName, metav1.GetOptions{})
 	if err != nil {
 		// If error occurs over here then there are 2 possibilities either the
 		// service was not created or KubeAPIServer is not reachable
@@ -94,7 +93,7 @@ func init() {
 	svcPort := strconv.FormatInt(int64(svc.Spec.Ports[0].Port), 10)
 	MAPIServerEndpoint = "http://" + svcIP + ":" + svcPort
 
-	Volumes = map[string]*v1alpha1.CSIVolume{}
+	Volumes = map[string]*apis.CSIVolume{}
 	ReqMountList = make(map[string]bool)
 
 }
@@ -113,13 +112,13 @@ func parseEndpoint(ep string) (string, string, error) {
 // logGRPC logs all the grpc related errors, i.e the final errors
 // which are returned to the grpc clients
 func logGRPC(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	glog.V(3).Infof("GRPC call: %s", info.FullMethod)
-	glog.V(5).Infof("GRPC request: %s", protosanitizer.StripSecrets(req))
+	logrus.Infof("GRPC call: %s", info.FullMethod)
+	logrus.Infof("GRPC request: %s", protosanitizer.StripSecrets(req))
 	resp, err := handler(ctx, req)
 	if err != nil {
-		glog.Errorf("GRPC error: %v", err)
+		logrus.Errorf("GRPC error: %v", err)
 	} else {
-		glog.V(5).Infof("GRPC response: %s", protosanitizer.StripSecrets(resp))
+		logrus.Infof("GRPC response: %s", protosanitizer.StripSecrets(resp))
 	}
 	return resp, err
 }
@@ -189,7 +188,7 @@ checkVolumeStatus:
 }
 
 // GetVolumeByName fetches the volume from Volumes list based on th input name
-func GetVolumeByName(volName string) (*v1alpha1.CSIVolume, error) {
+func GetVolumeByName(volName string) (*apis.CSIVolume, error) {
 	for _, Vol := range Volumes {
 		if Vol.Spec.Volume.Volname == volName {
 			return Vol, nil
@@ -202,13 +201,13 @@ func GetVolumeByName(volName string) (*v1alpha1.CSIVolume, error) {
 // GetVolumeDetails returns a new instance of csiVolume filled with the
 // VolumeAttributes fetched from the corresponding PV and some additional info
 // required for remounting
-func GetVolumeDetails(volumeID, mountPath string, readOnly bool, mountOptions []string) (*v1alpha1.CSIVolume, error) {
+func GetVolumeDetails(volumeID, mountPath string, readOnly bool, mountOptions []string) (*apis.CSIVolume, error) {
 	pv, err := FetchPVDetails(volumeID)
 	if err != nil {
 		return nil, err
 	}
-	vol := v1alpha1.CSIVolume{}
-	cap := pv.Spec.Capacity[api_core_v1.ResourceName(api_core_v1.ResourceStorage)]
+	vol := apis.CSIVolume{}
+	cap := pv.Spec.Capacity[corev1.ResourceName(corev1.ResourceStorage)]
 	for _, accessmode := range pv.Spec.AccessModes {
 		vol.Spec.Volume.AccessModes = append(vol.Spec.Volume.AccessModes, string(accessmode))
 	}
@@ -289,7 +288,7 @@ func MonitorMounts() {
 // and is reachable, this function will not come out until both the conditions
 // are met. This function stops the driver from overloading the OS with iSCSI
 // login commands.
-func WaitForVolumeReadyAndReachable(vol *v1alpha1.CSIVolume) {
+func WaitForVolumeReadyAndReachable(vol *apis.CSIVolume) {
 	for {
 		// This function return after 12s in case the volume is not ready
 		if err := WaitForVolumeToBeReady(vol.Spec.Volume.Volname); err != nil {
@@ -318,7 +317,7 @@ func verifyMountOpts(opts []string, desiredOpt string) bool {
 // RemountVolume unmounts the volume if it is already mounted in an undesired
 // state and then tries to mount again. If it is not mounted the volume, first
 // the disk will be attached via iSCSI login and then it will be mounted
-func RemountVolume(exists bool, vol *v1alpha1.CSIVolume, mountPoint *mount.MountPoint, desiredMountOpt string) (devicePath string, err error) {
+func RemountVolume(exists bool, vol *apis.CSIVolume, mountPoint *mount.MountPoint, desiredMountOpt string) (devicePath string, err error) {
 	mounter := mount.New("")
 	options := []string{"rw"}
 	// Wait until it is possible to chhange the state of mountpoint or when
@@ -346,8 +345,8 @@ func RemountVolume(exists bool, vol *v1alpha1.CSIVolume, mountPoint *mount.Mount
 }
 
 // GenerateCSIVolFromCASVolume returns an instance of CSIVolInfo
-func GenerateCSIVolFromCASVolume(vol *v1alpha1.CASVolume) *v1alpha1.CSIVolume {
-	csivol := &v1alpha1.CSIVolume{}
+func GenerateCSIVolFromCASVolume(vol *apismaya.CASVolume) *apis.CSIVolume {
+	csivol := &apis.CSIVolume{}
 	csivol.Spec.Volume.Volname = vol.Name
 	csivol.Spec.Volume.Capacity = vol.Spec.Capacity
 	csivol.Spec.ISCSI.Iqn = vol.Spec.Iqn
