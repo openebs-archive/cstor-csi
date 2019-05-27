@@ -34,7 +34,7 @@ run:
   # examples
   #   	vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
   skip-dirs:
-    - pkg/client/generated/
+    - pkg/generated/
 
   # which files to skip yet be analyzed, but issues
   # from them won't be reported
