@@ -5,16 +5,14 @@ PACKAGES = $(shell go list ./... | grep -v 'vendor\|pkg/generated')
 VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
          -nilfunc -printf -rangeloops -shift -structtags -unsafeptr
 
-# Tools required for different make targets or for development purposes
+# Tools required for different make
+# targets or for development purposes
 EXTERNAL_TOOLS=\
 	github.com/golang/dep/cmd/dep \
 	golang.org/x/tools/cmd/cover \
 	github.com/axw/gocov/gocov \
 	gopkg.in/matm/v1/gocov-html \
 	github.com/ugorji/go/codec/codecgen
-
-# list only our .go files i.e. exlcudes any .go files from the vendor directory
-GOFILES_NOVENDOR = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 
 ifeq (${IMAGE_TAG}, )
   IMAGE_TAG = ci
@@ -29,81 +27,62 @@ else
   export BASE_TAG
 endif
 
-# Specify the name for the binaries
+# Specify the name for the binary
 CSI_DRIVER=csi-driver
 
 # Specify the date o build
 BUILD_DATE = $(shell date +'%Y%m%d%H%M%S')
 
-all: format test csi-driver-image
+.PHONY: all
+all: test csi-driver-image
 
-deps:
-	dep ensure
-
+.PHONY: clean
 clean:
 	go clean -testcache
 	rm -rf bin
 	rm -rf ${GOPATH}/bin/${CSI_DRIVER}
 	rm -rf ${GOPATH}/pkg/*
 
-release:
-	@$(MAKE) bin
-
-# Run the bootstrap target once before trying cov
-cov:
-	gocov test ./... | gocov-html > /tmp/coverage.html
-	@cat /tmp/coverage.html
-
-test: format
-	@echo "--> Running go test" ;
-	@go test $(PACKAGES)
-
-cover:
-	go list ./... | grep -v vendor | xargs -n1 go test --cover
-
+.PHONY: format
 format:
 	@echo "--> Running go fmt"
 	@go fmt $(PACKAGES)
 
-vet:
-	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
-		go get golang.org/x/tools/cmd/vet; \
-	fi
-	@echo "--> Running go tool vet ..."
-	@go tool vet $(VETARGS) ${GOFILES_NOVENDOR} ; if [ $$? -eq 1 ]; then \
-		echo ""; \
-		echo "[LINT] Vet found suspicious constructs. Please check the reported constructs"; \
-		echo "and fix them if necessary before submitting the code for review."; \
-	fi
+.PHONY: test
+test: format
+	@echo "--> Running go test" ;
+	@go test $(PACKAGES)
 
-	@git grep -n `echo "log"".Print"` | grep -v 'vendor/' ; if [ $$? -eq 0 ]; then \
-		echo "[LINT] Found "log"".Printf" calls. These should use Maya's logger instead."; \
-	fi
-
-# Bootstrap the build by downloading additional tools
+# Bootstrap downloads tools required
+# during build
+.PHONY: bootstrap
 bootstrap:
 	@for tool in  $(EXTERNAL_TOOLS) ; do \
 		echo "+ Installing $$tool" ; \
 		go get -u $$tool; \
 	done
 
-# SRC_PKG sets the path of code files
+# SRC_PKG is the path of code files
 SRC_PKG := github.com/openebs/csi/pkg
 
 # code generation for custom resources
+.PHONY: kubegen
 kubegen: kubegendelete deepcopy-install clientset-install lister-install informer-install
 	@GEN_SRC=openebs.io/core/v1alpha1 GEN_DEST=core make deepcopy clientset lister informer
 	@GEN_SRC=openebs.io/maya/v1alpha1 GEN_DEST=maya make deepcopy clientset lister informer
 
 # deletes generated code by codegen
+.PHONY: kubegendelete
 kubegendelete:
 	@rm -rf pkg/generated/clientset
 	@rm -rf pkg/generated/lister
 	@rm -rf pkg/generated/informer
 
+.PHONY: deepcopy-install
 deepcopy-install:
 	@go install ./vendor/k8s.io/code-generator/cmd/deepcopy-gen
 
+.PHONY: deepcopy
 deepcopy:
 	@echo "+ Generating deepcopy funcs for $(GEN_SRC)"
 	@deepcopy-gen \
@@ -111,10 +90,11 @@ deepcopy:
 		--output-file-base zz_generated.deepcopy \
 		--go-header-file ./buildscripts/custom-boilerplate.go.txt
 
+.PHONY: clientset-install
 clientset-install:
 	@go install ./vendor/k8s.io/code-generator/cmd/client-gen
 
-# builds vendored version of client-gen tool
+.PHONY: clientset
 clientset:
 	@echo "+ Generating clientsets for $(GEN_SRC)"
 	@client-gen \
@@ -124,10 +104,11 @@ clientset:
 		--clientset-path $(SRC_PKG)/generated/clientset/$(GEN_DEST) \
 		--go-header-file ./buildscripts/custom-boilerplate.go.txt
 
+.PHONY: lister-install
 lister-install:
 	@go install ./vendor/k8s.io/code-generator/cmd/lister-gen
 
-# builds vendored version via lister-gen tool
+.PHONY: lister
 lister:
 	@echo "+ Generating lister for $(GEN_SRC)"
 	@lister-gen \
@@ -135,10 +116,11 @@ lister:
 		--output-package $(SRC_PKG)/generated/lister \
 		--go-header-file ./buildscripts/custom-boilerplate.go.txt
 
+.PHONY: informer-install
 informer-install:
 	@go install ./vendor/k8s.io/code-generator/cmd/informer-gen
 
-# builds vendored version via informer tool
+.PHONY: informer
 informer:
 	@echo "+ Generating informer for $(GEN_SRC)"
 	@informer-gen \
@@ -148,18 +130,18 @@ informer:
 		--output-package $(SRC_PKG)/generated/informer/$(GEN_DEST) \
 		--go-header-file ./buildscripts/custom-boilerplate.go.txt
 
-#Use this to build csi-driver
+.PHONY: csi-driver
 csi-driver:
-	@echo "-----------------------------"
-	@echo "+ Building csi-driver        "
-	@echo "-----------------------------"
-	@PNAME="csi-driver" CTLNAME=${CSI_DRIVER} sh -c "'$(PWD)/buildscripts/build.sh'"
+	@echo "--------------------------------"
+	@echo "+ Building ${CSI_DRIVER}        "
+	@echo "--------------------------------"
+	@PNAME=${CSI_DRIVER} CTLNAME=${CSI_DRIVER} sh -c "'$(PWD)/buildscripts/build.sh'"
 
-
+.PHONY: csi-driver-image
 csi-driver-image: csi-driver
-	@echo "-----------------------------"
-	@echo "+ Generating csi-driver image"
-	@echo "-----------------------------"
-	@cp bin/csi-driver/${CSI_DRIVER} buildscripts/csi-driver/
-	cd buildscripts/csi-driver && sudo docker build -t openebs/csi-driver:${IMAGE_TAG} --build-arg BUILD_DATE=${BUILD_DATE} .
-	@rm buildscripts/csi-driver/${CSI_DRIVER}
+	@echo "--------------------------------"
+	@echo "+ Generating ${CSI_DRIVER} image"
+	@echo "--------------------------------"
+	@cp bin/${CSI_DRIVER}/${CSI_DRIVER} buildscripts/${CSI_DRIVER}/
+	cd buildscripts/${CSI_DRIVER} && sudo docker build -t openebs/${CSI_DRIVER}:${IMAGE_TAG} --build-arg BUILD_DATE=${BUILD_DATE} .
+	@rm buildscripts/${CSI_DRIVER}/${CSI_DRIVER}
