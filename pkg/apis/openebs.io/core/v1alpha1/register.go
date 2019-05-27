@@ -28,7 +28,7 @@ import (
 // NOTE:
 //  This variable name should not be changed
 var SchemeGroupVersion = schema.GroupVersion{
-	Group:   "oenebs.io",
+	Group:   "openebs.io",
 	Version: "v1alpha1",
 }
 
