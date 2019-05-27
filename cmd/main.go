@@ -8,7 +8,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/openebs/csi/pkg/config/v1alpha1"
-	"github.com/openebs/csi/pkg/driver/v1alpha1"
+	driver "github.com/openebs/csi/pkg/driver/v1alpha1"
 	"github.com/openebs/csi/pkg/version"
 	"github.com/spf13/cobra"
 )

@@ -35,27 +35,27 @@ type CSIVolume struct {
 // CSIVolumeSpec is the spec for a CStorVolume resource
 type CSIVolumeSpec struct {
 	// Volume specific info
-	Volume VolumeInfo
+	Volume CSIVolumeInfo `json:"volume"`
 
 	// ISCSI info specific to ISCSI protocol,
 	// this is filled only if the volume type
 	// is iSCSI
-	ISCSI ISCSIInfo
+	ISCSI CSIISCSIInfo `json: "iscsi"`
 }
 
-// VolumeInfo contains the volume related info
+// CSIVolumeInfo contains the volume related info
 // for all types of volumes in CSIVolumeSpec
-type VolumeInfo struct {
-	// Volname is the name of the CSI volume
-	Volname string `json:"volname"`
+type CSIVolumeInfo struct {
+	// Name of the CSI volume
+	Name string `json:"name"`
 
-	// CASType of a volume is the backend type
-	// for OpenEBS volumes
-	CASType string `json:"castype"`
+	// CASType refers to specific OpenEBS storage
+	// engine
+	CASType string `json:"casType"`
 
-	// OwnerNodeID of a volume will hold the
-	// ownerNodeID of the Volume
-	OwnerNodeID string `json:"ownernodeID"`
+	// OwnerNodeID is the Node ID which
+	// is also the owner of this Volume
+	OwnerNodeID string `json:"ownerNodeID"`
 
 	// Capacity of the volume
 	Capacity string `json:"capacity"`
@@ -66,7 +66,7 @@ type VolumeInfo struct {
 
 	// AccessMode of a volume will hold the
 	// access mode of the volume
-	AccessModes []string `json:"accessMode"`
+	AccessModes []string `json:"accessModes"`
 
 	// MountPath of the volume will hold the
 	// path on which the volume is mounted
@@ -87,10 +87,10 @@ type VolumeInfo struct {
 	DevicePath string `json:"devicePath"`
 }
 
-// ISCSIInfo has ISCSI protocol specific info,
+// CSIISCSIInfo has ISCSI protocol specific info,
 // this can be used only if the volume type exposed
 // by the vendor is iSCSI
-type ISCSIInfo struct {
+type CSIISCSIInfo struct {
 	// Iqn of a volume will hold the IQN
 	// value of the Volume
 	Iqn string `json:"iqn"`

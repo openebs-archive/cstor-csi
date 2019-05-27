@@ -181,14 +181,6 @@
   version = "1.0.1"
 
 [[projects]]
-  digest = "1:d4cd027f273381f96ba1a691185f9d0eed3694650c2cfe364b9f2c901af73a05"
-  name = "github.com/openebs/maya"
-  packages = ["pkg/version"]
-  pruneopts = "UT"
-  revision = "61f4668b694c1eeb226ba20cf760d2c43b3b7a0f"
-  version = "0.9.0"
-
-[[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -840,7 +832,6 @@
     "github.com/container-storage-interface/spec/lib/go/csi",
     "github.com/golang/glog",
     "github.com/kubernetes-csi/csi-lib-utils/protosanitizer",
-    "github.com/openebs/maya/pkg/version",
     "github.com/pkg/errors",
     "github.com/spf13/cobra",
     "golang.org/x/net/context",

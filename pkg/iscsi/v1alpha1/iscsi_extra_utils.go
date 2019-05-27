@@ -15,11 +15,10 @@ func getISCSIInfo(vol *apis.CSIVolume) (*iscsiDisk, error) {
 	portals = append(portals, portal)
 
 	chapDiscovery := false
-
 	chapSession := false
 
 	return &iscsiDisk{
-		VolName:       vol.Spec.Volume.Volname,
+		VolName:       vol.Spec.Volume.Name,
 		Portals:       portals,
 		Iqn:           vol.Spec.ISCSI.Iqn,
 		lun:           vol.Spec.ISCSI.Lun,
