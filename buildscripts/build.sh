@@ -91,7 +91,7 @@ env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags \
     -X github.com/openebs/csi/pkg/version.Version=${VERSION} \
     -X github.com/openebs/csi/pkg/version.VersionMeta=${VERSION_META}"\
     -o $output_name\
-    ./cmd/${CTLNAME}
+    ./cmd
 
 echo ""
 
