@@ -113,18 +113,3 @@ func GetGitCommit() string {
 func Verbose() string {
 	return strings.Join([]string{Get(), GetGitCommit()[0:7]}, "-")
 }
-
-// GetVersion returns the current version from the global Version variable.
-// If Version is unset then from the VERSION file at the root of the repo.
-func GetVersion() string {
-	if Version != "" {
-		return Version
-	}
-	path := filepath.Join(os.Getenv("GOPATH") + versionFile)
-	vBytes, err := ioutil.ReadFile(path)
-	if err != nil {
-		// ignore error
-		return ""
-	}
-	return strings.TrimSpace(string(vBytes))
-}

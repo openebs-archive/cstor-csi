@@ -44,10 +44,10 @@ func main() {
 func handle(driverConfig *config.Config) {
 
 	if driverConfig.Version == "" {
-		driverConfig.Version = version.GetVersion()
+		driverConfig.Version = version.Get()
 	}
 
-	logrus.Infof("%s - %s", version.GetVersion(),
+	logrus.Infof("%s - %s", version.Get(),
 		version.GetGitCommit())
 
 	logrus.Infof("DriverName: %v Plugin: %v EndPoint: %v URL: %v NodeID: %v",
