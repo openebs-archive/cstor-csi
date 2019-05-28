@@ -14,24 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package driver
+package v1alpha1
 
 import (
-	"github.com/container-storage-interface/spec/lib/go/csi"
-	//"github.com/golang/glog"
 	"github.com/Sirupsen/logrus"
+	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/openebs/csi/pkg/config/v1alpha1"
 	"github.com/openebs/csi/pkg/utils/v1alpha1"
 )
 
 const (
-	// TODO rename to Name
+	// Name of this csi driver that is understood
+	// by Kubernetes and the CSI system
 	//
-	// DriverName defines the name that is used
-	// in Kubernetes and the CSI system for the
-	// canonical, official name of this plugin
-	DriverName = "openebs-csi.openebs.io"
+	// This is the canonical, official name of this
+	// plugin
+	Name = "openebs-csi.openebs.io"
 )
+
+// volume can only be published once as
+// read/write on a single node, at any
+// given time
+var supportedAccessMode = &csi.VolumeCapability_AccessMode{
+	Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+}
 
 // TODO check if this can be renamed to Base
 //

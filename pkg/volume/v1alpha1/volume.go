@@ -15,7 +15,10 @@
 package v1alpha1
 
 import (
+	"strconv"
+
 	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
+	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
 )
 
 // CSIVolume is a wrapper over
@@ -29,6 +32,27 @@ type CSIVolume struct {
 func From(vol *apis.CSIVolume) *CSIVolume {
 	return &CSIVolume{
 		Object: vol,
+	}
+}
+
+// FromCASVolume returns a new instance
+// of csi volume from given cas volume
+// instance
+func FromCASVolume(vol *apismaya.CASVolume) *CSIVolume {
+	return &CSIVolume{
+		Object: &apis.CSIVolume{
+			Spec: apis.CSIVolumeSpec{
+				Volume: apis.CSIVolumeInfo{
+					Name:     vol.Name,
+					Capacity: vol.Spec.Capacity,
+				},
+				ISCSI: apis.CSIISCSIInfo{
+					Iqn:          vol.Spec.Iqn,
+					TargetPortal: vol.Spec.TargetPortal,
+					Lun:          strconv.FormatInt(int64(vol.Spec.Lun), 10),
+				},
+			},
+		},
 	}
 }
 

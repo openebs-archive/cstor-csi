@@ -14,7 +14,6 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
 	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
-	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
 	service "github.com/openebs/csi/pkg/generated/maya/kubernetes/service/v1alpha1"
 	iscsi "github.com/openebs/csi/pkg/iscsi/v1alpha1"
 	"google.golang.org/grpc"
@@ -190,7 +189,7 @@ checkVolumeStatus:
 // GetVolumeByName fetches the volume from Volumes list based on th input name
 func GetVolumeByName(volName string) (*apis.CSIVolume, error) {
 	for _, Vol := range Volumes {
-		if Vol.Spec.Volume.Volname == volName {
+		if Vol.Spec.Volume.Name == volName {
 			return Vol, nil
 		}
 	}
@@ -211,7 +210,7 @@ func GetVolumeDetails(volumeID, mountPath string, readOnly bool, mountOptions []
 	for _, accessmode := range pv.Spec.AccessModes {
 		vol.Spec.Volume.AccessModes = append(vol.Spec.Volume.AccessModes, string(accessmode))
 	}
-	vol.Spec.Volume.Volname = volumeID
+	vol.Spec.Volume.Name = volumeID
 	vol.Spec.Volume.FSType = pv.Spec.CSI.FSType
 	vol.Spec.Volume.Capacity = cap.String()
 	vol.Spec.Volume.MountPath = mountPath
@@ -269,13 +268,13 @@ func MonitorMounts() {
 					continue
 				}
 				// Skip remount if the volume is already being remounted
-				if _, isRemounting := ReqMountList[vol.Spec.Volume.Volname]; isRemounting {
+				if _, isRemounting := ReqMountList[vol.Spec.Volume.Name]; isRemounting {
 					continue
 				}
 				// Add volume to the reqMountList and start a goroutine to
 				// remount it
 				ReqMountListLock.Lock()
-				ReqMountList[vol.Spec.Volume.Volname] = true
+				ReqMountList[vol.Spec.Volume.Name] = true
 				ReqMountListLock.Unlock()
 				go RemountVolume(exists, vol, mountPoint, vol.Spec.Volume.MountPath)
 			}
@@ -291,7 +290,7 @@ func MonitorMounts() {
 func WaitForVolumeReadyAndReachable(vol *apis.CSIVolume) {
 	for {
 		// This function return after 12s in case the volume is not ready
-		if err := WaitForVolumeToBeReady(vol.Spec.Volume.Volname); err != nil {
+		if err := WaitForVolumeToBeReady(vol.Spec.Volume.Name); err != nil {
 			logrus.Error(err)
 			// Keep retrying until the volume is ready
 			continue
@@ -339,19 +338,7 @@ func RemountVolume(exists bool, vol *apis.CSIVolume, mountPoint *mount.MountPoin
 	ReqMountListLock.Lock()
 	// Remove the volume from ReqMountList once the remount operation is
 	// complete
-	delete(ReqMountList, vol.Spec.Volume.Volname)
+	delete(ReqMountList, vol.Spec.Volume.Name)
 	ReqMountListLock.Unlock()
 	return
-}
-
-// GenerateCSIVolFromCASVolume returns an instance of CSIVolInfo
-func GenerateCSIVolFromCASVolume(vol *apismaya.CASVolume) *apis.CSIVolume {
-	csivol := &apis.CSIVolume{}
-	csivol.Spec.Volume.Volname = vol.Name
-	csivol.Spec.Volume.Capacity = vol.Spec.Capacity
-	csivol.Spec.ISCSI.Iqn = vol.Spec.Iqn
-	csivol.Spec.ISCSI.TargetPortal = vol.Spec.TargetPortal
-	csivol.Spec.ISCSI.Lun = strconv.FormatInt(int64(vol.Spec.Lun), 10)
-
-	return csivol
 }
