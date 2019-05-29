@@ -21,6 +21,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	errors "github.com/openebs/csi/pkg/generated/maya/errors/v1alpha1"
 	csipayload "github.com/openebs/csi/pkg/payload/v1alpha1"
 	"github.com/openebs/csi/pkg/utils/v1alpha1"
 	csivolume "github.com/openebs/csi/pkg/volume/v1alpha1"
@@ -94,25 +95,39 @@ func (cs *ControllerServer) CreateVolume(
 	ctx context.Context,
 	req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
 
-	logrus.Infof("received create volume request")
+	logrus.Infof("received request to create volume {%s}", req.GetName())
+
 	err := cs.validateRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(
+			err,
+			"failed to handle create volume request for {%s}",
+			req.GetName(),
+		)
 	}
 
 	volName := req.GetName()
 	if len(volName) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "failed to create volume: missing volume name")
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"failed to handle create volume request: missing volume name",
+		)
 	}
 
 	volCapabilities := req.GetVolumeCapabilities()
 	if volCapabilities == nil {
-		return nil, status.Error(codes.InvalidArgument, "failed to create volume: missing volume capabilities")
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"failed to handle create volume request: missing volume capabilities",
+		)
 	}
 
 	for _, cap := range volCapabilities {
 		if cap.GetBlock() != nil {
-			return nil, status.Error(codes.Unimplemented, "failed to create volume: block volume not supported")
+			return nil, status.Error(
+				codes.Unimplemented,
+				"failed to handle create volume request: block volume is not supported",
+			)
 		}
 	}
 
@@ -122,7 +137,7 @@ func (cs *ControllerServer) CreateVolume(
 		return nil,
 			status.Error(
 				codes.AlreadyExists,
-				fmt.Sprintf("failed to create volume: volume {%s} already exists", volName),
+				fmt.Sprintf("failed to handle create volume request: volume {%s} already exists", volName),
 			)
 	}
 
@@ -165,35 +180,56 @@ func (cs *ControllerServer) CreateVolume(
 }
 
 // DeleteVolume deletes the specified volume
-func (cs *ControllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
-	logrus.Infof("Delete Volume")
+func (cs *ControllerServer) DeleteVolume(
+	ctx context.Context,
+	req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
 
-	if len(req.GetVolumeId()) == 0 {
-		return nil, status.Error(codes.InvalidArgument,
-			"Volume ID missing in request")
+	logrus.Infof("received request to delete volume {%s}", req.VolumeId)
+
+	if req.VolumeId == "" {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"failed to handle delete volume request: missing volume id",
+		)
 	}
 
-	if err := cs.validateRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME); err != nil {
-		logrus.Infof("invalid delete volume req: %v", req)
-		return nil, err
-	}
-	volumeID := req.VolumeId
-
-	// This call is made just to fetch pvc namespace
-	pv, err := utils.FetchPVDetails(volumeID)
+	err := cs.validateRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME)
 	if err != nil {
-		logrus.Infof("fetch Volume Failed, volID:%v %v", volumeID, err)
-		return nil, err
+		return nil, errors.Wrapf(
+			err,
+			"failed to handle delete volume request for {%s}",
+			req.VolumeId,
+		)
 	}
+
+	// this call is made just to fetch pvc namespace
+	pv, err := utils.FetchPVDetails(req.VolumeId)
+	if err != nil {
+		return nil, errors.Wrapf(
+			err,
+			"failed to handle delete volume request for {%s}",
+			req.VolumeId,
+		)
+	}
+
 	pvcNamespace := pv.Spec.ClaimRef.Namespace
 
-	//Send delete request to m-apiserver
-	if err := utils.DeleteVolume(volumeID, pvcNamespace); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	// send delete request to maya apiserver
+	err = utils.DeleteVolume(req.VolumeId, pvcNamespace)
+	if err != nil {
+		return nil, errors.Wrapf(
+			err,
+			"failed to handle delete volume request for {%s}",
+			req.VolumeId,
+		)
 	}
 
-	// Remove entry from the volume list maintained
-	delete(utils.Volumes, volumeID)
+	// TODO
+	// Use a lock to remove
+	//
+	// remove entry from the in-memory
+	// maintained list
+	delete(utils.Volumes, req.VolumeId)
 	return &csi.DeleteVolumeResponse{}, nil
 }
 

@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,12 +11,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-)
-
-const (
-	maxStorageCapacity = tib
+	errors "github.com/openebs/csi/pkg/generated/maya/errors/v1alpha1"
 )
 
 const (
@@ -29,7 +23,7 @@ const (
 	tib100 int64 = tib * 100
 )
 
-// TD: @amitd
+// TODO
 //  Need to remove the dependency of maya api server
 // Provisioning workflow should be tightly integrated
 // with Kubernetes based custom resources. This tight
@@ -40,16 +34,7 @@ const (
 // apiserver to create a new CAS volume
 func ProvisionVolume(req *csi.CreateVolumeRequest) (*apismaya.CASVolume, error) {
 	casVolume := apismaya.CASVolume{}
-
-	capacity := int64(req.GetCapacityRange().GetRequiredBytes())
-	if capacity >= maxStorageCapacity {
-		return nil, status.Errorf(
-			codes.OutOfRange,
-			"requested capacity {%d} exceeds maximum allowed {%d}",
-			capacity, maxStorageCapacity)
-	}
-
-	casVolume.Spec.Capacity = strconv.FormatInt(capacity, 10)
+	casVolume.Spec.Capacity = strconv.FormatInt(req.GetCapacityRange().GetRequiredBytes(), 10)
 
 	parameters := req.GetParameters()
 	storageclass := parameters["storageclass"]
@@ -192,32 +177,35 @@ func ReadVolume(vname, namespace, storageclass string, obj interface{}) error {
 	return json.NewDecoder(resp.Body).Decode(obj)
 }
 
-// DeleteVolume to get delete CAS volume through a API call to m-apiserver
-func DeleteVolume(vname, namespace string) error {
+// DeleteVolume deletes CAS volume through an
+// API call to maya apiserver
+func DeleteVolume(name, namespace string) error {
 
-	url := MAPIServerEndpoint + "/latest/volumes/" + vname
+	url := MAPIServerEndpoint + "/latest/volumes/" + name
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("namespace", namespace)
-
 	c := &http.Client{
 		Timeout: timeout,
 	}
+
 	resp, err := c.Do(req)
 	if err != nil {
-		logrus.Errorf("Error when connecting to maya-apiserver  %v", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	code := resp.StatusCode
 	if code != http.StatusOK {
-		return fmt.Errorf("failed to delete volume %s:%s",
-			vname, http.StatusText(code))
+		return errors.Errorf(
+			"failed to delete volume {%s}: got http code {%s}",
+			url,
+			http.StatusText(code),
+		)
 	}
-	logrus.Info("Volume Deletion Successfully initiated")
+
 	return nil
 }
