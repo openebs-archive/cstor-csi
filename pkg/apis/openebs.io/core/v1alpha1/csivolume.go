@@ -35,17 +35,17 @@ type CSIVolume struct {
 // CSIVolumeSpec is the spec for a CStorVolume resource
 type CSIVolumeSpec struct {
 	// Volume specific info
-	Volume CSIVolumeInfo `json:"volume"`
+	Volume VolumeInfo `json:"volume"`
 
-	// ISCSI info specific to ISCSI protocol,
+	// ISCSIInfo specific to ISCSI protocol,
 	// this is filled only if the volume type
 	// is iSCSI
-	ISCSI CSIISCSIInfo `json: "iscsi"`
+	ISCSI ISCSIInfo `json: "iscsi"`
 }
 
-// CSIVolumeInfo contains the volume related info
+// VolumeInfo contains the volume related info
 // for all types of volumes in CSIVolumeSpec
-type CSIVolumeInfo struct {
+type VolumeInfo struct {
 	// Name of the CSI volume
 	Name string `json:"name"`
 
@@ -53,12 +53,16 @@ type CSIVolumeInfo struct {
 	// engine
 	CASType string `json:"casType"`
 
+	// Capacity of the volume
+	Capacity string `json:"capacity"`
+
+	// TODO
+	// Below fields might be moved to a separate
+	// sub resource e.g. CSIVolumeContext
+
 	// OwnerNodeID is the Node ID which
 	// is also the owner of this Volume
 	OwnerNodeID string `json:"ownerNodeID"`
-
-	// Capacity of the volume
-	Capacity string `json:"capacity"`
 
 	// FSType of a volume will specify the
 	// format type - ext4(default), xfs of PV
@@ -87,19 +91,22 @@ type CSIVolumeInfo struct {
 	DevicePath string `json:"devicePath"`
 }
 
-// CSIISCSIInfo has ISCSI protocol specific info,
+// ISCSIInfo has ISCSI protocol specific info,
 // this can be used only if the volume type exposed
 // by the vendor is iSCSI
-type CSIISCSIInfo struct {
-	// Iqn of a volume will hold the IQN
-	// value of the Volume
+type ISCSIInfo struct {
+	// Iqn of this volume
 	Iqn string `json:"iqn"`
 
-	// TargetPortal of a volume will hold
-	// the target portal of the volume
+	// TargetPortal holds the target portal
+	// of this volume
 	TargetPortal string `json:"targetPortal"`
 
-	// IscsiInterface
+	// Portals holds all target portals
+	// of this volume
+	Portals string `json:"portals"`
+
+	// IscsiInterface of this volume
 	IscsiInterface string `json:"iscsiInterface"`
 
 	// Lun specify the lun number 0, 1.. on

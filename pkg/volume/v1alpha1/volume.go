@@ -42,11 +42,11 @@ func FromCASVolume(vol *apismaya.CASVolume) *CSIVolume {
 	return &CSIVolume{
 		Object: &apis.CSIVolume{
 			Spec: apis.CSIVolumeSpec{
-				Volume: apis.CSIVolumeInfo{
+				Volume: apis.VolumeInfo{
 					Name:     vol.Name,
 					Capacity: vol.Spec.Capacity,
 				},
-				ISCSI: apis.CSIISCSIInfo{
+				ISCSI: apis.ISCSIInfo{
 					Iqn:          vol.Spec.Iqn,
 					TargetPortal: vol.Spec.TargetPortal,
 					Lun:          strconv.FormatInt(int64(vol.Spec.Lun), 10),
