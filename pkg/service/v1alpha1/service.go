@@ -19,7 +19,7 @@ package v1alpha1
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/openebs/csi/pkg/config/v1alpha1"
+	config "github.com/openebs/csi/pkg/config/v1alpha1"
 	"github.com/openebs/csi/pkg/utils/v1alpha1"
 )
 
@@ -47,9 +47,9 @@ type CSIDriver struct {
 	// TODO change the field names to make it
 	// readable
 	config *config.Config
-	ids    *IdentityServer
-	ns     *NodeServer
-	cs     *ControllerServer
+	ids    csi.IdentityServer
+	ns     csi.NodeServer
+	cs     csi.ControllerServer
 
 	cap []*csi.VolumeCapability_AccessMode
 }
@@ -82,7 +82,7 @@ func New(config *config.Config) *CSIDriver {
 
 	switch config.PluginType {
 	case "controller":
-		driver.cs = NewControllerServer(driver)
+		driver.cs = NewController(driver)
 
 	case "node":
 		utils.FetchAndUpdateVolInfos(config.NodeID)
@@ -94,14 +94,14 @@ func New(config *config.Config) *CSIDriver {
 		// and relogin or remount
 		go utils.MonitorMounts()
 
-		driver.ns = NewNodeServer(driver)
+		driver.ns = NewNode(driver)
 	}
 
 	// Identity server is common to both node and
 	// controller, it is required to register,
 	// share capabilities and probe the corresponding
 	// driver
-	driver.ids = NewIdentityServer(driver)
+	driver.ids = NewIdentity(driver)
 	return driver
 }
 

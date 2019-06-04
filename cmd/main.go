@@ -7,57 +7,75 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/openebs/csi/pkg/config/v1alpha1"
-	driver "github.com/openebs/csi/pkg/driver/v1alpha1"
+	config "github.com/openebs/csi/pkg/config/v1alpha1"
+	service "github.com/openebs/csi/pkg/service/v1alpha1"
 	"github.com/openebs/csi/pkg/version"
 	"github.com/spf13/cobra"
 )
 
 func main() {
 	_ = flag.CommandLine.Parse([]string{})
-	var driverConfig = config.NewConfig()
+	var config = config.Default()
 
 	cmd := &cobra.Command{
 		Use:   "openebs-csi-driver",
 		Short: "openebs-csi-driver",
 		Run: func(cmd *cobra.Command, args []string) {
-			handle(driverConfig)
+			run(config)
 		},
 	}
 
 	cmd.Flags().AddGoFlagSet(flag.CommandLine)
-	cmd.PersistentFlags().StringVar(&driverConfig.RestURL, "url", "", "url")
-	cmd.PersistentFlags().StringVar(&driverConfig.NodeID, "nodeid", "node1", "node id")
-	cmd.PersistentFlags().StringVar(&driverConfig.Version, "version", "", "Print the version and exit")
-	cmd.PersistentFlags().StringVar(&driverConfig.Endpoint, "endpoint", "unix://csi/csi.sock", "CSI endpoint")
-	cmd.PersistentFlags().StringVar(&driverConfig.DriverName, "name",
-		"openebs-csi.openebs.io", "name of the driver")
-	cmd.PersistentFlags().StringVar(&driverConfig.PluginType,
-		"plugin", "csi-plugin", "Plugin type controller/node")
 
-	if err := cmd.Execute(); err != nil {
+	cmd.PersistentFlags().StringVar(
+		&config.RestURL, "url", "", "REST URL that points to maya api server",
+	)
+
+	cmd.PersistentFlags().StringVar(
+		&config.NodeID, "nodeid", "node1", "NodeID to identify the node running this driver",
+	)
+
+	cmd.PersistentFlags().StringVar(
+		&config.Version, "version", "", "Displays driver version",
+	)
+
+	cmd.PersistentFlags().StringVar(
+		&config.Endpoint, "endpoint", "unix://csi/csi.sock", "CSI endpoint",
+	)
+
+	cmd.PersistentFlags().StringVar(
+		&config.DriverName, "name", "openebs-csi.openebs.io", "Name of this driver",
+	)
+
+	cmd.PersistentFlags().StringVar(
+		&config.PluginType, "plugin", "csi-plugin", "Type of this driver i.e. controller or node",
+	)
+
+	err := cmd.Execute()
+	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
 		os.Exit(1)
 	}
 }
 
-func handle(driverConfig *config.Config) {
-
-	if driverConfig.Version == "" {
-		driverConfig.Version = version.Get()
+func run(config *config.Config) {
+	if config.Version == "" {
+		config.Version = version.Current()
 	}
 
-	logrus.Infof("%s - %s", version.Get(),
-		version.GetGitCommit())
+	logrus.Infof("%s - %s", version.Current(), version.GetGitCommit())
+	logrus.Infof(
+		"DriverName: %s Plugin: %s EndPoint: %s URL: %s NodeID: %s",
+		config.DriverName,
+		config.PluginType,
+		config.Endpoint,
+		config.RestURL,
+		config.NodeID,
+	)
 
-	logrus.Infof("DriverName: %v Plugin: %v EndPoint: %v URL: %v NodeID: %v",
-		driverConfig.DriverName, driverConfig.PluginType, driverConfig.Endpoint,
-		driverConfig.RestURL, driverConfig.NodeID)
-	drvr := driver.New(driverConfig)
-
-	if err := drvr.Run(); err != nil {
+	err := service.New(config).Run()
+	if err != nil {
 		log.Fatalln(err)
 	}
 	os.Exit(0)
-
 }

@@ -28,36 +28,45 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// NodeServer defines the structure of the csi node driver
-type NodeServer struct {
+// node is the server implementation
+// for CSI NodeServer
+type node struct {
 	driver *CSIDriver
 }
 
-// NewNodeServer returns a new object of type NodeServer
-func NewNodeServer(d *CSIDriver) *NodeServer {
-	return &NodeServer{
+// NewNode returns a new instance
+// of CSI NodeServer
+func NewNode(d *CSIDriver) csi.NodeServer {
+	return &node{
 		driver: d,
 	}
 }
 
-// NodePublishVolume publishes(mounts) the volume at the corresponding node at
-// a given path
-func (ns *NodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+// NodePublishVolume publishes (mounts) the volume
+// at the corresponding node at a given path
+//
+// This implements csi.NodeServer
+func (ns *node) NodePublishVolume(
+	ctx context.Context,
+	req *csi.NodePublishVolumeRequest,
+) (*csi.NodePublishVolumeResponse, error) {
+
 	var (
 		err        error
 		reVerified bool
 		devicePath string
 	)
-	logrus.Infof("NodepublishVolume")
 
 	if req.GetVolumeCapability() == nil {
 		return nil, status.Error(codes.InvalidArgument,
 			"Volume capability missing in request")
 	}
+
 	if len(req.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument,
 			"Volume ID missing in request")
 	}
+
 	mountPath := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 	mountOptions := req.GetVolumeCapability().GetMount().GetMountFlags()
@@ -167,22 +176,27 @@ verifyPublish:
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
-// NodeUnpublishVolume unpublishes(unmounts) the volume from the corresponding
-// node from the given path
-func (ns *NodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
-	var (
-		err error
-	)
-	logrus.Infof("NodeUnpublishVolume")
+// NodeUnpublishVolume unpublishes (unmounts) the volume
+// from the corresponding node from the given path
+//
+// This implements csi.NodeServer
+func (ns *node) NodeUnpublishVolume(
+	ctx context.Context,
+	req *csi.NodeUnpublishVolumeRequest,
+) (*csi.NodeUnpublishVolumeResponse, error) {
+
+	var err error
 
 	if len(req.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument,
 			"Volume ID missing in request")
 	}
+
 	if len(req.GetTargetPath()) == 0 {
 		return nil, status.Error(codes.InvalidArgument,
 			"Target path missing in request")
 	}
+
 	targetPath := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 	utils.VolumesListLock.Lock()
@@ -191,8 +205,10 @@ func (ns *NodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		utils.VolumesListLock.Unlock()
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
+
 	delete(utils.Volumes, volumeID)
 	utils.VolumesListLock.Unlock()
+
 	// if node driver restarts before this step Kubelet will trigger the
 	// NodeUnpublish command again so there is no need to worry that when this
 	// driver restarts it will pick up the CSIVolume CR and start monitoring
@@ -212,6 +228,7 @@ func (ns *NodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.Internal,
 			err.Error())
 	}
+
 	// It is safe to delete the CSIVolume CR now since the volume has already
 	// been unmounted and logged out
 	err = utils.DeleteCSIVolumeCR(vol)
@@ -219,41 +236,81 @@ func (ns *NodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.Internal,
 			err.Error())
 	}
+
 	logrus.Infof("hostpath: volume %s/%s has been unmounted.",
 		targetPath, volumeID)
 
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
-// NodeStageVolume mounts the volume on the staging path
-func (ns *NodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
+// TODO
+// This needs to be implemented
+//
+// NodeStageVolume mounts the volume on the staging
+// path
+//
+// This implements csi.NodeServer
+func (ns *node) NodeStageVolume(
+	ctx context.Context,
+	req *csi.NodeStageVolumeRequest,
+) (*csi.NodeStageVolumeResponse, error) {
+
 	return &csi.NodeStageVolumeResponse{}, nil
 }
 
-// NodeUnstageVolume unmounts the volume from the staging path
-func (ns *NodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
+// NodeUnstageVolume unmounts the volume from
+// the staging path
+//
+// This implements csi.NodeServer
+func (ns *node) NodeUnstageVolume(
+	ctx context.Context,
+	req *csi.NodeUnstageVolumeRequest,
+) (*csi.NodeUnstageVolumeResponse, error) {
+
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
-// NodeGetInfo returns the info of the corresponding node
-func (ns *NodeServer) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+// NodeGetInfo returns node details
+//
+// This implements csi.NodeServer
+func (ns *node) NodeGetInfo(
+	ctx context.Context,
+	req *csi.NodeGetInfoRequest,
+) (*csi.NodeGetInfoResponse, error) {
+
 	return &csi.NodeGetInfoResponse{
 		NodeId:            ns.driver.config.NodeID,
 		MaxVolumesPerNode: 1,
 	}, nil
 }
 
+// TODO
+// Verify if this needs to be implemented
+//
 // NodeExpandVolume resizes the filesystem if required
-// if ControllerExpandVolumeResponse returns true in
-// node_expansion_required then FileSystemResizePending condition will be added
-// to PVC and NodeExpandVolume operation will be queued on kubelet
-func (ns *NodeServer) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
+//
+// If ControllerExpandVolumeResponse returns true in
+// node_expansion_required then FileSystemResizePending
+// condition will be added to PVC and NodeExpandVolume
+// operation will be queued on kubelet
+//
+// This implements csi.NodeServer
+func (ns *node) NodeExpandVolume(
+	ctx context.Context,
+	req *csi.NodeExpandVolumeRequest,
+) (*csi.NodeExpandVolumeResponse, error) {
+
 	return nil, nil
 }
 
-// NodeGetCapabilities returns the capabilities supported by the node
-func (ns *NodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilitiesRequest) (*csi.NodeGetCapabilitiesResponse, error) {
-	logrus.Infof("Using default NodeGetCapabilities")
+// NodeGetCapabilities returns capabilities supported
+// by this node service
+//
+// This implements csi.NodeServer
+func (ns *node) NodeGetCapabilities(
+	ctx context.Context,
+	req *csi.NodeGetCapabilitiesRequest,
+) (*csi.NodeGetCapabilitiesResponse, error) {
 
 	return &csi.NodeGetCapabilitiesResponse{
 		Capabilities: []*csi.NodeServiceCapability{
@@ -268,8 +325,14 @@ func (ns *NodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 	}, nil
 }
 
-// NodeGetVolumeStats returns the volume capacity statistics
-// available for the volume
-func (ns *NodeServer) NodeGetVolumeStats(ctx context.Context, in *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
+// NodeGetVolumeStats returns statistics for the
+// given volume
+//
+// This implements csi.NodeServer
+func (ns *node) NodeGetVolumeStats(
+	ctx context.Context,
+	in *csi.NodeGetVolumeStatsRequest,
+) (*csi.NodeGetVolumeStatsResponse, error) {
+
 	return nil, status.Error(codes.Unimplemented, "")
 }
