@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package v1alpha1
 
 // Config struct fills the parameters of request or user input
 type Config struct {
@@ -48,8 +48,8 @@ type Config struct {
 	RestURL string
 }
 
-// NewConfig returns a new instance of config
+// Default returns a new instance of config
 // required to initialize a driver instance
-func NewConfig() *Config {
+func Default() *Config {
 	return &Config{}
 }
