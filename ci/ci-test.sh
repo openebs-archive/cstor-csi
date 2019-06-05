@@ -15,7 +15,7 @@
 #!/bin/bash
 set -e
 
-OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
+OPENEBS_OPERATOR=kubectl apply -f https://openebs.github.io/charts/openebs-operator-0.9.0.yaml
 CSI_OPERATOR=https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
 
 SRC_REPO="https://github.com/openebs/maya.git"
@@ -33,7 +33,7 @@ cd $DST_PATH/maya
 
 # Run BDD tests for volume provisioning via CSI
 cd $DST_PATH/maya/tests/csi/cstor/volume
-ginkgo -v -- -kubeconfig="$HOME/.kube/config"
+ginkgo -v -- -kubeconfig="$HOME/.kube/config" --cstor-replicas=1 --cstor-maxpools=1
 if [[ $? != 0 ]]; then
 	echo "BDD tests for volume provisioning via CSI failed"
 	exit 1
