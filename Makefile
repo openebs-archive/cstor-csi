@@ -12,7 +12,9 @@ EXTERNAL_TOOLS=\
 	golang.org/x/tools/cmd/cover \
 	github.com/axw/gocov/gocov \
 	gopkg.in/matm/v1/gocov-html \
-	github.com/ugorji/go/codec/codecgen
+	github.com/ugorji/go/codec/codecgen \
+	github.com/onsi/ginkgo/ginkgo \
+	github.com/onsi/gomega/...
 
 ifeq (${IMAGE_TAG}, )
   IMAGE_TAG = ci
