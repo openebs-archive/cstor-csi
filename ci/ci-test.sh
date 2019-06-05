@@ -15,7 +15,7 @@
 #!/bin/bash
 set -e
 
-OPENEBS_OPERATOR=kubectl apply -f https://openebs.github.io/charts/openebs-operator-0.9.0.yaml
+OPENEBS_OPERATOR=https://openebs.github.io/charts/openebs-operator-0.9.0.yaml
 CSI_OPERATOR=https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
 
 SRC_REPO="https://github.com/openebs/maya.git"
