@@ -26,6 +26,8 @@ import (
 type Interface interface {
 	// CStorVolumes returns a CStorVolumeInformer.
 	CStorVolumes() CStorVolumeInformer
+	// CStorVolumeClaims returns a CStorVolumeClaimInformer.
+	CStorVolumeClaims() CStorVolumeClaimInformer
 }
 
 type version struct {
@@ -42,4 +44,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // CStorVolumes returns a CStorVolumeInformer.
 func (v *version) CStorVolumes() CStorVolumeInformer {
 	return &cStorVolumeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// CStorVolumeClaims returns a CStorVolumeClaimInformer.
+func (v *version) CStorVolumeClaims() CStorVolumeClaimInformer {
+	return &cStorVolumeClaimInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
