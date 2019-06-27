@@ -38,6 +38,16 @@ func NewBuilder() *Builder {
 	}
 }
 
+// BuilderFrom returns new instance of Builder
+// from the provided api instance
+func BuilderFrom(cvc *apismaya.CStorVolumeClaim) *Builder {
+	return &Builder{
+		cvc: &CStorVolumeClaim{
+			object: cvc,
+		},
+	}
+}
+
 // WithName sets the Name of CStorVolumeClaim
 func (b *Builder) WithName(name string) *Builder {
 	if len(name) == 0 {
@@ -241,12 +251,25 @@ func (b *Builder) WithCapacity(capacity string) *Builder {
 	return b.WithCapacityQty(resCapacity)
 }
 
-// WithCapacityQty sets the Capacity field in PV with provided arguments
+// WithCapacityQty sets Capacity of CStorVOlumeClaim
 func (b *Builder) WithCapacityQty(resCapacity resource.Quantity) *Builder {
 	resourceList := metav1.ResourceList{
 		metav1.ResourceName(metav1.ResourceStorage): resCapacity,
 	}
 	b.cvc.object.Spec.Capacity = resourceList
+	return b
+}
+
+// WithNodeID sets NodeID details of CStorVolumeClaim
+func (b *Builder) WithNodeID(nodeID string) *Builder {
+	if nodeID == "" {
+		b.errs = append(
+			b.errs,
+			errors.New("failed to build cstorvolumeclaim object: missing nodeID"),
+		)
+		return b
+	}
+	b.cvc.object.Publish.NodeId = nodeID
 	return b
 }
 
