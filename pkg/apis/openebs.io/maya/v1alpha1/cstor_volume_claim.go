@@ -61,12 +61,21 @@ type CStorVolumeClaimPublish struct {
 // CStorVolumeClaimPhase represents the current phase of CStorVolumeClaim.
 type CStorVolumeClaimPhase string
 
+const (
+	//CStorVolumeClaimPhasePending indicates that the cvc is still waiting for
+	//the cstorvolume to be created and bound
+	CStorVolumeClaimPhasePending CStorVolumeClaimPhase = "Pending"
+	//CStorVolumeClaimPhaseBound indiacates that the cstorvolume has been
+	//provisioned and bound to the cstor volume claim
+	CStorVolumeClaimPhaseBound CStorVolumeClaimPhase = "Bound"
+)
+
 // CStorVolumeClaimStatus is for handling status of CstorVolume Claim.
 // defines the observed state of CStorVolumeClaim
 type CStorVolumeClaimStatus struct {
 	// Phase represents the current phase of CStorVolumeClaim.
-	Phase     CStorVolumeClaimPhase       `json:"phase"`
-	Condition []CStorVolumeClaimCondition `json:"condition,omitempty"`
+	Phase      CStorVolumeClaimPhase       `json:"phase"`
+	Conditions []CStorVolumeClaimCondition `json:"condition,omitempty"`
 }
 
 // CStorVolumeClaimCondition contains details about state of cstor volume

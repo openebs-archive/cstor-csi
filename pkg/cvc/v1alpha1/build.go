@@ -60,7 +60,7 @@ func (b *Builder) WithGenerateName(name string) *Builder {
 	return b
 }
 
-// WithNamespace sets the Namespace field of CStorVolumeClaim provided arguments
+// WithNamespace resets the Namespace field of CStorVolumeClaim with provided arguments
 func (b *Builder) WithNamespace(namespace string) *Builder {
 	if len(namespace) == 0 {
 		b.errs = append(
@@ -70,6 +70,37 @@ func (b *Builder) WithNamespace(namespace string) *Builder {
 		return b
 	}
 	b.cvc.object.Namespace = namespace
+	return b
+}
+
+// WithStatus updates the status field of CStorVolumeClaim with provided arguments
+func (b *Builder) WithStatus(status apismaya.CStorVolumeClaimStatus) *Builder {
+	if status.Phase == "" {
+		b.errs = append(
+			b.errs,
+			errors.New("failed to build cstorvolumeclaim object: missing phase"),
+		)
+		return b
+	}
+	b.cvc.object.Status.Phase = status.Phase
+	if status.Conditions != nil {
+		b.cvc.object.Status.Conditions = append(b.cvc.object.Status.Conditions,
+			status.Conditions...)
+	}
+	return b
+}
+
+// WithStatusNew sets the status field of CStorVolumeClaim with provided arguments
+func (b *Builder) WithStatusNew(status apismaya.CStorVolumeClaimStatus) *Builder {
+	if status.Phase == "" {
+		b.errs = append(
+			b.errs,
+			errors.New("failed to build cstorvolumeclaim object: missing phase"),
+		)
+		return b
+	}
+	b.cvc.object.Status.Phase = status.Phase
+	b.cvc.object.Status.Conditions = status.Conditions
 	return b
 }
 
