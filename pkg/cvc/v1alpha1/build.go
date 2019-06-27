@@ -38,7 +38,7 @@ func NewBuilder() *Builder {
 	}
 }
 
-// WithName sets the Name field of CStorVolumeClaim with provided value.
+// WithName sets the Name of CStorVolumeClaim
 func (b *Builder) WithName(name string) *Builder {
 	if len(name) == 0 {
 		b.errs = append(
@@ -51,8 +51,7 @@ func (b *Builder) WithName(name string) *Builder {
 	return b
 }
 
-// WithGenerateName sets the GenerateName field of
-// CStorVolumeClaim with provided value
+// WithGenerateName sets the GenerateName of CStorVolumeClaim
 func (b *Builder) WithGenerateName(name string) *Builder {
 	if len(name) == 0 {
 		b.errs = append(
@@ -66,7 +65,7 @@ func (b *Builder) WithGenerateName(name string) *Builder {
 	return b
 }
 
-// WithNamespace resets the Namespace field of CStorVolumeClaim with provided arguments
+// WithNamespace resets the Namespace of CStorVolumeClaim with provided arguments
 func (b *Builder) WithNamespace(namespace string) *Builder {
 	if len(namespace) == 0 {
 		b.errs = append(
@@ -79,7 +78,7 @@ func (b *Builder) WithNamespace(namespace string) *Builder {
 	return b
 }
 
-// WithStatus updates the status field of CStorVolumeClaim with provided arguments
+// WithStatus updates the status of CStorVolumeClaim
 func (b *Builder) WithStatus(status apismaya.CStorVolumeClaimStatus) *Builder {
 	if status.Phase == "" {
 		b.errs = append(
@@ -96,7 +95,7 @@ func (b *Builder) WithStatus(status apismaya.CStorVolumeClaimStatus) *Builder {
 	return b
 }
 
-// WithStatusNew sets the status field of CStorVolumeClaim with provided arguments
+// WithStatusNew resets the status of CStorVolumeClaim
 func (b *Builder) WithStatusNew(status apismaya.CStorVolumeClaimStatus) *Builder {
 	if status.Phase == "" {
 		b.errs = append(
@@ -110,7 +109,7 @@ func (b *Builder) WithStatusNew(status apismaya.CStorVolumeClaimStatus) *Builder
 	return b
 }
 
-// WithAnnotations merges existing annotations if any
+// WithAnnotations merges existing annotations of CStorVolumeClaim if any
 // with the ones that are provided here
 func (b *Builder) WithAnnotations(annotations map[string]string) *Builder {
 	if len(annotations) == 0 {
@@ -131,7 +130,7 @@ func (b *Builder) WithAnnotations(annotations map[string]string) *Builder {
 	return b
 }
 
-// WithAnnotationsNew resets existing annotations if any with
+// WithAnnotationsNew resets existing annotations of CStorVolumeiClaim if any with
 // ones that are provided here
 func (b *Builder) WithAnnotationsNew(annotations map[string]string) *Builder {
 	if len(annotations) == 0 {
@@ -153,7 +152,7 @@ func (b *Builder) WithAnnotationsNew(annotations map[string]string) *Builder {
 	return b
 }
 
-// WithLabels merges existing labels if any
+// WithLabels merges existing labels of CStorVolumeClaim if any
 // with the ones that are provided here
 func (b *Builder) WithLabels(labels map[string]string) *Builder {
 	if len(labels) == 0 {
@@ -174,7 +173,7 @@ func (b *Builder) WithLabels(labels map[string]string) *Builder {
 	return b
 }
 
-// WithLabelsNew resets existing labels if any with
+// WithLabelsNew resets existing labels of CStorVolumeClaim if any with
 // ones that are provided here
 func (b *Builder) WithLabelsNew(labels map[string]string) *Builder {
 	if len(labels) == 0 {
@@ -196,7 +195,7 @@ func (b *Builder) WithLabelsNew(labels map[string]string) *Builder {
 	return b
 }
 
-// WithFinalizers merges existing finalizers if any
+// WithFinalizers merges existing finalizers of CStorVolumeClaim if any
 // with the ones that are provided here
 func (b *Builder) WithFinalizers(finalizers []string) *Builder {
 	if len(finalizers) == 0 {
@@ -215,7 +214,7 @@ func (b *Builder) WithFinalizers(finalizers []string) *Builder {
 	return b
 }
 
-// WithFinalizersNew resets existing finalizers if any with
+// WithFinalizersNew resets existing finalizers of CStorVolumeClaim if any with
 // ones that are provided here
 func (b *Builder) WithFinalizersNew(finalizers []string) *Builder {
 	if len(finalizers) == 0 {
@@ -231,12 +230,12 @@ func (b *Builder) WithFinalizersNew(finalizers []string) *Builder {
 	return b
 }
 
-// WithCapacity sets the Capacity field in CstorVOlumeClaim by converting string
+// WithCapacity sets the Capacity of CstorVOlumeClaim by converting string
 // capacity into Quantity
 func (b *Builder) WithCapacity(capacity string) *Builder {
 	resCapacity, err := resource.ParseQuantity(capacity)
 	if err != nil {
-		b.errs = append(b.errs, errors.Wrapf(err, "failed to build PV object: failed to parse capacity {%s}", capacity))
+		b.errs = append(b.errs, errors.Wrapf(err, "failed to build CStorVolumeClaim object: failed to parse capacity {%s}", capacity))
 		return b
 	}
 	return b.WithCapacityQty(resCapacity)
