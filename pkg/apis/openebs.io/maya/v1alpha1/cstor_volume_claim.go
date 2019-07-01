@@ -48,8 +48,9 @@ type CStorVolumeClaimSpec struct {
 	// cstor volume.
 	Capacity corev1.ResourceList `json:"capacity"`
 
-	// CStorVolumeRef has the information about where CstorVolumeClaim
-	// is created from.
+	// CStorVolumeRef contains the reference to CStorVolume i.e. CstorVolume Name
+	// This field will be updated by maya after cstor Volume has been
+	// provisioned
 	CStorVolumeRef *corev1.ObjectReference `json:"cstorVolumeRef,omitempty"`
 }
 
