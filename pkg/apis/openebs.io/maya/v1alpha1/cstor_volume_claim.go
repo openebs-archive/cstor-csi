@@ -74,6 +74,10 @@ const (
 	//CStorVolumeClaimPhaseBound indiacates that the cstorvolume has been
 	//provisioned and bound to the cstor volume claim
 	CStorVolumeClaimPhaseBound CStorVolumeClaimPhase = "Bound"
+
+	//CStorVolumeClaimPhaseFailed indiacates that the cstorvolume provisioning
+	//has failed
+	CStorVolumeClaimPhaseFailed CStorVolumeClaimPhase = "Failed"
 )
 
 // CStorVolumeClaimStatus is for handling status of CstorVolume Claim.
