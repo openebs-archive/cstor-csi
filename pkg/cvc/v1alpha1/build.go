@@ -23,7 +23,7 @@ import (
 	resource "k8s.io/apimachinery/pkg/api/resource"
 )
 
-// Builder is the builder object for CStorVolume
+// Builder is the builder object for CStorVolumeClaim
 type Builder struct {
 	cvc  *CStorVolumeClaim
 	errs []error
@@ -50,7 +50,7 @@ func BuilderFrom(cvc *apismaya.CStorVolumeClaim) *Builder {
 
 // WithName sets the Name of CStorVolumeClaim
 func (b *Builder) WithName(name string) *Builder {
-	if len(name) == 0 {
+	if name == "" {
 		b.errs = append(
 			b.errs,
 			errors.New("failed to build cstorvolumeclaim object: missing name"),
@@ -63,7 +63,7 @@ func (b *Builder) WithName(name string) *Builder {
 
 // WithGenerateName sets the GenerateName of CStorVolumeClaim
 func (b *Builder) WithGenerateName(name string) *Builder {
-	if len(name) == 0 {
+	if name == "" {
 		b.errs = append(
 			b.errs,
 			errors.New("failed to build cstorvolumeclaim object: missing generateName"),
@@ -77,7 +77,7 @@ func (b *Builder) WithGenerateName(name string) *Builder {
 
 // WithNamespace resets the Namespace of CStorVolumeClaim with provided arguments
 func (b *Builder) WithNamespace(namespace string) *Builder {
-	if len(namespace) == 0 {
+	if namespace == "" {
 		b.errs = append(
 			b.errs,
 			errors.New("failed to build cstorvolumeclaim object: missing namespace"),
@@ -88,34 +88,43 @@ func (b *Builder) WithNamespace(namespace string) *Builder {
 	return b
 }
 
-// WithStatus updates the status of CStorVolumeClaim
-func (b *Builder) WithStatus(status apismaya.CStorVolumeClaimStatus) *Builder {
-	if status.Phase == "" {
+// WithStatusPhase updates the phase of CStorVolumeClaim
+func (b *Builder) WithStatusPhase(phase string) *Builder {
+	if phase == "" {
 		b.errs = append(
 			b.errs,
 			errors.New("failed to build cstorvolumeclaim object: missing phase"),
 		)
 		return b
 	}
-	b.cvc.object.Status.Phase = status.Phase
-	if status.Conditions != nil {
-		b.cvc.object.Status.Conditions = append(b.cvc.object.Status.Conditions,
-			status.Conditions...)
-	}
+	b.cvc.object.Status.Phase = apismaya.CStorVolumeClaimPhase(phase)
 	return b
 }
 
-// WithStatusNew resets the status of CStorVolumeClaim
-func (b *Builder) WithStatusNew(status apismaya.CStorVolumeClaimStatus) *Builder {
-	if status.Phase == "" {
+// WithStatusConditions updates the status of CStorVolumeClaim
+func (b *Builder) WithStatusConditions(conditions []apismaya.CStorVolumeClaimCondition) *Builder {
+	if conditions == nil || len(conditions) == 0 {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: missing phase"),
+			errors.New("failed to build cstorvolumeclaim object: missing conditions"),
 		)
 		return b
 	}
-	b.cvc.object.Status.Phase = status.Phase
-	b.cvc.object.Status.Conditions = status.Conditions
+	b.cvc.object.Status.Conditions = append(b.cvc.object.Status.Conditions,
+		conditions...)
+	return b
+}
+
+// WithStatusConditionsNew resets the status of CStorVolumeClaim
+func (b *Builder) WithStatusConditionsNew(conditions []apismaya.CStorVolumeClaimCondition) *Builder {
+	if conditions == nil || len(conditions) == 0 {
+		b.errs = append(
+			b.errs,
+			errors.New("failed to build cstorvolumeclaim object: missing conditions"),
+		)
+		return b
+	}
+	b.cvc.object.Status.Conditions = conditions
 	return b
 }
 
@@ -208,7 +217,7 @@ func (b *Builder) WithLabelsNew(labels map[string]string) *Builder {
 // WithFinalizers merges existing finalizers of CStorVolumeClaim if any
 // with the ones that are provided here
 func (b *Builder) WithFinalizers(finalizers []string) *Builder {
-	if len(finalizers) == 0 {
+	if finalizers == nil || len(finalizers) == 0 {
 		b.errs = append(
 			b.errs,
 			errors.New("failed to build cstorvolumeclaim object: missing finalizers"),
@@ -227,7 +236,7 @@ func (b *Builder) WithFinalizers(finalizers []string) *Builder {
 // WithFinalizersNew resets existing finalizers of CStorVolumeClaim if any with
 // ones that are provided here
 func (b *Builder) WithFinalizersNew(finalizers []string) *Builder {
-	if len(finalizers) == 0 {
+	if finalizers == nil || len(finalizers) == 0 {
 		b.errs = append(
 			b.errs,
 			errors.New("failed to build cstorvolumeclaim object: no new finalizers"),
@@ -245,7 +254,10 @@ func (b *Builder) WithFinalizersNew(finalizers []string) *Builder {
 func (b *Builder) WithCapacity(capacity string) *Builder {
 	resCapacity, err := resource.ParseQuantity(capacity)
 	if err != nil {
-		b.errs = append(b.errs, errors.Wrapf(err, "failed to build CStorVolumeClaim object: failed to parse capacity {%s}", capacity))
+		b.errs = append(
+			b.errs,
+			errors.Wrapf(err, "failed to build CStorVolumeClaim object: failed to parse capacity {%s}", capacity),
+		)
 		return b
 	}
 	return b.WithCapacityQty(resCapacity)
@@ -269,7 +281,7 @@ func (b *Builder) WithNodeID(nodeID string) *Builder {
 		)
 		return b
 	}
-	b.cvc.object.Publish.NodeId = nodeID
+	b.cvc.object.Publish.NodeID = nodeID
 	return b
 }
 

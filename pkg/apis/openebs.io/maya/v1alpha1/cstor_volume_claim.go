@@ -28,6 +28,7 @@ import (
 type CStorVolumeClaim struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
+
 	// Spec defines a specification of a cstor volume claim required
 	// to provisione cstor volume resources
 	Spec CStorVolumeClaimSpec `json:"spec"`
@@ -46,16 +47,19 @@ type CStorVolumeClaimSpec struct {
 	// Capacity represents the actual resources of the underlying
 	// cstor volume.
 	Capacity corev1.ResourceList `json:"capacity"`
+
 	// CStorVolumeRef has the information about where CstorVolumeClaim
 	// is created from.
 	CStorVolumeRef *corev1.ObjectReference `json:"cstorVolumeRef,omitempty"`
 }
 
-// CStorVolumeClaimPublish contains info related to attachment of a volume to a node.
-// i.e. NodeId etc.
+// CStorVolumeClaimPublish will contain the publish details of the volume.
+// eg. NodeId indicates where the volume is currently published.
+// More fields will be added as and when required
 type CStorVolumeClaimPublish struct {
-	// NodeId contains publish info related to attachment of a volume to a node.
-	NodeId string `json:"nodeId,omitempty"`
+	// NodeId indicates where the volume is needed to be mounted, i.e the node
+	// where the app is scheduled
+	NodeID string `json:"nodeId,omitempty"`
 }
 
 // CStorVolumeClaimPhase represents the current phase of CStorVolumeClaim.
@@ -65,6 +69,7 @@ const (
 	//CStorVolumeClaimPhasePending indicates that the cvc is still waiting for
 	//the cstorvolume to be created and bound
 	CStorVolumeClaimPhasePending CStorVolumeClaimPhase = "Pending"
+
 	//CStorVolumeClaimPhaseBound indiacates that the cstorvolume has been
 	//provisioned and bound to the cstor volume claim
 	CStorVolumeClaimPhaseBound CStorVolumeClaimPhase = "Bound"
@@ -80,16 +85,20 @@ type CStorVolumeClaimStatus struct {
 
 // CStorVolumeClaimCondition contains details about state of cstor volume
 type CStorVolumeClaimCondition struct {
-	// Current Condition of cstor volume claim. If underlying persistent volume is being
-	// resized then the Condition will be set to 'ResizeStarted' etc
+	// Current Condition of cstor volume claim.
+	// If underlying persistent volume is being resized
+	// then the Condition will be set to 'ResizeStarted' etc
 	Type CStorVolumeClaimConditionType `json:"type"`
+
 	// Reason is a brief CamelCase string that describes any failure
 	Reason string `json:"reason"`
+
 	// Human-readable message indicating details about last transition.
 	Message string `json:"message"`
 }
 
-// CStorVolumeClaimConditionType is a valid value of CstorVolumeClaimCondition.Type
+// CStorVolumeClaimConditionType can indiacte the current condition of
+// CstorVOlumeClaim depending on the operation being performed on Volume.
 type CStorVolumeClaimConditionType string
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
