@@ -119,7 +119,7 @@ func (b *Builder) WithStatusPhase(
 // WithStatusConditions updates the status of CStorVolumeClaim
 func (b *Builder) WithStatusConditions(
 	conditions []apismaya.CStorVolumeClaimCondition) *Builder {
-	if conditions == nil || len(conditions) == 0 {
+	if len(conditions) == 0 {
 		b.errs = append(
 			b.errs,
 			errors.New(
@@ -136,7 +136,7 @@ func (b *Builder) WithStatusConditions(
 // WithStatusConditionsNew resets the status of CStorVolumeClaim
 func (b *Builder) WithStatusConditionsNew(
 	conditions []apismaya.CStorVolumeClaimCondition) *Builder {
-	if conditions == nil || len(conditions) == 0 {
+	if len(conditions) == 0 {
 		b.errs = append(
 			b.errs,
 			errors.New(
@@ -246,7 +246,7 @@ func (b *Builder) WithLabelsNew(labels map[string]string) *Builder {
 // WithFinalizers merges existing finalizers of CStorVolumeClaim if any
 // with the ones that are provided here
 func (b *Builder) WithFinalizers(finalizers []string) *Builder {
-	if finalizers == nil || len(finalizers) == 0 {
+	if len(finalizers) == 0 {
 		b.errs = append(
 			b.errs,
 			errors.New(
@@ -267,7 +267,7 @@ func (b *Builder) WithFinalizers(finalizers []string) *Builder {
 // WithFinalizersNew resets existing finalizers of CStorVolumeClaim if any with
 // ones that are provided here
 func (b *Builder) WithFinalizersNew(finalizers []string) *Builder {
-	if finalizers == nil || len(finalizers) == 0 {
+	if len(finalizers) == 0 {
 		b.errs = append(
 			b.errs,
 			errors.New(
