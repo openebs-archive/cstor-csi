@@ -25,3 +25,11 @@ type CStorVolumeListerExpansion interface{}
 // CStorVolumeNamespaceListerExpansion allows custom methods to be added to
 // CStorVolumeNamespaceLister.
 type CStorVolumeNamespaceListerExpansion interface{}
+
+// CStorVolumeClaimListerExpansion allows custom methods to be added to
+// CStorVolumeClaimLister.
+type CStorVolumeClaimListerExpansion interface{}
+
+// CStorVolumeClaimNamespaceListerExpansion allows custom methods to be added to
+// CStorVolumeClaimNamespaceLister.
+type CStorVolumeClaimNamespaceListerExpansion interface{}

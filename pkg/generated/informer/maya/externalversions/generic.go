@@ -55,6 +55,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=openebs.io, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("cstorvolumes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Openebs().V1alpha1().CStorVolumes().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("cstorvolumeclaims"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Openebs().V1alpha1().CStorVolumeClaims().Informer()}, nil
 
 	}
 
