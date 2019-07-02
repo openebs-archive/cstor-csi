@@ -48,7 +48,8 @@ func NewListBuilder() *ListBuilder {
 // WithAPIList builds the list of cstorvolume claim
 // instances based on the provided
 // CStorVolumeClaim api instances
-func (b *ListBuilder) WithAPIList(list *apismaya.CStorVolumeClaimList) *ListBuilder {
+func (b *ListBuilder) WithAPIList(
+	list *apismaya.CStorVolumeClaimList) *ListBuilder {
 	if list == nil {
 		return b
 	}

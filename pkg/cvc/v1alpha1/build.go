@@ -41,6 +41,14 @@ func NewBuilder() *Builder {
 // BuilderFrom returns new instance of Builder
 // from the provided api instance
 func BuilderFrom(cvc *apismaya.CStorVolumeClaim) *Builder {
+	if cvc == nil {
+		b := NewBuilder()
+		b.errs = append(
+			b.errs,
+			errors.New("failed to build cstorvolumeclaim object: nil cvc"),
+		)
+		return b
+	}
 	return &Builder{
 		cvc: &CStorVolumeClaim{
 			object: cvc,
@@ -66,7 +74,9 @@ func (b *Builder) WithGenerateName(name string) *Builder {
 	if name == "" {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: missing generateName"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: missing generateName",
+			),
 		)
 		return b
 	}
@@ -80,7 +90,9 @@ func (b *Builder) WithNamespace(namespace string) *Builder {
 	if namespace == "" {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: missing namespace"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: missing namespace",
+			),
 		)
 		return b
 	}
@@ -89,11 +101,14 @@ func (b *Builder) WithNamespace(namespace string) *Builder {
 }
 
 // WithStatusPhase updates the phase of CStorVolumeClaim
-func (b *Builder) WithStatusPhase(phase apismaya.CStorVolumeClaimPhase) *Builder {
+func (b *Builder) WithStatusPhase(
+	phase apismaya.CStorVolumeClaimPhase) *Builder {
 	if phase == "" {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: missing phase"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: missing phase",
+			),
 		)
 		return b
 	}
@@ -102,11 +117,14 @@ func (b *Builder) WithStatusPhase(phase apismaya.CStorVolumeClaimPhase) *Builder
 }
 
 // WithStatusConditions updates the status of CStorVolumeClaim
-func (b *Builder) WithStatusConditions(conditions []apismaya.CStorVolumeClaimCondition) *Builder {
+func (b *Builder) WithStatusConditions(
+	conditions []apismaya.CStorVolumeClaimCondition) *Builder {
 	if conditions == nil || len(conditions) == 0 {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: missing conditions"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: missing conditions",
+			),
 		)
 		return b
 	}
@@ -116,11 +134,14 @@ func (b *Builder) WithStatusConditions(conditions []apismaya.CStorVolumeClaimCon
 }
 
 // WithStatusConditionsNew resets the status of CStorVolumeClaim
-func (b *Builder) WithStatusConditionsNew(conditions []apismaya.CStorVolumeClaimCondition) *Builder {
+func (b *Builder) WithStatusConditionsNew(
+	conditions []apismaya.CStorVolumeClaimCondition) *Builder {
 	if conditions == nil || len(conditions) == 0 {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: missing conditions"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: missing conditions",
+			),
 		)
 		return b
 	}
@@ -134,7 +155,9 @@ func (b *Builder) WithAnnotations(annotations map[string]string) *Builder {
 	if len(annotations) == 0 {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: missing annotations"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: missing annotations",
+			),
 		)
 		return b
 	}
@@ -149,13 +172,15 @@ func (b *Builder) WithAnnotations(annotations map[string]string) *Builder {
 	return b
 }
 
-// WithAnnotationsNew resets existing annotations of CStorVolumeiClaim if any with
-// ones that are provided here
+// WithAnnotationsNew resets existing annotations of CStorVolumeiClaim
+// if any with ones that are provided here
 func (b *Builder) WithAnnotationsNew(annotations map[string]string) *Builder {
 	if len(annotations) == 0 {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: no new annotations"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: no new annotations",
+			),
 		)
 		return b
 	}
@@ -177,7 +202,9 @@ func (b *Builder) WithLabels(labels map[string]string) *Builder {
 	if len(labels) == 0 {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: missing labels"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: missing labels",
+			),
 		)
 		return b
 	}
@@ -198,7 +225,9 @@ func (b *Builder) WithLabelsNew(labels map[string]string) *Builder {
 	if len(labels) == 0 {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: no new labels"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: no new labels",
+			),
 		)
 		return b
 	}
@@ -220,7 +249,9 @@ func (b *Builder) WithFinalizers(finalizers []string) *Builder {
 	if finalizers == nil || len(finalizers) == 0 {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: missing finalizers"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: missing finalizers",
+			),
 		)
 		return b
 	}
@@ -239,13 +270,16 @@ func (b *Builder) WithFinalizersNew(finalizers []string) *Builder {
 	if finalizers == nil || len(finalizers) == 0 {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: no new finalizers"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: no new finalizers",
+			),
 		)
 		return b
 	}
 
 	// override
-	b.cvc.object.Finalizers = finalizers
+	b.cvc.object.Finalizers = nil
+	b.cvc.object.Finalizers = append(b.cvc.object.Finalizers, finalizers...)
 	return b
 }
 
@@ -256,7 +290,11 @@ func (b *Builder) WithCapacity(capacity string) *Builder {
 	if err != nil {
 		b.errs = append(
 			b.errs,
-			errors.Wrapf(err, "failed to build CStorVolumeClaim object: failed to parse capacity {%s}", capacity),
+			errors.Wrapf(
+				err,
+				"failed to build CStorVolumeClaim object: failed to parse capacity {%s}",
+				capacity,
+			),
 		)
 		return b
 	}
@@ -277,7 +315,9 @@ func (b *Builder) WithNodeID(nodeID string) *Builder {
 	if nodeID == "" {
 		b.errs = append(
 			b.errs,
-			errors.New("failed to build cstorvolumeclaim object: missing nodeID"),
+			errors.New(
+				"failed to build cstorvolumeclaim object: missing nodeID",
+			),
 		)
 		return b
 	}

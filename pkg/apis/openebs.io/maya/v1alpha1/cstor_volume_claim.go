@@ -30,7 +30,7 @@ type CStorVolumeClaim struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// Spec defines a specification of a cstor volume claim required
-	// to provisione cstor volume resources
+	// to provision cstor volume resources
 	Spec CStorVolumeClaimSpec `json:"spec"`
 
 	// Publish contains info related to attachment of a volume to a node.
