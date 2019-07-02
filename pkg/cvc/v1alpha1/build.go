@@ -89,7 +89,7 @@ func (b *Builder) WithNamespace(namespace string) *Builder {
 }
 
 // WithStatusPhase updates the phase of CStorVolumeClaim
-func (b *Builder) WithStatusPhase(phase string) *Builder {
+func (b *Builder) WithStatusPhase(phase apismaya.CStorVolumeClaimPhase) *Builder {
 	if phase == "" {
 		b.errs = append(
 			b.errs,
@@ -97,7 +97,7 @@ func (b *Builder) WithStatusPhase(phase string) *Builder {
 		)
 		return b
 	}
-	b.cvc.object.Status.Phase = apismaya.CStorVolumeClaimPhase(phase)
+	b.cvc.object.Status.Phase = phase
 	return b
 }
 
