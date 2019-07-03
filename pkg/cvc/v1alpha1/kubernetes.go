@@ -295,7 +295,7 @@ func (k *Kubeclient) Create(
 	if cvc == nil {
 		return nil,
 			errors.New(
-				"failed to create service: nil cvc object",
+				"failed to create cstovolumeclaim: nil cvc object",
 			)
 	}
 	cli, err := k.getClientOrCached()

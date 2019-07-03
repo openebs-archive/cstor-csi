@@ -30,28 +30,52 @@ type getClientsetFn func() (clientset *clientset.Clientset, err error)
 
 // getClientsetFromPathFn is a typed function that
 // abstracts fetching of clientset from kubeConfigPath
-type getClientsetForPathFn func(kubeConfigPath string) (clientset *clientset.Clientset, err error)
+type getClientsetForPathFn func(kubeConfigPath string) (
+	clientset *clientset.Clientset,
+	err error,
+)
 
 // createFn is a typed function that abstracts
 // creating csi volume instance
-type createFn func(cs *clientset.Clientset, upgradeResultObj *apis.CSIVolume, namespace string) (*apis.CSIVolume, error)
+type createFn func(
+	cs *clientset.Clientset,
+	upgradeResultObj *apis.CSIVolume,
+	namespace string,
+) (*apis.CSIVolume, error)
 
 // getFn is a typed function that abstracts
 // fetching a csi volume instance
-type getFn func(cli *clientset.Clientset, name, namespace string,
-	opts metav1.GetOptions) (*apis.CSIVolume, error)
+type getFn func(
+	cli *clientset.Clientset,
+	name,
+	namespace string,
+	opts metav1.GetOptions,
+) (*apis.CSIVolume, error)
 
 // listFn is a typed function that abstracts
 // listing of csi volume instances
-type listFn func(cli *clientset.Clientset, namespace string, opts metav1.ListOptions) (*apis.CSIVolumeList, error)
+type listFn func(
+	cli *clientset.Clientset,
+	namespace string,
+	opts metav1.ListOptions,
+) (*apis.CSIVolumeList, error)
 
 // delFn is a typed function that abstracts
 // deleting a csi volume instance
-type delFn func(cli *clientset.Clientset, name, namespace string, opts *metav1.DeleteOptions) error
+type delFn func(
+	cli *clientset.Clientset,
+	name,
+	namespace string,
+	opts *metav1.DeleteOptions,
+) error
 
 // updateFn is a typed function that abstracts
 // updating csi volume instance
-type updateFn func(cs *clientset.Clientset, vol *apis.CSIVolume, namespace string) (*apis.CSIVolume, error)
+type updateFn func(
+	cs *clientset.Clientset,
+	vol *apis.CSIVolume,
+	namespace string,
+) (*apis.CSIVolume, error)
 
 // Kubeclient enables kubernetes API operations
 // on csi volume instance
@@ -81,62 +105,120 @@ type Kubeclient struct {
 // to build a kubeclient instance
 type KubeclientBuildOption func(*Kubeclient)
 
+// defaultGetClientset is the default implementation to
+// get kubernetes clientset instance
+func defaultGetClientset() (clients *clientset.Clientset, err error) {
+
+	config, err := client.GetConfig(client.New())
+	if err != nil {
+		return nil, err
+	}
+
+	return clientset.NewForConfig(config)
+
+}
+
+// defaultGetClientsetForPath is the default implementation to
+// get kubernetes clientset instance based on the given
+// kubeconfig path
+func defaultGetClientsetForPath(
+	kubeConfigPath string,
+) (clients *clientset.Clientset, err error) {
+	config, err := client.GetConfig(
+		client.New(client.WithKubeConfigPath(kubeConfigPath)))
+	if err != nil {
+		return nil, err
+	}
+
+	return clientset.NewForConfig(config)
+}
+
+// defaultGet is the default implementation to get
+// a csi volume instance in kubernetes cluster
+func defaultGet(
+	cli *clientset.Clientset,
+	name, namespace string,
+	opts metav1.GetOptions,
+) (*apis.CSIVolume, error) {
+	return cli.OpenebsV1alpha1().
+		CSIVolumes(namespace).
+		Get(name, opts)
+}
+
+// defaultList is the default implementation to list
+// csi volume instances in kubernetes cluster
+func defaultList(
+	cli *clientset.Clientset,
+	namespace string,
+	opts metav1.ListOptions,
+) (*apis.CSIVolumeList, error) {
+	return cli.OpenebsV1alpha1().
+		CSIVolumes(namespace).
+		List(opts)
+}
+
+// defaultCreate is the default implementation to delete
+// a csi volume instance in kubernetes cluster
+func defaultDel(
+	cli *clientset.Clientset,
+	name, namespace string,
+	opts *metav1.DeleteOptions,
+) error {
+	deletePropagation := metav1.DeletePropagationForeground
+	opts.PropagationPolicy = &deletePropagation
+	err := cli.OpenebsV1alpha1().
+		CSIVolumes(namespace).
+		Delete(name, opts)
+	return err
+}
+
+// defaultCreate is the default implementation to create
+// a csi volume instance in kubernetes cluster
+func defaultCreate(
+	cli *clientset.Clientset,
+	vol *apis.CSIVolume,
+	namespace string,
+) (*apis.CSIVolume, error) {
+	return cli.OpenebsV1alpha1().
+		CSIVolumes(namespace).
+		Create(vol)
+}
+
+// defaultUpdate is the default implementation to update
+// a csi volume instance in kubernetes cluster
+func defaultUpdate(
+	cli *clientset.Clientset,
+	vol *apis.CSIVolume,
+	namespace string,
+) (*apis.CSIVolume, error) {
+	return cli.OpenebsV1alpha1().
+		CSIVolumes(namespace).
+		Update(vol)
+}
+
 // withDefaults sets the default options
 // of kubeclient instance
 func (k *Kubeclient) withDefaults() {
 	if k.getClientset == nil {
-		k.getClientset = func() (clients *clientset.Clientset, err error) {
-			config, err := client.GetConfig(client.New())
-			if err != nil {
-				return nil, err
-			}
-
-			return clientset.NewForConfig(config)
-		}
+		k.getClientset = defaultGetClientset
 	}
-
 	if k.getClientsetForPath == nil {
-		k.getClientsetForPath = func(kubeConfigPath string) (clients *clientset.Clientset, err error) {
-			config, err := client.GetConfig(client.New(client.WithKubeConfigPath(kubeConfigPath)))
-			if err != nil {
-				return nil, err
-			}
-
-			return clientset.NewForConfig(config)
-		}
+		k.getClientsetForPath = defaultGetClientsetForPath
 	}
-
-	if k.create == nil {
-		k.create = func(cli *clientset.Clientset, vol *apis.CSIVolume, namespace string) (*apis.CSIVolume, error) {
-			return cli.OpenebsV1alpha1().CSIVolumes(namespace).Create(vol)
-		}
-	}
-
 	if k.get == nil {
-		k.get = func(cli *clientset.Clientset, name, namespace string, opts metav1.GetOptions) (*apis.CSIVolume, error) {
-			return cli.OpenebsV1alpha1().CSIVolumes(namespace).Get(name, opts)
-		}
+		k.get = defaultGet
 	}
-
 	if k.list == nil {
-		k.list = func(cli *clientset.Clientset, namespace string, opts metav1.ListOptions) (*apis.CSIVolumeList, error) {
-			return cli.OpenebsV1alpha1().CSIVolumes(namespace).List(opts)
-		}
+		k.list = defaultList
 	}
-
 	if k.del == nil {
-		k.del = func(cli *clientset.Clientset, name, namespace string, opts *metav1.DeleteOptions) error {
-			deletePropagation := metav1.DeletePropagationForeground
-			opts.PropagationPolicy = &deletePropagation
-			err := cli.OpenebsV1alpha1().CSIVolumes(namespace).Delete(name, opts)
-			return err
-		}
+		k.del = defaultDel
 	}
-
+	if k.create == nil {
+		k.create = defaultCreate
+	}
 	if k.update == nil {
-		k.update = func(cs *clientset.Clientset, vol *apis.CSIVolume, namespace string) (*apis.CSIVolume, error) {
-			return cs.OpenebsV1alpha1().CSIVolumes(namespace).Update(vol)
-		}
+		k.update = defaultUpdate
 	}
 }
 
@@ -183,7 +265,10 @@ func NewKubeclient(opts ...KubeclientBuildOption) *Kubeclient {
 	return k
 }
 
-func (k *Kubeclient) getClientsetForPathOrDirect() (*clientset.Clientset, error) {
+func (k *Kubeclient) getClientsetForPathOrDirect() (
+	*clientset.Clientset,
+	error,
+) {
 	if k.kubeConfigPath != "" {
 		return k.getClientsetForPath(k.kubeConfigPath)
 	}
@@ -200,7 +285,11 @@ func (k *Kubeclient) getClientOrCached() (*clientset.Clientset, error) {
 
 	c, err := k.getClientsetForPathOrDirect()
 	if err != nil {
-		return nil, err
+		return nil,
+			errors.Wrapf(
+				err,
+				"failed to get clientset",
+			)
 	}
 
 	k.clientset = c
@@ -210,23 +299,45 @@ func (k *Kubeclient) getClientOrCached() (*clientset.Clientset, error) {
 // Create creates a csi volume instance
 // in kubernetes cluster
 func (k *Kubeclient) Create(vol *apis.CSIVolume) (*apis.CSIVolume, error) {
+	if vol == nil {
+		return nil,
+			errors.New(
+				"failed to create csivolume: nil vol object",
+			)
+	}
 	cs, err := k.getClientOrCached()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(
+			err,
+			"failed to create csi volume {%s} in namespace {%s}",
+			vol.Name,
+			k.namespace,
+		)
 	}
 
 	return k.create(cs, vol, k.namespace)
 }
 
 // Get returns csi volume object for given name
-func (k *Kubeclient) Get(name string, opts metav1.GetOptions) (*apis.CSIVolume, error) {
-	if len(name) == 0 {
-		return nil, errors.New("failed to get csi volume: missing csi volume name")
+func (k *Kubeclient) Get(
+	name string,
+	opts metav1.GetOptions,
+) (*apis.CSIVolume, error) {
+	if name == "" {
+		return nil,
+			errors.New(
+				"failed to get csi volume: missing csi volume name",
+			)
 	}
 
 	cli, err := k.getClientOrCached()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(
+			err,
+			"failed to get csi volume {%s} in namespace {%s}",
+			name,
+			k.namespace,
+		)
 	}
 
 	return k.get(cli, name, k.namespace, opts)
@@ -234,10 +345,23 @@ func (k *Kubeclient) Get(name string, opts metav1.GetOptions) (*apis.CSIVolume, 
 
 // GetRaw returns csi volume instance
 // in bytes
-func (k *Kubeclient) GetRaw(name string, opts metav1.GetOptions) ([]byte, error) {
+func (k *Kubeclient) GetRaw(
+	name string,
+	opts metav1.GetOptions,
+) ([]byte, error) {
+	if name == "" {
+		return nil, errors.New(
+			"failed to get raw csi volume: missing vol name",
+		)
+	}
 	csiv, err := k.Get(name, opts)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(
+			err,
+			"failed to get csi volume {%s} in namespace {%s}",
+			name,
+			k.namespace,
+		)
 	}
 
 	return json.Marshal(csiv)
@@ -248,7 +372,11 @@ func (k *Kubeclient) GetRaw(name string, opts metav1.GetOptions) ([]byte, error)
 func (k *Kubeclient) List(opts metav1.ListOptions) (*apis.CSIVolumeList, error) {
 	cli, err := k.getClientOrCached()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(
+			err,
+			"failed to list csi volumes in namespace {%s}",
+			k.namespace,
+		)
 	}
 
 	return k.list(cli, k.namespace, opts)
@@ -257,9 +385,19 @@ func (k *Kubeclient) List(opts metav1.ListOptions) (*apis.CSIVolumeList, error) 
 // Delete deletes the csi volume from
 // kubernetes
 func (k *Kubeclient) Delete(name string) error {
+	if name == "" {
+		return errors.New(
+			"failed to delete csivolume: missing vol name",
+		)
+	}
 	cli, err := k.getClientOrCached()
 	if err != nil {
-		return err
+		return errors.Wrapf(
+			err,
+			"failed to delete csivolume {%s} in namespace {%s}",
+			name,
+			k.namespace,
+		)
 	}
 
 	return k.del(cli, name, k.namespace, &metav1.DeleteOptions{})
@@ -268,9 +406,21 @@ func (k *Kubeclient) Delete(name string) error {
 // Update updates this csi volume instance
 // against kubernetes cluster
 func (k *Kubeclient) Update(vol *apis.CSIVolume) (*apis.CSIVolume, error) {
+	if vol == nil {
+		return nil,
+			errors.New(
+				"failed to update csivolume: nil vol object",
+			)
+	}
+
 	cs, err := k.getClientOrCached()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(
+			err,
+			"failed to update csivolume {%s} in namespace {%s}",
+			vol.Name,
+			vol.Namespace,
+		)
 	}
 
 	return k.update(cs, vol, k.namespace)
