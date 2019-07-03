@@ -220,7 +220,10 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 			continue
 		}
 		// build discoverydb and discover iscsi target
-		b.exec.Run("iscsiadm", "-m", "discoverydb", "-t", "sendtargets", "-p", tp, "-I", b.Iface, "-o", "new")
+		out, err = b.exec.Run("iscsiadm", "-m", "discoverydb", "-t", "sendtargets", "-p", tp, "-I", b.Iface, "-o", "new")
+		if err != nil {
+			glog.Errorf("iscsi: failed to discover session with error: %s (%v)", string(out), err)
+		}
 		// update discoverydb with CHAP secret
 		err = updateISCSIDiscoverydb(b, tp)
 		if err != nil {
