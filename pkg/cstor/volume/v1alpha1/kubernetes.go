@@ -233,6 +233,13 @@ func NewKubeclient(opts ...KubeclientBuildOption) *Kubeclient {
 	return k
 }
 
+// WithNamespace sets the provided namespace
+// against this Kubeclient instance
+func (k *Kubeclient) WithNamespace(namespace string) *Kubeclient {
+	k.namespace = namespace
+	return k
+}
+
 func (k *Kubeclient) getClientsetForPathOrDirect() (
 	*clientset.Clientset, error) {
 	if k.kubeConfigPath != "" {
