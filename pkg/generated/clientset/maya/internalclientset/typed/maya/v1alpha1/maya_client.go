@@ -28,6 +28,7 @@ import (
 type OpenebsV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	CStorVolumesGetter
+	CStorVolumeClaimsGetter
 }
 
 // OpenebsV1alpha1Client is used to interact with features provided by the openebs.io group.
@@ -37,6 +38,10 @@ type OpenebsV1alpha1Client struct {
 
 func (c *OpenebsV1alpha1Client) CStorVolumes(namespace string) CStorVolumeInterface {
 	return newCStorVolumes(c, namespace)
+}
+
+func (c *OpenebsV1alpha1Client) CStorVolumeClaims(namespace string) CStorVolumeClaimInterface {
+	return newCStorVolumeClaims(c, namespace)
 }
 
 // NewForConfig creates a new OpenebsV1alpha1Client for the given config.
