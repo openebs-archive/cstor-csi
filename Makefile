@@ -148,6 +148,10 @@ csi-driver-image: csi-driver
 	cd buildscripts/${CSI_DRIVER} && sudo docker build -t openebs/${CSI_DRIVER}:${IMAGE_TAG} --build-arg BUILD_DATE=${BUILD_DATE} .
 	@rm buildscripts/${CSI_DRIVER}/${CSI_DRIVER}
 
+# Fetch required code from other repos
+fetch-maya:
+	buildscripts/fetch-maya.sh
+
 # Push images
 deploy-images:
 	@DIMAGE="openebs/csi-driver" ./buildscripts/push
