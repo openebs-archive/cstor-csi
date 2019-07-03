@@ -99,7 +99,7 @@ func (b *Builder) WithVolName(volName string) *Builder {
 	return b
 }
 
-// WithCapacity sets the Capacity of CstorVOlumeClaim by converting string
+// WithCapacity sets the Capacity of csi volume by converting string
 // capacity into Quantity
 func (b *Builder) WithCapacity(capacity string) *Builder {
 	if capacity == "" {
@@ -238,21 +238,6 @@ func (b *Builder) WithTargetPortal(targetPortal string) *Builder {
 		return b
 	}
 	b.volume.Object.Spec.ISCSI.TargetPortal = targetPortal
-	return b
-}
-
-// WithIface sets the IscsiInterface of csi volume
-func (b *Builder) WithIface(iface string) *Builder {
-	if iface == "" {
-		b.errs = append(
-			b.errs,
-			errors.New(
-				"failed to build csi volume object: missing iface",
-			),
-		)
-		return b
-	}
-	b.volume.Object.Spec.ISCSI.IscsiInterface = iface
 	return b
 }
 
