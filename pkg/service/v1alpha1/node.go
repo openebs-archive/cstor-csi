@@ -58,12 +58,12 @@ func (ns *node) NodePublishVolume(
 		devicePath string
 	)
 
-	mountPath := req.GetTargetPath()
-	volumeID := req.GetVolumeId()
-
 	if err = ns.validateNodePublishReq(req); err != nil {
 		return nil, err
 	}
+
+	mountPath := req.GetTargetPath()
+	volumeID := req.GetVolumeId()
 
 	vol, err := csivol.NewBuilder().
 		WithName(req.GetVolumeId()).
@@ -207,6 +207,7 @@ func (ns *node) NodeUnpublishVolume(
 ) (*csi.NodeUnpublishVolumeResponse, error) {
 
 	var err error
+
 	if err = ns.validateNodeUnpublishReq(req); err != nil {
 		return nil, err
 	}
@@ -266,8 +267,7 @@ func (ns *node) NodeGetInfo(
 ) (*csi.NodeGetInfoResponse, error) {
 
 	return &csi.NodeGetInfoResponse{
-		NodeId:            ns.driver.config.NodeID,
-		MaxVolumesPerNode: 1,
+		NodeId: ns.driver.config.NodeID,
 	}, nil
 }
 

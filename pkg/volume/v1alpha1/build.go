@@ -36,9 +36,9 @@ func NewBuilder() *Builder {
 	}
 }
 
-// BuilderFrom returns new instance of Builder
+// BuildFrom returns new instance of Builder
 // from the provided api instance
-func BuilderFrom(volume *apis.CSIVolume) *Builder {
+func BuildFrom(volume *apis.CSIVolume) *Builder {
 	if volume == nil {
 		b := NewBuilder()
 		b.errs = append(

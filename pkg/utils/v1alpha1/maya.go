@@ -5,7 +5,7 @@ import (
 
 	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
 	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	cstvol "github.com/openebs/csi/pkg/cstor/volume/v1alpha1"
+	cv "github.com/openebs/csi/pkg/cstor/volume/v1alpha1"
 	cvc "github.com/openebs/csi/pkg/cvc/v1alpha1"
 	csivol "github.com/openebs/csi/pkg/volume/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,14 +46,13 @@ func ProvisionVolume(size int64, volName, configclass string) error {
 		CVCFinalizer,
 	}
 
-	sizeGi := strconv.FormatInt(size/gib, 10) + "Gi"
-
+	sSize := strconv.FormatInt(size, 10)
 	cvcObj, err := cvc.NewBuilder().
 		WithName(volName).
 		WithNamespace(OpenEBSNamespace).
 		WithAnnotations(annotations).
 		WithFinalizers(finalizers).
-		WithCapacity(sizeGi).
+		WithCapacity(sSize).
 		WithStatusPhase(apismaya.CStorVolumeClaimPhasePending).Build()
 	if err != nil {
 		return err
@@ -98,7 +97,7 @@ func PatchCVCNodeID(volumeID, nodeID string) error {
 	if err != nil {
 		return err
 	}
-	cvcObj, err = cvc.BuilderFrom(cvcObj).
+	cvcObj, err = cvc.BuildFrom(cvcObj).
 		WithNodeID(nodeID).Build()
 	//TODO Patch needs to be done over here instead of update
 	_, err = cvc.NewKubeclient().WithNamespace(OpenEBSNamespace).Update(cvcObj)
@@ -109,15 +108,15 @@ func PatchCVCNodeID(volumeID, nodeID string) error {
 //resource and updates the corresponding csivolume resource
 func FetchAndUpdateISCSIDetails(volumeID string, vol *apis.CSIVolume) error {
 	getOptions := metav1.GetOptions{}
-	cv, err := cstvol.NewKubeclient().
+	cstorVolume, err := cv.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Get(volumeID, getOptions)
 	if err != nil {
 		return err
 	}
-	_, err = csivol.BuilderFrom(vol).
-		WithIQN(cv.Spec.Iqn).
-		WithTargetPortal(cv.Spec.TargetPortal).
+	_, err = csivol.BuildFrom(vol).
+		WithIQN(cstorVolume.Spec.Iqn).
+		WithTargetPortal(cstorVolume.Spec.TargetPortal).
 		WithLun(TargetLunID).
 		WithIscsiInterface(DefaultIscsiInterface).
 		Build()

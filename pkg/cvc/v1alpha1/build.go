@@ -38,9 +38,9 @@ func NewBuilder() *Builder {
 	}
 }
 
-// BuilderFrom returns new instance of Builder
+// BuildFrom returns new instance of Builder
 // from the provided api instance
-func BuilderFrom(cvc *apismaya.CStorVolumeClaim) *Builder {
+func BuildFrom(cvc *apismaya.CStorVolumeClaim) *Builder {
 	if cvc == nil {
 		b := NewBuilder()
 		b.errs = append(

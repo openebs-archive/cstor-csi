@@ -46,6 +46,8 @@ func NewController(d *CSIDriver) csi.ControllerServer {
 	}
 }
 
+// SupportedVolumeCapabilityAccessModes contains the list of supported access
+// modes for the volume
 var SupportedVolumeCapabilityAccessModes = []*csi.VolumeCapability_AccessMode{
 	&csi.VolumeCapability_AccessMode{
 		Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
@@ -60,23 +62,24 @@ func (cs *controller) CreateVolume(
 
 	logrus.Infof("received request to create volume {%s}", req.GetName())
 	var err error
-	volName := req.GetName()
-	size := req.GetCapacityRange().RequiredBytes
-	configClass := req.GetParameters()["configClass"]
 
 	if err = cs.validateVolumeCreateReq(req); err != nil {
 		return nil, err
 	}
 
+	volName := req.GetName()
+	size := req.GetCapacityRange().RequiredBytes
+	configClass := req.GetParameters()["configClass"]
+
 	// verify if the volume has already been created
 	cvc, err := utils.GetVolume(volName)
 	if err == nil && cvc != nil && cvc.DeletionTimestamp == nil {
+		goto createVolumeResponse
+	} else if cvc.DeletionTimestamp != nil {
 		return nil,
 			status.Error(
-				codes.AlreadyExists,
-				fmt.Sprintf(
-					"failed to handle create volume request: volume {%s} already exists",
-					volName),
+				codes.Internal,
+				"Volume with same name is being deleted",
 			)
 	}
 
@@ -85,6 +88,7 @@ func (cs *controller) CreateVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+createVolumeResponse:
 	return csipayload.NewCreateVolumeResponseBuilder().
 		WithName(volName).
 		WithCapacity(size).
@@ -106,6 +110,7 @@ func (cs *controller) DeleteVolume(
 	if err = cs.validateDeleteVolumeReq(req); err != nil {
 		return nil, err
 	}
+
 	volumeID := req.GetVolumeId()
 
 	// verify if the volume has already been deleted
@@ -251,16 +256,12 @@ func (cs *controller) ListVolumes(
 // are supported by this driver
 func validateCapabilities(caps []*csi.VolumeCapability) bool {
 
-	var supported bool
 	for _, cap := range caps {
-		if IsSupportedVolumeCapabilityAccessMode(cap.AccessMode.Mode) {
-			supported = true
-		} else {
-			supported = false
+		if !IsSupportedVolumeCapabilityAccessMode(cap.AccessMode.Mode) {
+			return false
 		}
 	}
-
-	return supported
+	return true
 }
 
 func (cs *controller) validateDeleteVolumeReq(req *csi.DeleteVolumeRequest) error {
@@ -285,12 +286,13 @@ func (cs *controller) validateDeleteVolumeReq(req *csi.DeleteVolumeRequest) erro
 	return nil
 }
 
+// IsSupportedVolumeCapabilityAccessMode valides the requested access mode
 func IsSupportedVolumeCapabilityAccessMode(
-	given csi.VolumeCapability_AccessMode_Mode,
+	accessMode csi.VolumeCapability_AccessMode_Mode,
 ) bool {
 
 	for _, access := range SupportedVolumeCapabilityAccessModes {
-		if given == access.Mode {
+		if accessMode == access.Mode {
 			return true
 		}
 	}
@@ -315,9 +317,6 @@ func newControllerCapabilities() []*csi.ControllerServiceCapability {
 	var capabilities []*csi.ControllerServiceCapability
 	for _, cap := range []csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
-		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
-		csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
-		csi.ControllerServiceCapability_RPC_LIST_VOLUMES,
 	} {
 		capabilities = append(capabilities, fromType(cap))
 	}
@@ -329,9 +328,6 @@ func newControllerCapabilities() []*csi.ControllerServiceCapability {
 func (cs *controller) validateRequest(
 	c csi.ControllerServiceCapability_RPC_Type,
 ) error {
-	if c == csi.ControllerServiceCapability_RPC_UNKNOWN {
-		return nil
-	}
 
 	for _, cap := range cs.capabilities {
 		if c == cap.GetRpc().GetType() {
@@ -344,6 +340,7 @@ func (cs *controller) validateRequest(
 		fmt.Sprintf("failed to validate request: {%s} is not supported", c),
 	)
 }
+
 func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) error {
 	err := cs.validateRequest(
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
