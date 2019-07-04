@@ -23,6 +23,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	iscsi "github.com/openebs/csi/pkg/iscsi/v1alpha1"
 	"github.com/openebs/csi/pkg/utils/v1alpha1"
+	csivol "github.com/openebs/csi/pkg/volume/v1alpha1"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -57,24 +58,39 @@ func (ns *node) NodePublishVolume(
 		devicePath string
 	)
 
-	if req.GetVolumeCapability() == nil {
-		return nil, status.Error(codes.InvalidArgument,
-			"Volume capability missing in request")
-	}
-
-	if len(req.GetVolumeId()) == 0 {
-		return nil, status.Error(codes.InvalidArgument,
-			"Volume ID missing in request")
-	}
-
 	mountPath := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
-	mountOptions := req.GetVolumeCapability().GetMount().GetMountFlags()
 
-	//TODO get this info from our own CRs
-	vol, err := utils.GetVolumeDetails(volumeID, mountPath, req.Readonly, mountOptions)
+	if err = ns.validateNodePublishReq(req); err != nil {
+		return nil, err
+	}
+
+	vol, err := csivol.NewBuilder().
+		WithName(req.GetVolumeId()).
+		WithVolName(req.GetVolumeId()).
+		WithMountPath(req.GetTargetPath()).
+		WithFSType(req.GetVolumeCapability().GetMount().GetFsType()).
+		WithMountOptions(req.GetVolumeCapability().GetMount().GetMountFlags()).
+		WithReadOnly(req.GetReadonly()).Build()
 	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	if err = utils.PatchCVCNodeID(volumeID, ns.driver.config.NodeID); err != nil {
+		return nil,
+			status.Error(codes.Internal, err.Error())
+	}
+
+	if isCVCBound, err := utils.IsCVCBound(volumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
+	} else if !isCVCBound {
+		time.Sleep(10 * time.Second)
+		return nil, status.Error(codes.Internal, "Waiting for CVC to be bound")
+	}
+
+	if err = utils.FetchAndUpdateISCSIDetails(volumeID, vol); err != nil {
+		return nil,
+			status.Error(codes.Internal, err.Error())
 	}
 
 	//Check if volume is ready to serve IOs,
@@ -86,7 +102,9 @@ func (ns *node) NodePublishVolume(
 
 	// A temporary TCP connection is made to the volume to check if its
 	// reachable
-	if err := utils.WaitForVolumeToBeReachable(vol.Spec.ISCSI.TargetPortal); err != nil {
+	if err := utils.WaitForVolumeToBeReachable(
+		vol.Spec.ISCSI.TargetPortal,
+	); err != nil {
 		return nil,
 			status.Error(codes.Internal, err.Error())
 	}
@@ -113,7 +131,9 @@ verifyPublish:
 		// duplicate request
 		utils.VolumesListLock.Unlock()
 		if !reVerified {
-			time.Sleep(utils.VolumeWaitRetryCount * utils.VolumeWaitTimeout * time.Second)
+			time.Sleep(
+				utils.VolumeWaitRetryCount * utils.VolumeWaitTimeout * time.Second,
+			)
 			reVerified = true
 			goto verifyPublish
 		}
@@ -129,11 +149,12 @@ verifyPublish:
 	// to trigger an unpublish event on that node due to which when it comes up
 	// it starts remounting that volume. If the node's CSIVolume CR is marked
 	// for deletion that node will not reattempt to mount this volume again.
-	if err = utils.DeleteOldCSIVolumeCR(vol, ns.driver.config.NodeID); err != nil {
+	if err = utils.DeleteOldCSIVolumeCR(
+		vol, ns.driver.config.NodeID,
+	); err != nil {
 		utils.VolumesListLock.Unlock()
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-
 	// This CR creation will help iSCSI target(istgt) identify
 	// the current owner node of the volume and accordingly the target will
 	// allow only that node to login to the volume
@@ -186,15 +207,8 @@ func (ns *node) NodeUnpublishVolume(
 ) (*csi.NodeUnpublishVolumeResponse, error) {
 
 	var err error
-
-	if len(req.GetVolumeId()) == 0 {
-		return nil, status.Error(codes.InvalidArgument,
-			"Volume ID missing in request")
-	}
-
-	if len(req.GetTargetPath()) == 0 {
-		return nil, status.Error(codes.InvalidArgument,
-			"Target path missing in request")
+	if err = ns.validateNodeUnpublishReq(req); err != nil {
+		return nil, err
 	}
 
 	targetPath := req.GetTargetPath()
@@ -243,6 +257,42 @@ func (ns *node) NodeUnpublishVolume(
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
+// NodeGetInfo returns node details
+//
+// This implements csi.NodeServer
+func (ns *node) NodeGetInfo(
+	ctx context.Context,
+	req *csi.NodeGetInfoRequest,
+) (*csi.NodeGetInfoResponse, error) {
+
+	return &csi.NodeGetInfoResponse{
+		NodeId:            ns.driver.config.NodeID,
+		MaxVolumesPerNode: 1,
+	}, nil
+}
+
+// NodeGetCapabilities returns capabilities supported
+// by this node service
+//
+// This implements csi.NodeServer
+func (ns *node) NodeGetCapabilities(
+	ctx context.Context,
+	req *csi.NodeGetCapabilitiesRequest,
+) (*csi.NodeGetCapabilitiesResponse, error) {
+
+	return &csi.NodeGetCapabilitiesResponse{
+		Capabilities: []*csi.NodeServiceCapability{
+			{
+				Type: &csi.NodeServiceCapability_Rpc{
+					Rpc: &csi.NodeServiceCapability_RPC{
+						Type: csi.NodeServiceCapability_RPC_UNKNOWN,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
 // TODO
 // This needs to be implemented
 //
@@ -270,20 +320,6 @@ func (ns *node) NodeUnstageVolume(
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 
-// NodeGetInfo returns node details
-//
-// This implements csi.NodeServer
-func (ns *node) NodeGetInfo(
-	ctx context.Context,
-	req *csi.NodeGetInfoRequest,
-) (*csi.NodeGetInfoResponse, error) {
-
-	return &csi.NodeGetInfoResponse{
-		NodeId:            ns.driver.config.NodeID,
-		MaxVolumesPerNode: 1,
-	}, nil
-}
-
 // TODO
 // Verify if this needs to be implemented
 //
@@ -303,28 +339,6 @@ func (ns *node) NodeExpandVolume(
 	return nil, nil
 }
 
-// NodeGetCapabilities returns capabilities supported
-// by this node service
-//
-// This implements csi.NodeServer
-func (ns *node) NodeGetCapabilities(
-	ctx context.Context,
-	req *csi.NodeGetCapabilitiesRequest,
-) (*csi.NodeGetCapabilitiesResponse, error) {
-
-	return &csi.NodeGetCapabilitiesResponse{
-		Capabilities: []*csi.NodeServiceCapability{
-			{
-				Type: &csi.NodeServiceCapability_Rpc{
-					Rpc: &csi.NodeServiceCapability_RPC{
-						Type: csi.NodeServiceCapability_RPC_UNKNOWN,
-					},
-				},
-			},
-		},
-	}, nil
-}
-
 // NodeGetVolumeStats returns statistics for the
 // given volume
 //
@@ -335,4 +349,30 @@ func (ns *node) NodeGetVolumeStats(
 ) (*csi.NodeGetVolumeStatsResponse, error) {
 
 	return nil, status.Error(codes.Unimplemented, "")
+}
+
+func (ns *node) validateNodePublishReq(req *csi.NodePublishVolumeRequest) error {
+	if req.GetVolumeCapability() == nil {
+		return status.Error(codes.InvalidArgument,
+			"Volume capability missing in request")
+	}
+
+	if len(req.GetVolumeId()) == 0 {
+		return status.Error(codes.InvalidArgument,
+			"Volume ID missing in request")
+	}
+	return nil
+}
+
+func (ns *node) validateNodeUnpublishReq(req *csi.NodeUnpublishVolumeRequest) error {
+	if req.GetVolumeId() == "" {
+		return status.Error(codes.InvalidArgument,
+			"Volume ID missing in request")
+	}
+
+	if req.GetTargetPath() == "" {
+		return status.Error(codes.InvalidArgument,
+			"Target path missing in request")
+	}
+	return nil
 }
