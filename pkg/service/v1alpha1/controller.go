@@ -21,57 +21,14 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
 	errors "github.com/openebs/csi/pkg/generated/maya/errors/v1alpha1"
 	csipayload "github.com/openebs/csi/pkg/payload/v1alpha1"
 	"github.com/openebs/csi/pkg/utils/v1alpha1"
-	csivolume "github.com/openebs/csi/pkg/volume/v1alpha1"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-var SupportedVolumeCapabilityAccessModes = []*csi.VolumeCapability_AccessMode{
-	&csi.VolumeCapability_AccessMode{
-		Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
-	},
-}
-
-func IsSupportedVolumeCapabilityAccessMode(
-	given csi.VolumeCapability_AccessMode_Mode,
-) bool {
-
-	for _, access := range SupportedVolumeCapabilityAccessModes {
-		if given == access.Mode {
-			return true
-		}
-	}
-	return false
-}
-
-// newControllerCapabilities returns a list
-// of this controller's capabilities
-func newControllerCapabilities() []*csi.ControllerServiceCapability {
-	fromType := func(cap csi.ControllerServiceCapability_RPC_Type) *csi.ControllerServiceCapability {
-		return &csi.ControllerServiceCapability{
-			Type: &csi.ControllerServiceCapability_Rpc{
-				Rpc: &csi.ControllerServiceCapability_RPC{
-					Type: cap,
-				},
-			},
-		}
-	}
-
-	var capabilities []*csi.ControllerServiceCapability
-	for _, cap := range []csi.ControllerServiceCapability_RPC_Type{
-		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
-		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
-		csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
-		csi.ControllerServiceCapability_RPC_LIST_VOLUMES,
-	} {
-		capabilities = append(capabilities, fromType(cap))
-	}
-	return capabilities
-}
 
 // controller is the server implementation
 // for CSI Controller
@@ -89,111 +46,48 @@ func NewController(d *CSIDriver) csi.ControllerServer {
 	}
 }
 
-// validateRequest validates if the requested service is
-// supported by the driver
-func (cs *controller) validateRequest(c csi.ControllerServiceCapability_RPC_Type) error {
-	if c == csi.ControllerServiceCapability_RPC_UNKNOWN {
-		return nil
-	}
-
-	for _, cap := range cs.capabilities {
-		if c == cap.GetRpc().GetType() {
-			return nil
-		}
-	}
-
-	return status.Error(
-		codes.InvalidArgument,
-		fmt.Sprintf("failed to validate request: {%s} is not supported", c),
-	)
+var SupportedVolumeCapabilityAccessModes = []*csi.VolumeCapability_AccessMode{
+	&csi.VolumeCapability_AccessMode{
+		Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+	},
 }
 
 // CreateVolume provisions a volume
 func (cs *controller) CreateVolume(
 	ctx context.Context,
-	req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
+	req *csi.CreateVolumeRequest,
+) (*csi.CreateVolumeResponse, error) {
 
 	logrus.Infof("received request to create volume {%s}", req.GetName())
-
-	err := cs.validateRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME)
-	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"failed to handle create volume request for {%s}",
-			req.GetName(),
-		)
-	}
-
+	var err error
 	volName := req.GetName()
-	if len(volName) == 0 {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			"failed to handle create volume request: missing volume name",
-		)
-	}
+	size := req.GetCapacityRange().RequiredBytes
+	configClass := req.GetParameters()["configClass"]
 
-	volCapabilities := req.GetVolumeCapabilities()
-	if volCapabilities == nil {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			"failed to handle create volume request: missing volume capabilities",
-		)
-	}
-
-	for _, cap := range volCapabilities {
-		if cap.GetBlock() != nil {
-			return nil, status.Error(
-				codes.Unimplemented,
-				"failed to handle create volume request: block volume is not supported",
-			)
-		}
+	if err = cs.validateVolumeCreateReq(req); err != nil {
+		return nil, err
 	}
 
 	// verify if the volume has already been created
-	_, err = utils.GetVolumeByName(volName)
-	if err == nil {
+	cvc, err := utils.GetVolume(volName)
+	if err == nil && cvc != nil && cvc.DeletionTimestamp == nil {
 		return nil,
 			status.Error(
 				codes.AlreadyExists,
-				fmt.Sprintf("failed to handle create volume request: volume {%s} already exists", volName),
+				fmt.Sprintf(
+					"failed to handle create volume request: volume {%s} already exists",
+					volName),
 			)
 	}
 
-	// TODO
-	// This needs to be de-coupled. csi & maya api server
-	// should deal with custom resources and hence
-	// reconciliation
-	//
-	// Send volume creation request to maya apiserver
-	casvol, err := utils.ProvisionVolume(req)
+	err = utils.ProvisionVolume(size, volName, configClass)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	// Create a csi vol object from maya apiserver's
-	// create volume request
-	csivol := csivolume.FromCASVolume(casvol).Object
-
-	//TODO take lock against this local map
-	//
-	// Keep a local copy of the volume info
-	// to catch duplicate requests
-	utils.Volumes[volName] = csivol
-
 	return csipayload.NewCreateVolumeResponseBuilder().
 		WithName(volName).
-		WithCapacity(req.GetCapacityRange().GetRequiredBytes()).
-		// VolumeContext is essential for publishing
-		// volumes at nodes, for iscsi login, this
-		// will be stored in PV CR
-		WithContext(map[string]string{
-			"volname":        volName,
-			"iqn":            casvol.Spec.Iqn,
-			"targetPortal":   casvol.Spec.TargetPortal,
-			"lun":            "0",
-			"iscsiInterface": "default",
-			"portals":        casvol.Spec.TargetPortal,
-		}).
+		WithCapacity(size).
 		Build(), nil
 }
 
@@ -204,66 +98,46 @@ func (cs *controller) DeleteVolume(
 
 	logrus.Infof("received request to delete volume {%s}", req.VolumeId)
 
-	if req.VolumeId == "" {
-		return nil, status.Error(
-			codes.InvalidArgument,
-			"failed to handle delete volume request: missing volume id",
-		)
+	var (
+		err error
+		cvc *apismaya.CStorVolumeClaim
+	)
+
+	if err = cs.validateDeleteVolumeReq(req); err != nil {
+		return nil, err
+	}
+	volumeID := req.GetVolumeId()
+
+	// verify if the volume has already been deleted
+	cvc, err = utils.GetVolume(volumeID)
+	if cvc != nil && cvc.DeletionTimestamp != nil {
+		goto deleteResponse
 	}
 
-	err := cs.validateRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME)
+	// Delete the corresponding CVC
+	err = utils.DeleteVolume(volumeID)
 	if err != nil {
 		return nil, errors.Wrapf(
 			err,
 			"failed to handle delete volume request for {%s}",
-			req.VolumeId,
+			volumeID,
 		)
 	}
-
-	// this call is made just to fetch pvc namespace
-	pv, err := utils.FetchPVDetails(req.VolumeId)
-	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"failed to handle delete volume request for {%s}",
-			req.VolumeId,
-		)
-	}
-
-	pvcNamespace := pv.Spec.ClaimRef.Namespace
-
-	// send delete request to maya apiserver
-	err = utils.DeleteVolume(req.VolumeId, pvcNamespace)
-	if err != nil {
-		return nil, errors.Wrapf(
-			err,
-			"failed to handle delete volume request for {%s}",
-			req.VolumeId,
-		)
-	}
-
-	// TODO
-	// Use a lock to remove
-	//
-	// remove entry from the in-memory
-	// maintained list
-	delete(utils.Volumes, req.VolumeId)
-	return &csi.DeleteVolumeResponse{}, nil
+deleteResponse:
+	return csipayload.NewDeleteVolumeResponseBuilder().Build(), nil
 }
 
-// TODO
-// Verify if this is a never ending loop
-//
+// TODO Implementation will be taken up later
+
 // ValidateVolumeCapabilities validates the capabilities
 // required to create a new volume
-//
 // This implements csi.ControllerServer
 func (cs *controller) ValidateVolumeCapabilities(
 	ctx context.Context,
 	req *csi.ValidateVolumeCapabilitiesRequest,
 ) (*csi.ValidateVolumeCapabilitiesResponse, error) {
 
-	return cs.ValidateVolumeCapabilities(ctx, req)
+	return nil, status.Error(codes.Unimplemented, "")
 }
 
 // ControllerGetCapabilities fetches controller capabilities
@@ -290,22 +164,6 @@ func (cs *controller) ControllerExpandVolume(
 ) (*csi.ControllerExpandVolumeResponse, error) {
 
 	return nil, status.Error(codes.Unimplemented, "")
-}
-
-// validateCapabilities validates if provided capabilities
-// are supported by this driver
-func validateCapabilities(caps []*csi.VolumeCapability) bool {
-
-	var supported bool
-	for _, cap := range caps {
-		if IsSupportedVolumeCapabilityAccessMode(cap.AccessMode.Mode) {
-			supported = true
-		} else {
-			supported = false
-		}
-	}
-
-	return supported
 }
 
 // CreateSnapshot creates a snapshot for given volume
@@ -387,4 +245,137 @@ func (cs *controller) ListVolumes(
 ) (*csi.ListVolumesResponse, error) {
 
 	return nil, status.Error(codes.Unimplemented, "")
+}
+
+// validateCapabilities validates if provided capabilities
+// are supported by this driver
+func validateCapabilities(caps []*csi.VolumeCapability) bool {
+
+	var supported bool
+	for _, cap := range caps {
+		if IsSupportedVolumeCapabilityAccessMode(cap.AccessMode.Mode) {
+			supported = true
+		} else {
+			supported = false
+		}
+	}
+
+	return supported
+}
+
+func (cs *controller) validateDeleteVolumeReq(req *csi.DeleteVolumeRequest) error {
+	volumeID := req.GetVolumeId()
+	if volumeID == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle delete volume request: missing volume id",
+		)
+	}
+
+	err := cs.validateRequest(
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
+	)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"failed to handle delete volume request for {%s}",
+			volumeID,
+		)
+	}
+	return nil
+}
+
+func IsSupportedVolumeCapabilityAccessMode(
+	given csi.VolumeCapability_AccessMode_Mode,
+) bool {
+
+	for _, access := range SupportedVolumeCapabilityAccessModes {
+		if given == access.Mode {
+			return true
+		}
+	}
+	return false
+}
+
+// newControllerCapabilities returns a list
+// of this controller's capabilities
+func newControllerCapabilities() []*csi.ControllerServiceCapability {
+	fromType := func(
+		cap csi.ControllerServiceCapability_RPC_Type,
+	) *csi.ControllerServiceCapability {
+		return &csi.ControllerServiceCapability{
+			Type: &csi.ControllerServiceCapability_Rpc{
+				Rpc: &csi.ControllerServiceCapability_RPC{
+					Type: cap,
+				},
+			},
+		}
+	}
+
+	var capabilities []*csi.ControllerServiceCapability
+	for _, cap := range []csi.ControllerServiceCapability_RPC_Type{
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
+		csi.ControllerServiceCapability_RPC_LIST_SNAPSHOTS,
+		csi.ControllerServiceCapability_RPC_LIST_VOLUMES,
+	} {
+		capabilities = append(capabilities, fromType(cap))
+	}
+	return capabilities
+}
+
+// validateRequest validates if the requested service is
+// supported by the driver
+func (cs *controller) validateRequest(
+	c csi.ControllerServiceCapability_RPC_Type,
+) error {
+	if c == csi.ControllerServiceCapability_RPC_UNKNOWN {
+		return nil
+	}
+
+	for _, cap := range cs.capabilities {
+		if c == cap.GetRpc().GetType() {
+			return nil
+		}
+	}
+
+	return status.Error(
+		codes.InvalidArgument,
+		fmt.Sprintf("failed to validate request: {%s} is not supported", c),
+	)
+}
+func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) error {
+	err := cs.validateRequest(
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
+	)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"failed to handle create volume request for {%s}",
+			req.GetName(),
+		)
+	}
+
+	if req.GetName() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle create volume request: missing volume name",
+		)
+	}
+
+	if req.GetParameters()["configClass"] == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle create volume request: missing storage class parameter configClass",
+		)
+	}
+
+	volCapabilities := req.GetVolumeCapabilities()
+	if volCapabilities == nil {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle create volume request: missing volume capabilities",
+		)
+	}
+	return nil
 }
