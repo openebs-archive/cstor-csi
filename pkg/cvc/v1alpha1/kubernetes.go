@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"encoding/json"
+	"fmt"
 
 	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
 
@@ -26,6 +27,7 @@ import (
 
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
 )
 
 // getClientsetFn is a typed function that
@@ -71,6 +73,15 @@ type updateFn func(
 	cvc *apismaya.CStorVolumeClaim,
 	namespace string) (*apismaya.CStorVolumeClaim, error)
 
+// patchFn is a typed function that abstracts
+// patching csi volume instance
+type patchFn func(
+	cli *clientset.Clientset,
+	oldCVC *apismaya.CStorVolumeClaim,
+	newCVC *apismaya.CStorVolumeClaim,
+	subresources ...string,
+) (*apismaya.CStorVolumeClaim, error)
+
 // Kubeclient enables kubernetes API operations
 // on csi volume instance
 type Kubeclient struct {
@@ -93,6 +104,7 @@ type Kubeclient struct {
 	del                 delFn
 	create              createFn
 	update              updateFn
+	patch               patchFn
 }
 
 // KubeclientBuildOption defines the abstraction
@@ -178,6 +190,38 @@ func defaultCreate(
 		Create(cvc)
 }
 
+// defaultPatch is the default implementation to patch
+// a cstorvolumeclaim instance in kubernetes cluster
+func defaultPatch(
+	cli *clientset.Clientset,
+	oldCVC *apismaya.CStorVolumeClaim,
+	newCVC *apismaya.CStorVolumeClaim,
+	subresources ...string,
+) (*apismaya.CStorVolumeClaim, error) {
+	patchBytes, err := getPatchData(oldCVC, newCVC)
+	if err != nil {
+		return nil,
+			fmt.Errorf(
+				"can't patch CVC %s as generate path data failed: %v",
+				CVCKey(oldCVC), err,
+			)
+	}
+
+	updatedCVC, updateErr := cli.OpenebsV1alpha1().
+		CStorVolumeClaims(oldCVC.Namespace).
+		Patch(
+			oldCVC.Name, types.StrategicMergePatchType,
+			patchBytes, subresources...,
+		)
+	if updateErr != nil {
+		return nil,
+			fmt.Errorf("can't patch status of  CVC %s with %v",
+				CVCKey(oldCVC), updateErr,
+			)
+	}
+	return updatedCVC, nil
+}
+
 // defaultUpdate is the default implementation to update
 // a cstorvolumeclaim instance in kubernetes cluster
 func defaultUpdate(
@@ -213,6 +257,9 @@ func (k *Kubeclient) withDefaults() {
 	}
 	if k.update == nil {
 		k.update = defaultUpdate
+	}
+	if k.patch == nil {
+		k.patch = defaultPatch
 	}
 }
 
@@ -420,4 +467,31 @@ func (k *Kubeclient) Update(
 	}
 
 	return k.update(cli, cvc, k.namespace)
+}
+
+// Patch patches this cstorvolumeclaim instance
+// against kubernetes cluster
+func (k *Kubeclient) Patch(
+	oldCVC *apismaya.CStorVolumeClaim,
+	newCVC *apismaya.CStorVolumeClaim,
+	subresources ...string,
+) (*apismaya.CStorVolumeClaim, error) {
+	if oldCVC == nil || newCVC == nil {
+		return nil,
+			errors.New(
+				"failed to update cstorvolumeclaim: nil cvc object",
+			)
+	}
+
+	cli, err := k.getClientOrCached()
+	if err != nil {
+		return nil, errors.Wrapf(
+			err,
+			"failed to update cstorvolumeclaim {%s} in namespace {%s}",
+			newCVC.Name,
+			newCVC.Namespace,
+		)
+	}
+
+	return k.patch(cli, oldCVC, newCVC, subresources...)
 }

@@ -91,16 +91,19 @@ func IsCVCBound(volumeID string) (bool, error) {
 
 //PatchCVCNodeID patches the NodeID of CVC
 func PatchCVCNodeID(volumeID, nodeID string) error {
-	cvcObj, err := cvc.NewKubeclient().
+	oldCVCObj, err := cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Get(volumeID, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	cvcObj, err = cvc.BuildFrom(cvcObj).
+
+	newCVCObj, err := cvc.BuildFrom(oldCVCObj.DeepCopy()).
 		WithNodeID(nodeID).Build()
-	//TODO Patch needs to be done over here instead of update
-	_, err = cvc.NewKubeclient().WithNamespace(OpenEBSNamespace).Update(cvcObj)
+	subresources := "spec"
+	_, err = cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Patch(oldCVCObj, newCVCObj, subresources)
 	return err
 }
 
