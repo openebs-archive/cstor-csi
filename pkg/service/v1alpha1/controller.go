@@ -75,12 +75,6 @@ func (cs *controller) CreateVolume(
 	cvc, err := utils.GetVolume(volName)
 	if err == nil && cvc != nil && cvc.DeletionTimestamp == nil {
 		goto createVolumeResponse
-	} else if cvc.DeletionTimestamp != nil {
-		return nil,
-			status.Error(
-				codes.Internal,
-				"Volume with same name is being deleted",
-			)
 	}
 
 	err = utils.ProvisionVolume(size, volName, configClass)
