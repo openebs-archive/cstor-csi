@@ -17,7 +17,6 @@ import (
 	service "github.com/openebs/csi/pkg/generated/maya/kubernetes/service/v1alpha1"
 	iscsi "github.com/openebs/csi/pkg/iscsi/v1alpha1"
 	"google.golang.org/grpc"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/util/mount"
 )
@@ -195,32 +194,6 @@ func GetVolumeByName(volName string) (*apis.CSIVolume, error) {
 	}
 	return nil,
 		fmt.Errorf("volume name %s does not exit in the volumes list", volName)
-}
-
-// GetVolumeDetails returns a new instance of csiVolume filled with the
-// VolumeAttributes fetched from the corresponding PV and some additional info
-// required for remounting
-func GetVolumeDetails(volumeID, mountPath string, readOnly bool, mountOptions []string) (*apis.CSIVolume, error) {
-	pv, err := FetchPVDetails(volumeID)
-	if err != nil {
-		return nil, err
-	}
-	vol := apis.CSIVolume{}
-	cap := pv.Spec.Capacity[corev1.ResourceName(corev1.ResourceStorage)]
-	for _, accessmode := range pv.Spec.AccessModes {
-		vol.Spec.Volume.AccessModes = append(vol.Spec.Volume.AccessModes, string(accessmode))
-	}
-	vol.Spec.Volume.Name = volumeID
-	vol.Spec.Volume.FSType = pv.Spec.CSI.FSType
-	vol.Spec.Volume.Capacity = cap.String()
-	vol.Spec.Volume.MountPath = mountPath
-	vol.Spec.Volume.ReadOnly = readOnly
-	vol.Spec.Volume.MountOptions = mountOptions
-	vol.Spec.ISCSI.Iqn = pv.Spec.CSI.VolumeAttributes["iqn"]
-	vol.Spec.ISCSI.Lun = pv.Spec.CSI.VolumeAttributes["lun"]
-	vol.Spec.ISCSI.IscsiInterface = pv.Spec.CSI.VolumeAttributes["iscsiInterface"]
-	vol.Spec.ISCSI.TargetPortal = pv.Spec.CSI.VolumeAttributes["targetPortal"]
-	return &vol, nil
 }
 
 func listContains(mountPath string, list []mount.MountPoint) (*mount.MountPoint, bool) {
