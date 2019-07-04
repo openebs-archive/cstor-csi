@@ -100,7 +100,7 @@ func PatchCVCNodeID(volumeID, nodeID string) error {
 
 	newCVCObj, err := cvc.BuildFrom(oldCVCObj.DeepCopy()).
 		WithNodeID(nodeID).Build()
-	subresources := "spec"
+	subresources := "publish"
 	_, err = cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Patch(oldCVCObj, newCVCObj, subresources)
