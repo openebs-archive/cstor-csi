@@ -24,7 +24,8 @@ func getISCSIInfo(vol *apis.CSIVolume) (*iscsiDisk, error) {
 		lun:           vol.Spec.ISCSI.Lun,
 		Iface:         vol.Spec.ISCSI.IscsiInterface,
 		chapDiscovery: chapDiscovery,
-		chapSession:   chapSession}, nil
+		chapSession:   chapSession,
+	}, nil
 }
 
 func getISCSIInfoFromPV(req *csi.NodePublishVolumeRequest) (*iscsiDisk, error) {

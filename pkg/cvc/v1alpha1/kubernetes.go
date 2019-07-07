@@ -210,7 +210,7 @@ func defaultPatch(
 	updatedCVC, updateErr := cli.OpenebsV1alpha1().
 		CStorVolumeClaims(oldCVC.Namespace).
 		Patch(
-			oldCVC.Name, types.StrategicMergePatchType,
+			oldCVC.Name, types.MergePatchType,
 			patchBytes, subresources...,
 		)
 	if updateErr != nil {
