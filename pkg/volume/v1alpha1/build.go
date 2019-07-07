@@ -147,13 +147,8 @@ func (b *Builder) WithMountPath(mountPath string) *Builder {
 
 // WithMountOptions sets the mountoptions of csi volume
 func (b *Builder) WithMountOptions(mountOptions []string) *Builder {
+	//Error is not being retured over here since this is an optional field
 	if len(mountOptions) == 0 {
-		b.errs = append(
-			b.errs,
-			errors.New(
-				"failed to build csi volume object: missing mountOptions",
-			),
-		)
 		return b
 	}
 	if b.volume.Object.Spec.Volume.MountOptions == nil {
@@ -166,13 +161,8 @@ func (b *Builder) WithMountOptions(mountOptions []string) *Builder {
 
 // WithMountOptionsNew sets the mountoptions of csi volume
 func (b *Builder) WithMountOptionsNew(mountOptions []string) *Builder {
+	//Error is not being retured over here since this is an optional field
 	if len(mountOptions) == 0 {
-		b.errs = append(
-			b.errs,
-			errors.New(
-				"failed to build csi volume object: missing mountOptions",
-			),
-		)
 		return b
 	}
 	b.volume.Object.Spec.Volume.MountOptions = nil
