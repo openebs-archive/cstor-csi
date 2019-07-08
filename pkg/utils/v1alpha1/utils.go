@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -14,11 +13,8 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
 	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
-	service "github.com/openebs/csi/pkg/generated/maya/kubernetes/service/v1alpha1"
 	iscsi "github.com/openebs/csi/pkg/iscsi/v1alpha1"
 	"google.golang.org/grpc"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/util/mount"
 )
 
@@ -34,10 +30,6 @@ const (
 )
 
 var (
-	// MAPIServerEndpoint is the address to connect
-	// to maya apiserver
-	MAPIServerEndpoint string
-
 	// OpenEBSNamespace is openebs system namespace
 	OpenEBSNamespace string
 
@@ -68,29 +60,6 @@ func init() {
 	if OpenEBSNamespace == "" {
 		logrus.Fatalf("OPENEBS_NAMESPACE environment variable not set")
 	}
-
-	// Get MAPI_ServiceName from env OPENEBS_MAPI_SVC
-	// If this env is not set its better to crash the container since its a
-	// configuration problem. Without this service its not possible to create
-	// or delete volumes
-	MAPIServiceName := os.Getenv("OPENEBS_MAPI_SVC")
-	if MAPIServiceName == "" {
-		logrus.Fatalf("OPENEBS_MAPI_SVC environment variable not set")
-	}
-
-	svc, err := service.NewKubeclient().
-		WithNamespace(OpenEBSNamespace).
-		Get(MAPIServiceName, metav1.GetOptions{})
-	if err != nil {
-		// If error occurs over here then there are 2 possibilities either the
-		// service was not created or KubeAPIServer is not reachable
-		// In both the cases the driver cannot be started
-		logrus.Fatalf(err.Error())
-	}
-
-	svcIP := svc.Spec.ClusterIP
-	svcPort := strconv.FormatInt(int64(svc.Spec.Ports[0].Port), 10)
-	MAPIServerEndpoint = "http://" + svcIP + ":" + svcPort
 
 	Volumes = map[string]*apis.CSIVolume{}
 	ReqMountList = make(map[string]bool)
@@ -195,32 +164,6 @@ func GetVolumeByName(volName string) (*apis.CSIVolume, error) {
 	}
 	return nil,
 		fmt.Errorf("volume name %s does not exit in the volumes list", volName)
-}
-
-// GetVolumeDetails returns a new instance of csiVolume filled with the
-// VolumeAttributes fetched from the corresponding PV and some additional info
-// required for remounting
-func GetVolumeDetails(volumeID, mountPath string, readOnly bool, mountOptions []string) (*apis.CSIVolume, error) {
-	pv, err := FetchPVDetails(volumeID)
-	if err != nil {
-		return nil, err
-	}
-	vol := apis.CSIVolume{}
-	cap := pv.Spec.Capacity[corev1.ResourceName(corev1.ResourceStorage)]
-	for _, accessmode := range pv.Spec.AccessModes {
-		vol.Spec.Volume.AccessModes = append(vol.Spec.Volume.AccessModes, string(accessmode))
-	}
-	vol.Spec.Volume.Name = volumeID
-	vol.Spec.Volume.FSType = pv.Spec.CSI.FSType
-	vol.Spec.Volume.Capacity = cap.String()
-	vol.Spec.Volume.MountPath = mountPath
-	vol.Spec.Volume.ReadOnly = readOnly
-	vol.Spec.Volume.MountOptions = mountOptions
-	vol.Spec.ISCSI.Iqn = pv.Spec.CSI.VolumeAttributes["iqn"]
-	vol.Spec.ISCSI.Lun = pv.Spec.CSI.VolumeAttributes["lun"]
-	vol.Spec.ISCSI.IscsiInterface = pv.Spec.CSI.VolumeAttributes["iscsiInterface"]
-	vol.Spec.ISCSI.TargetPortal = pv.Spec.CSI.VolumeAttributes["targetPortal"]
-	return &vol, nil
 }
 
 func listContains(mountPath string, list []mount.MountPoint) (*mount.MountPoint, bool) {

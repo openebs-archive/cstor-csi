@@ -1,17 +1,14 @@
 package utils
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"strconv"
 
-	"github.com/Sirupsen/logrus"
-	"github.com/container-storage-interface/spec/lib/go/csi"
+	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
 	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	errors "github.com/openebs/csi/pkg/generated/maya/errors/v1alpha1"
+	cv "github.com/openebs/csi/pkg/cstor/volume/v1alpha1"
+	cvc "github.com/openebs/csi/pkg/cvc/v1alpha1"
+	csivol "github.com/openebs/csi/pkg/volume/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -21,191 +18,110 @@ const (
 	gib100 int64 = gib * 100
 	tib    int64 = gib * 1024
 	tib100 int64 = tib * 100
+	// OpenebsConfigClass is the config class name passed to CSI from the
+	// storage class parameters
+	OpenebsConfigClass = "openebs.io/config-class"
+	// OpenebsVolumeID is the PV name passed to CSI
+	OpenebsVolumeID = "openebs.io/volumeID"
+	// CVCFinalizer is used for CVC protection so that cvc is not deleted until
+	// the underlying cv is deleted
+	CVCFinalizer = "cvc.openebs.io/finalizer"
+	// TargetLunID indicates the LUN ID at the target
+	TargetLunID = "0"
+	// DefaultIscsiInterface can be used when there is no specific
+	// IscsiInterface set
+	DefaultIscsiInterface = "default"
 )
 
-// TODO
-//  Need to remove the dependency of maya api server
-// Provisioning workflow should be tightly integrated
-// with Kubernetes based custom resources. This tight
-// integration helps in decoupling two or more
-// applications.
-//
-// ProvisionVolume sends a request to maya
-// apiserver to create a new CAS volume
-func ProvisionVolume(req *csi.CreateVolumeRequest) (*apismaya.CASVolume, error) {
-	casVolume := apismaya.CASVolume{}
-	casVolume.Spec.Capacity = strconv.FormatInt(req.GetCapacityRange().GetRequiredBytes(), 10)
+// ProvisionVolume creates a CstorVolumeClaim(cvc) CR,
+// watcher for cvc is present in maya-apiserver
+func ProvisionVolume(size int64, volName, configclass string) error {
 
-	parameters := req.GetParameters()
-	storageclass := parameters["storageclass"]
-	namespace := parameters["namespace"]
-
-	// creating a map b/c have to initialize the map
-	// using the make function before adding any elements
-	// to avoid nil map assignment error
-	mapLabels := make(map[string]string)
-
-	if storageclass == "" {
-		logrus.Errorf("volume is not specified with storageclass")
-	} else {
-		mapLabels[string(apismaya.StorageClassKey)] = storageclass
-		casVolume.Labels = mapLabels
+	annotations := map[string]string{
+		OpenebsConfigClass: configclass,
+		OpenebsVolumeID:    volName,
 	}
 
-	casVolume.Labels[string(apismaya.NamespaceKey)] = namespace
-	casVolume.Namespace = namespace
-	casVolume.Labels[string(apismaya.PersistentVolumeClaimKey)] =
-		parameters["persistentvolumeclaim"]
-	casVolume.Name = req.GetName()
-
-	logrus.Infof("verify if volume {%s} is already present", casVolume.Name)
-	err := ReadVolume(req.GetName(), namespace, storageclass, &casVolume)
-	if err == nil {
-		logrus.Infof("volume {%v} already present", req.GetName())
-		return &casVolume, nil
+	finalizers := []string{
+		CVCFinalizer,
 	}
 
-	if err.Error() != http.StatusText(404) {
-		// any error other than 404 is unexpected error
-		logrus.Errorf("failed to read volume {%s}: %v", req.GetName(), err)
-		return nil, err
+	sSize := strconv.FormatInt(size, 10)
+	cvcObj, err := cvc.NewBuilder().
+		WithName(volName).
+		WithNamespace(OpenEBSNamespace).
+		WithAnnotations(annotations).
+		WithFinalizers(finalizers).
+		WithCapacity(sSize).
+		WithStatusPhase(apismaya.CStorVolumeClaimPhasePending).Build()
+	if err != nil {
+		return err
 	}
 
-	if err.Error() == http.StatusText(404) {
-		logrus.Infof("volume {%s} does not exist: will attempt to create", req.GetName())
-
-		err = CreateVolume(casVolume)
-		if err != nil {
-			logrus.Errorf(
-				"failed to create volume {%s}: %v",
-				req.GetName(),
-				err)
-			return nil, err
-		}
-
-		err = ReadVolume(req.GetName(), namespace, storageclass, &casVolume)
-		if err != nil {
-			logrus.Errorf("failed to read volume {%s}: %v", req.GetName(), err)
-			return nil, err
-		}
-
-		logrus.Infof("volume {%s} created successfully", req.GetName())
-	}
-
-	return &casVolume, nil
+	_, err = cvc.NewKubeclient().WithNamespace(OpenEBSNamespace).Create(cvcObj)
+	return err
 }
 
-// CreateVolume creates the CAS volume through
-// an API call to maya apiserver
-func CreateVolume(vol apismaya.CASVolume) error {
-
-	url := MAPIServerEndpoint + "/latest/volumes/"
-
-	// Marshal serializes the value provided into a json document
-	jsonValue, _ := json.Marshal(vol)
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonValue))
-	if err != nil {
-		logrus.Infof("error while creating newRequest: %v", err)
-		return err
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-
-	c := &http.Client{
-		Timeout: timeout,
-	}
-	resp, err := c.Do(req)
-	if err != nil {
-		logrus.Errorf("Error when connecting maya-apiserver %v", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		logrus.Errorf("Unable to read response from maya-apiserver %v", err)
-		return err
-	}
-
-	code := resp.StatusCode
-	if code != http.StatusOK {
-		logrus.Errorf("%s: failed to create volume '%s': response: %+v",
-			http.StatusText(code), vol.Name, string(data))
-		return fmt.Errorf("%s: failed to create volume '%s': response: %+v",
-			http.StatusText(code), vol.Name, string(data))
-	}
-
-	logrus.Infof("volume {%s} created successfully", vol.Name)
-	return nil
+// GetVolume the corresponding CstorVolumeClaim(cvc) CR
+func GetVolume(volumeID string) (*apismaya.CStorVolumeClaim, error) {
+	return cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Get(volumeID, metav1.GetOptions{})
 }
 
-// ReadVolume to get the info of CAS volume through a API call to m-apiserver
-func ReadVolume(vname, namespace, storageclass string, obj interface{}) error {
-
-	url := MAPIServerEndpoint + "/latest/volumes/" + vname
-
-	logrus.Infof("[DEBUG] Get details for Volume :%v", string(vname))
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("namespace", namespace)
-	// passing storageclass info as a request header which will extracted by the
-	// Maya-apiserver to get the CAS template name
-	req.Header.Set(string(apismaya.StorageClassHeaderKey), storageclass)
-
-	c := &http.Client{
-		Timeout: timeout,
-	}
-	resp, err := c.Do(req)
-	if err != nil {
-		logrus.Errorf("Error when connecting to maya-apiserver %v", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	code := resp.StatusCode
-	if code != http.StatusOK {
-		logrus.Errorf("HTTP Status error from maya-apiserver: %v\n",
-			http.StatusText(code))
-		return errors.New(http.StatusText(code))
-	}
-	logrus.Info("volume Details Successfully Retrieved")
-	return json.NewDecoder(resp.Body).Decode(obj)
+// DeleteVolume deletes the corresponding CstorVolumeClaim(cvc) CR
+func DeleteVolume(volumeID string) (err error) {
+	err = cvc.NewKubeclient().WithNamespace(OpenEBSNamespace).Delete(volumeID)
+	return
 }
 
-// DeleteVolume deletes CAS volume through an
-// API call to maya apiserver
-func DeleteVolume(name, namespace string) error {
+// IsCVCBound returns if the CV is bound to CVC or not
+func IsCVCBound(volumeID string) (bool, error) {
+	cvcObj, err := cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Get(volumeID, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	if cvcObj.Status.Phase == apismaya.CStorVolumeClaimPhasePending {
+		return false, nil
+	}
+	return true, nil
+}
 
-	url := MAPIServerEndpoint + "/latest/volumes/" + name
-	req, err := http.NewRequest("DELETE", url, nil)
+//PatchCVCNodeID patches the NodeID of CVC
+func PatchCVCNodeID(volumeID, nodeID string) error {
+	oldCVCObj, err := cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Get(volumeID, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	req.Header.Set("namespace", namespace)
-	c := &http.Client{
-		Timeout: timeout,
-	}
+	newCVCObj, err := cvc.BuildFrom(oldCVCObj.DeepCopy()).
+		WithNodeID(nodeID).Build()
+	_, err = cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Patch(oldCVCObj, newCVCObj)
 
-	resp, err := c.Do(req)
+	return err
+}
+
+//FetchAndUpdateISCSIDetails fetches the iSCSI details from cstor volume
+//resource and updates the corresponding csivolume resource
+func FetchAndUpdateISCSIDetails(volumeID string, vol *apis.CSIVolume) error {
+	getOptions := metav1.GetOptions{}
+	cstorVolume, err := cv.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Get(volumeID, getOptions)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-
-	code := resp.StatusCode
-	if code != http.StatusOK {
-		return errors.Errorf(
-			"failed to delete volume {%s}: got http code {%s}",
-			url,
-			http.StatusText(code),
-		)
-	}
-
-	return nil
+	_, err = csivol.BuildFrom(vol).
+		WithIQN(cstorVolume.Spec.Iqn).
+		WithTargetPortal(cstorVolume.Spec.TargetPortal).
+		WithLun(TargetLunID).
+		WithIscsiInterface(DefaultIscsiInterface).
+		Build()
+	return err
 }
