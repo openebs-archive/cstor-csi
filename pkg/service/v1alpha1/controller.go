@@ -24,7 +24,7 @@ import (
 	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
 	errors "github.com/openebs/csi/pkg/generated/maya/errors/v1alpha1"
 	csipayload "github.com/openebs/csi/pkg/payload/v1alpha1"
-	"github.com/openebs/csi/pkg/utils/v1alpha1"
+	utils "github.com/openebs/csi/pkg/utils/v1alpha1"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -70,6 +70,8 @@ func (cs *controller) CreateVolume(
 	volName := req.GetName()
 	size := req.GetCapacityRange().RequiredBytes
 	configClass := req.GetParameters()["configClass"]
+	rCount := req.GetParameters()["replicaCount"]
+	spcName := req.GetParameters()["storagePoolClaim"]
 
 	// verify if the volume has already been created
 	cvc, err := utils.GetVolume(volName)
@@ -77,7 +79,7 @@ func (cs *controller) CreateVolume(
 		goto createVolumeResponse
 	}
 
-	err = utils.ProvisionVolume(size, volName, configClass)
+	err = utils.ProvisionVolume(size, volName, rCount, configClass, spcName)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

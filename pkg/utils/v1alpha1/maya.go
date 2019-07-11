@@ -23,6 +23,8 @@ const (
 	OpenebsConfigClass = "openebs.io/config-class"
 	// OpenebsVolumeID is the PV name passed to CSI
 	OpenebsVolumeID = "openebs.io/volumeID"
+	// OpenebsSPCName is the name of cstor storagepool cluster
+	OpenebsSPCName = "openebs.io/storage-pool-claim"
 	// CVCFinalizer is used for CVC protection so that cvc is not deleted until
 	// the underlying cv is deleted
 	CVCFinalizer = "cvc.openebs.io/finalizer"
@@ -35,11 +37,21 @@ const (
 
 // ProvisionVolume creates a CstorVolumeClaim(cvc) CR,
 // watcher for cvc is present in maya-apiserver
-func ProvisionVolume(size int64, volName, configclass string) error {
+func ProvisionVolume(
+	size int64,
+	volName,
+	replicaCount,
+	configclass,
+	spcName string,
+) error {
 
 	annotations := map[string]string{
 		OpenebsConfigClass: configclass,
 		OpenebsVolumeID:    volName,
+	}
+
+	labels := map[string]string{
+		OpenebsSPCName: spcName,
 	}
 
 	finalizers := []string{
@@ -51,8 +63,10 @@ func ProvisionVolume(size int64, volName, configclass string) error {
 		WithName(volName).
 		WithNamespace(OpenEBSNamespace).
 		WithAnnotations(annotations).
+		WithLabelsNew(labels).
 		WithFinalizers(finalizers).
 		WithCapacity(sSize).
+		WithReplicaCount(replicaCount).
 		WithStatusPhase(apismaya.CStorVolumeClaimPhasePending).Build()
 	if err != nil {
 		return err

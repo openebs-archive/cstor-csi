@@ -47,7 +47,9 @@ type CStorVolumeClaimSpec struct {
 	// Capacity represents the actual resources of the underlying
 	// cstor volume.
 	Capacity corev1.ResourceList `json:"capacity"`
-
+	// ReplicaCount represents the actual replica count for the underlying
+	// cstor volume
+	ReplicaCount int `json:"replicaCount"`
 	// CStorVolumeRef contains the reference to CStorVolume i.e. CstorVolume Name
 	// This field will be updated by maya after cstor Volume has been
 	// provisioned
