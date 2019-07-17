@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"strconv"
+
 	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
 	errors "github.com/openebs/csi/pkg/generated/maya/errors/v1alpha1"
 	metav1 "k8s.io/api/core/v1"
@@ -307,6 +309,25 @@ func (b *Builder) WithCapacityQty(resCapacity resource.Quantity) *Builder {
 		metav1.ResourceName(metav1.ResourceStorage): resCapacity,
 	}
 	b.cvc.object.Spec.Capacity = resourceList
+	return b
+}
+
+// WithReplicaCount sets replica count of CStorVolumeClaim
+func (b *Builder) WithReplicaCount(count string) *Builder {
+
+	replicaCount, err := strconv.Atoi(count)
+	if err != nil {
+		b.errs = append(
+			b.errs,
+			errors.Wrapf(
+				err,
+				"failed to build cstorvolumeclaim object {%s}",
+				count,
+			),
+		)
+		return b
+	}
+	b.cvc.object.Spec.ReplicaCount = replicaCount
 	return b
 }
 
