@@ -21,7 +21,8 @@ import (
 	"github.com/pkg/errors"
 
 	apis "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	"github.com/openebs/csi/pkg/generated/clientset/versioned"
+	client "github.com/openebs/csi/pkg/generated/clientset/maya/internalclientset"
+	clientset "github.com/openebs/csi/pkg/generated/clientset/maya/internalclientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,56 +31,56 @@ var (
 	_, _ = fakeGetNilErrClientSetForPath("")
 )
 
-func fakeGetClientsetOk() (clientset *versioned.Clientset, err error) {
-	return &versioned.Clientset{}, nil
+func fakeGetClientsetOk() (clientset *clientset.Clientset, err error) {
+	return &client.Clientset{}, nil
 }
 
-func fakeListOk(cli *versioned.Clientset, namespace string, opts metav1.ListOptions) (*apis.CStorVolumeList, error) {
+func fakeListOk(cli *clientset.Clientset, namespace string, opts metav1.ListOptions) (*apis.CStorVolumeList, error) {
 	return &apis.CStorVolumeList{}, nil
 }
 
-func fakeGetOk(cli *versioned.Clientset, name, namespace string, opts metav1.GetOptions) (*apis.CStorVolume, error) {
+func fakeGetOk(cli *clientset.Clientset, name, namespace string, opts metav1.GetOptions) (*apis.CStorVolume, error) {
 	return &apis.CStorVolume{}, nil
 }
 
-func fakeDeleteOk(cli *versioned.Clientset, name, namespace string, opts *metav1.DeleteOptions) error {
+func fakeDeleteOk(cli *clientset.Clientset, name, namespace string, opts *metav1.DeleteOptions) error {
 	return nil
 }
 
-func fakeListErr(cli *versioned.Clientset, namespace string, opts metav1.ListOptions) (*apis.CStorVolumeList, error) {
+func fakeListErr(cli *clientset.Clientset, namespace string, opts metav1.ListOptions) (*apis.CStorVolumeList, error) {
 	return &apis.CStorVolumeList{}, errors.New("some error")
 }
 
-func fakeGetErr(cli *versioned.Clientset, name, namespace string, opts metav1.GetOptions) (*apis.CStorVolume, error) {
+func fakeGetErr(cli *clientset.Clientset, name, namespace string, opts metav1.GetOptions) (*apis.CStorVolume, error) {
 	return &apis.CStorVolume{}, errors.New("some error")
 }
 
-func fakeDeleteErr(cli *versioned.Clientset, name, namespace string, opts *metav1.DeleteOptions) error {
+func fakeDeleteErr(cli *clientset.Clientset, name, namespace string, opts *metav1.DeleteOptions) error {
 	return errors.New("some error")
 
 }
 
 func fakeSetClientsetOk(k *Kubeclient) {
-	k.clientset = &versioned.Clientset{}
+	k.clientset = &clientset.Clientset{}
 }
 
 func fakeSetClientsetNil(k *Kubeclient) {
 	k.clientset = nil
 }
 
-func fakeGetNilErrClientSet() (clientset *versioned.Clientset, err error) {
+func fakeGetNilErrClientSet() (clientset *clientset.Clientset, err error) {
 	return nil, nil
 }
 
-func fakeGetNilErrClientSetForPath(path string) (clientset *versioned.Clientset, err error) {
+func fakeGetNilErrClientSetForPath(path string) (clientset *clientset.Clientset, err error) {
 	return nil, nil
 }
 
-func fakeGetErrClientSetForPath(path string) (clientset *versioned.Clientset, err error) {
+func fakeGetErrClientSetForPath(path string) (clientset *clientset.Clientset, err error) {
 	return nil, errors.New("Some error")
 }
 
-func fakeGetErrClientSet() (clientset *versioned.Clientset, err error) {
+func fakeGetErrClientSet() (clientset *clientset.Clientset, err error) {
 	return nil, errors.New("Some error")
 }
 
@@ -121,11 +122,11 @@ func TestWithDefaults(t *testing.T) {
 
 func TestKubernetesWithKubeClient(t *testing.T) {
 	tests := map[string]struct {
-		Clientset             *versioned.Clientset
+		Clientset             *clientset.Clientset
 		expectKubeClientEmpty bool
 	}{
 		"Clientset is empty":     {nil, true},
-		"Clientset is not empty": {&versioned.Clientset{}, false},
+		"Clientset is not empty": {&clientset.Clientset{}, false},
 	}
 
 	for name, mock := range tests {
@@ -172,14 +173,14 @@ func TestKubernetesKubeClient(t *testing.T) {
 	}
 }
 
-func TesKubernetestGetClientOrCached(t *testing.T) {
+func TestKubernetestGetClientOrCached(t *testing.T) {
 	tests := map[string]struct {
 		expectErr  bool
 		KubeClient *Kubeclient
 	}{
 		// Positive tests
 		"Positive 1": {false, &Kubeclient{nil, "", "", fakeGetNilErrClientSet, fakeGetNilErrClientSetForPath, fakeGetOk, fakeListOk, fakeDeleteOk}},
-		"Positive 2": {false, &Kubeclient{&versioned.Clientset{}, "", "", fakeGetNilErrClientSet, fakeGetNilErrClientSetForPath, fakeGetOk, fakeListOk, fakeDeleteOk}},
+		"Positive 2": {false, &Kubeclient{&clientset.Clientset{}, "", "", nil, fakeGetNilErrClientSetForPath, fakeGetOk, fakeListOk, fakeDeleteOk}},
 		// Negative tests
 		"Negative 1": {true, &Kubeclient{nil, "", "", fakeGetErrClientSet, fakeGetErrClientSetForPath, fakeGetOk, fakeListOk, fakeDeleteOk}},
 	}

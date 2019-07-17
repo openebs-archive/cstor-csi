@@ -17,10 +17,10 @@ package v1alpha1
 import (
 	"strings"
 
-	errors "github.com/openebs/csi/pkg/generated/maya/errors/v1alpha1"
+	errors "github.com/openebs/csi/pkg/maya/errors/v1alpha1"
+	client "github.com/openebs/csi/pkg/maya/kubernetes/client/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	client "github.com/openebs/csi/pkg/generated/maya/kubernetes/client/v1alpha1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -206,7 +206,7 @@ func (k *Kubeclient) Delete(name string, deleteOpts *metav1.DeleteOptions) error
 func (k *Kubeclient) Create(pv *corev1.PersistentVolume) (*corev1.PersistentVolume, error) {
 	cli, err := k.getClientsetOrCached()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create pv: %s", pv.Name)
+		return nil, errors.Wrapf(err, "failed to create pv: %s", string(pv.Name))
 	}
 	return k.create(cli, pv)
 }

@@ -19,7 +19,7 @@ package v1alpha1
 import (
 	"encoding/json"
 
-	client "github.com/openebs/csi/pkg/generated/maya/kubernetes/client/v1alpha1"
+	client "github.com/openebs/csi/pkg/maya/kubernetes/client/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
