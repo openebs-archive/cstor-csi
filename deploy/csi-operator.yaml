@@ -46,6 +46,22 @@ status:
   storedVersions: []
 
 ---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: csivolumes.openebs.io
+spec:
+  group: openebs.io
+  version: v1alpha1
+  scope: Namespaced
+  names:
+    plural: csivolumes
+    singular: csivolume
+    kind: CSIVolume
+    shortNames:
+    - csivolume
+    - csiv
+---
 
 ##############################################
 ###########                       ############
@@ -151,7 +167,9 @@ rules:
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshotcontents"]
     verbs: ["get", "list"]
-
+  - apiGroups: ["*"]
+    resources: ["cstorvolumeclaims"]
+    verbs: ["*"]
 ---
 
 kind: ClusterRoleBinding
@@ -174,6 +192,10 @@ metadata:
   name: openebs-csi-controller
   namespace: kube-system
 spec:
+  selector:
+    matchLabels:
+      app: openebs-csi-controller
+      role: openebs-csi
   serviceName: "openebs-csi"
   replicas: 1
   template:
@@ -186,7 +208,8 @@ spec:
       serviceAccount: openebs-csi-controller-sa
       containers:
         - name: csi-provisioner
-          image: payes/external-provisioner:ci
+          image: quay.io/k8scsi/csi-provisioner:v1.0.1
+          imagePullPolicy: IfNotPresent
           args:
             - "--provisioner=openebs-csi.openebs.io"
             - "--csi-address=$(ADDRESS)"
@@ -195,31 +218,30 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          imagePullPolicy: "Always"
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-attacher
           image: quay.io/k8scsi/csi-attacher:v1.0.1
+          imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          imagePullPolicy: "Always"
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
           image: quay.io/k8scsi/csi-snapshotter:v1.0.1
+          imagePullPolicy: IfNotPresent
           args:
             - "--connection-timeout=15s"
             - "--csi-address=$(ADDRESS)"
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          imagePullPolicy: Always
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
@@ -236,7 +258,8 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: openebs-csi-plugin
-          image: openebs/csi-driver:ci
+          image: quay.io/openebs/csi-driver:ci
+          imagePullPolicy: IfNotPresent
           env:
             - name: OPENEBS_CONTROLLER_DRIVER
               value: controller
@@ -252,7 +275,6 @@ spec:
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
             - "--url=$(OPENEBS_CSI_API_URL)"
             - "--plugin=$(OPENEBS_CONTROLLER_DRIVER)"
-          imagePullPolicy: "Always"
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
@@ -399,7 +421,7 @@ rules:
     resources: ["persistentvolumes", "nodes", "services"]
     verbs: ["get", "list"]
   - apiGroups: ["*"]
-    resources: ["csivolumes", "cstorvolumes"]
+    resources: ["csivolumes", "cstorvolumes","cstorvolumeclaims"]
     verbs: ["get", "list", "watch", "create", "update", "delete", "patch"]
 
 ---
@@ -470,7 +492,8 @@ spec:
             capabilities:
               add: ["CAP_MKNOD", "CAP_SYS_ADMIN", "SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: openebs/csi-driver:ci
+          image: quay.io/openebs/csi-driver:ci
+          imagePullPolicy: IfNotPresent
           args:
             - "--nodeid=$(OPENEBS_NODE_ID)"
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
@@ -491,7 +514,6 @@ spec:
               value: maya-apiserver-service
             - name: OPENEBS_NAMESPACE
               value: openebs
-          imagePullPolicy: "Always"
           volumeMounts:
             - name: plugin-dir
               mountPath: /plugin
