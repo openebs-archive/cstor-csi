@@ -41,13 +41,11 @@ func ProvisionVolume(
 	size int64,
 	volName,
 	replicaCount,
-	configclass,
 	spcName string,
 ) error {
 
 	annotations := map[string]string{
-		OpenebsConfigClass: configclass,
-		OpenebsVolumeID:    volName,
+		OpenebsVolumeID: volName,
 	}
 
 	labels := map[string]string{

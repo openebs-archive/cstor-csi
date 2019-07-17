@@ -69,7 +69,6 @@ func (cs *controller) CreateVolume(
 
 	volName := req.GetName()
 	size := req.GetCapacityRange().RequiredBytes
-	configClass := req.GetParameters()["configClass"]
 	rCount := req.GetParameters()["replicaCount"]
 	spcName := req.GetParameters()["storagePoolClaim"]
 
@@ -79,7 +78,7 @@ func (cs *controller) CreateVolume(
 		goto createVolumeResponse
 	}
 
-	err = utils.ProvisionVolume(size, volName, rCount, configClass, spcName)
+	err = utils.ProvisionVolume(size, volName, rCount, spcName)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -356,10 +355,17 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 		)
 	}
 
-	if req.GetParameters()["configClass"] == "" {
+	if req.GetParameters()["storagePoolClaim"] == "" {
 		return status.Error(
 			codes.InvalidArgument,
-			"failed to handle create volume request: missing storage class parameter configClass",
+			"failed to handle create volume request: missing storage class parameter storagePoolClaim",
+		)
+	}
+
+	if req.GetParameters()["replicaCount"] == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle create volume request: missing storage class parameter replicaCount",
 		)
 	}
 
