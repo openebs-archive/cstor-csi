@@ -206,7 +206,7 @@ func (k *Kubeclient) Delete(name string, deleteOpts *metav1.DeleteOptions) error
 func (k *Kubeclient) Create(pv *corev1.PersistentVolume) (*corev1.PersistentVolume, error) {
 	cli, err := k.getClientsetOrCached()
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to create pv: %s", string(pv.Name))
+		return nil, errors.Wrapf(err, "failed to create pv: %s", pv.Name)
 	}
 	return k.create(cli, pv)
 }

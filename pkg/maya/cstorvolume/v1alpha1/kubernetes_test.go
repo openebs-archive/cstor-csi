@@ -21,7 +21,6 @@ import (
 	"github.com/pkg/errors"
 
 	apis "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	client "github.com/openebs/csi/pkg/generated/clientset/maya/internalclientset"
 	clientset "github.com/openebs/csi/pkg/generated/clientset/maya/internalclientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -31,8 +30,8 @@ var (
 	_, _ = fakeGetNilErrClientSetForPath("")
 )
 
-func fakeGetClientsetOk() (clientset *clientset.Clientset, err error) {
-	return &client.Clientset{}, nil
+func fakeGetClientsetOk() (cs *clientset.Clientset, err error) {
+	return &clientset.Clientset{}, nil
 }
 
 func fakeListOk(cli *clientset.Clientset, namespace string, opts metav1.ListOptions) (*apis.CStorVolumeList, error) {
