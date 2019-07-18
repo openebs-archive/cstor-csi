@@ -22,7 +22,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	errors "github.com/openebs/csi/pkg/generated/maya/errors/v1alpha1"
+	errors "github.com/openebs/csi/pkg/maya/errors/v1alpha1"
 	csipayload "github.com/openebs/csi/pkg/payload/v1alpha1"
 	utils "github.com/openebs/csi/pkg/utils/v1alpha1"
 	"golang.org/x/net/context"

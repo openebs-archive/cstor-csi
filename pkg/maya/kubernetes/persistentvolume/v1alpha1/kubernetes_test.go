@@ -17,7 +17,7 @@ package v1alpha1
 import (
 	"testing"
 
-	errors "github.com/openebs/csi/pkg/generated/errors/v1alpha1"
+	errors "github.com/openebs/csi/pkg/maya/errors/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -465,7 +465,7 @@ func TestKubernetesPVCreate(t *testing.T) {
 			getClientSetForPath: fakeGetClientSetForPathErr,
 			kubeConfigPath:      "fake-path",
 			create:              fakeCreateFnOk,
-			pv:                  nil,
+			pv:                  &v1.PersistentVolume{ObjectMeta: metav1.ObjectMeta{Name: "PV-3"}},
 			expectErr:           true,
 		},
 	}
