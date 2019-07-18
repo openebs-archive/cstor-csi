@@ -15,7 +15,7 @@
 #!/bin/bash
 set -e
 
-OPENEBS_OPERATOR=https://openebs.github.io/charts/openebs-operator-0.9.0.yaml
+OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
 CSI_OPERATOR=https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
 
 SRC_REPO="https://github.com/openebs/maya.git"
