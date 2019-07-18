@@ -13,8 +13,6 @@
 # limitations under the License.
 
 #!/usr/bin/env bash
-# set -x
-set -e
 
 OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
 CSI_OPERATOR=https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
@@ -34,27 +32,40 @@ cd $DST_PATH/maya
 
 function dumpCSINodeLogs() {
   LC=$1
-  CSIPOD=$(kubectl get pods -l app=openebs-csi-node -o jsonpath='{.items[?(@.spec.containers[5].name=="openebs-csi-plugin")].metadata.name}' -n kube-system)
-	kubectl logs --tail=${LC} $CSIPOD -n kube-system
+  CSINodePOD=$(kubectl get pods -l app=openebs-csi-node -o jsonpath='{.items[0].metadata.name}' -n kube-system)
+	kubectl logs --tail=${LC} $CSINodePOD -n kube-system -c openebs-csi-plugin
   printf "\n\n"
 }
 
 function dumpCSIControllerLogs() {
   LC=$1
-  CSIPOD=$(kubectl get pods -l app=openebs-csi-controller -o jsonpath='{.items[?(@.spec.containers[1].name=="openebs-csi-plugin")].metadata.name}' -n kube-system)
-  kubectl logs --tail=${LC} $CSIPOD -n kube-system
+	CSIControllerPOD=$(kubectl get pods -l app=openebs-csi-controller -o jsonpath='{.items[0].metadata.name}' -n kube-system)
+  kubectl logs --tail=${LC} $CSIControllerPOD -n kube-system -c openebs-csi-plugin
   printf "\n\n"
 }
 
 
 # Run BDD tests for volume provisioning via CSI
 cd $DST_PATH/maya/tests/csi/cstor/volume
-result=`ginkgo -v -- -kubeconfig="$HOME/.kube/config" --cstor-replicas=1 --cstor-maxpools=1`
+ginkgo -v -- -kubeconfig="$HOME/.kube/config" --cstor-replicas=1 --cstor-maxpools=1
 
 echo "BDD tests for volume provisioning via CSI "
 
 echo "CSI Controller logs "
-dumpCSIControllerLogs 20
+dumpCSIControllerLogs 1000
 
 echo "CSI Node logs"
-dumpCSINodeLogs 20
+dumpCSINodeLogs 1000
+
+echo "get all the pods"
+kubectl get pods --all-namespaces
+
+echo "get pvc and pv details"
+kubectl get pvc,pv --all-namespaces
+
+echo "get cvc details"
+kubectl get cvc -n openebs -oyaml
+
+
+
+
