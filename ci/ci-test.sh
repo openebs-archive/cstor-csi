@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
 
-OPENEBS_OPERATOR=https://openebs.github.io/charts/openebs-operator-0.9.0.yaml
+OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
 CSI_OPERATOR=https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
 
 SRC_REPO="https://github.com/openebs/maya.git"
@@ -31,10 +30,49 @@ mkdir -p $DST_PATH
 git clone $SRC_REPO $DST_PATH/maya
 cd $DST_PATH/maya
 
+function dumpCSINodeLogs() {
+  LC=$1
+  CSINodePOD=$(kubectl get pods -l app=openebs-csi-node -o jsonpath='{.items[0].metadata.name}' -n kube-system)
+	kubectl logs --tail=${LC} $CSINodePOD -n kube-system -c openebs-csi-plugin
+  printf "\n\n"
+}
+
+function dumpCSIControllerLogs() {
+  LC=$1
+	CSIControllerPOD=$(kubectl get pods -l app=openebs-csi-controller -o jsonpath='{.items[0].metadata.name}' -n kube-system)
+  kubectl logs --tail=${LC} $CSIControllerPOD -n kube-system -c openebs-csi-plugin
+  printf "\n\n"
+}
+
+function dumpMayaAPIServerLogs() {
+  LC=$1
+  MAPIPOD=$(kubectl get pods -o jsonpath='{.items[?(@.spec.containers[0].name=="maya-apiserver")].metadata.name}' -n openebs)
+  kubectl logs --tail=${LC} $MAPIPOD -n openebs
+  printf "\n\n"
+}
+
 # Run BDD tests for volume provisioning via CSI
 cd $DST_PATH/maya/tests/csi/cstor/volume
 ginkgo -v -- -kubeconfig="$HOME/.kube/config" --cstor-replicas=1 --cstor-maxpools=1
-if [[ $? != 0 ]]; then
-	echo "BDD tests for volume provisioning via CSI failed"
-	exit 1
+
+if [ $? -ne 0 ]; then
+echo "******************** CSI Controller logs***************************** "
+dumpCSIControllerLogs 1000
+
+echo "********************* CSI Node logs *********************************"
+dumpCSINodeLogs 1000
+
+echo "******************CSI Maya-apiserver logs ********************"
+dumpMayaAPIServerLogs 1000
+
+echo "get all the pods"
+kubectl get pods --all-namespaces
+
+echo "get pvc and pv details"
+kubectl get pvc,pv --all-namespaces
+
+echo "get cvc details"
+kubectl get cvc -n openebs -oyaml
+
+exit 1
 fi
