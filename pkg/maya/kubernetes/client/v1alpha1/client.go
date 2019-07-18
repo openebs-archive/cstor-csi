@@ -19,7 +19,7 @@ package v1alpha1
 import (
 	"strings"
 
-	env "github.com/openebs/csi/pkg/generated/maya/env/v1alpha1"
+	env "github.com/openebs/csi/pkg/maya/env/v1alpha1"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"

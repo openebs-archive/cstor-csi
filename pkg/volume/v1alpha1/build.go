@@ -18,7 +18,7 @@ package v1alpha1
 
 import (
 	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
-	errors "github.com/openebs/csi/pkg/generated/maya/errors/v1alpha1"
+	errors "github.com/openebs/csi/pkg/maya/errors/v1alpha1"
 )
 
 // Builder is the builder object for CSIVolume
