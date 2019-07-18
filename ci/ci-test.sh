@@ -44,6 +44,12 @@ function dumpCSIControllerLogs() {
   printf "\n\n"
 }
 
+function dumpMayaAPIServerLogs() {
+  LC=$1
+  MAPIPOD=$(kubectl get pods -o jsonpath='{.items[?(@.spec.containers[0].name=="maya-apiserver")].metadata.name}' -n openebs)
+  kubectl logs --tail=${LC} $MAPIPOD -n openebs
+  printf "\n\n"
+}
 
 # Run BDD tests for volume provisioning via CSI
 cd $DST_PATH/maya/tests/csi/cstor/volume
@@ -51,11 +57,14 @@ ginkgo -v -- -kubeconfig="$HOME/.kube/config" --cstor-replicas=1 --cstor-maxpool
 
 echo "BDD tests for volume provisioning via CSI "
 
-echo "CSI Controller logs "
+echo "******************** CSI Controller logs***************************** "
 dumpCSIControllerLogs 1000
 
-echo "CSI Node logs"
+echo "********************* CSI Node logs *********************************"
 dumpCSINodeLogs 1000
+
+echo "******************CSI Maya-apiserver logs ********************"
+dumpMayaAPIServerLogs 1000
 
 echo "get all the pods"
 kubectl get pods --all-namespaces
