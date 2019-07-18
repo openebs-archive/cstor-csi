@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#!/bin/bash
+#!/usr/bin/env bash
+# set -x
 set -e
 
 OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
@@ -31,10 +32,29 @@ mkdir -p $DST_PATH
 git clone $SRC_REPO $DST_PATH/maya
 cd $DST_PATH/maya
 
+function dumpCSINodeLogs() {
+  LC=$1
+  CSIPOD=$(kubectl get pods -l app=openebs-csi-node -o jsonpath='{.items[?(@.spec.containers[5].name=="openebs-csi-plugin")].metadata.name}' -n kube-system)
+	kubectl logs --tail=${LC} $CSIPOD -n kube-system
+  printf "\n\n"
+}
+
+function dumpCSIControllerLogs() {
+  LC=$1
+  CSIPOD=$(kubectl get pods -l app=openebs-csi-controller -o jsonpath='{.items[?(@.spec.containers[1].name=="openebs-csi-plugin")].metadata.name}' -n kube-system)
+  kubectl logs --tail=${LC} $CSIPOD -n kube-system
+  printf "\n\n"
+}
+
+
 # Run BDD tests for volume provisioning via CSI
 cd $DST_PATH/maya/tests/csi/cstor/volume
-ginkgo -v -- -kubeconfig="$HOME/.kube/config" --cstor-replicas=1 --cstor-maxpools=1
-if [[ $? != 0 ]]; then
-	echo "BDD tests for volume provisioning via CSI failed"
-	exit 1
-fi
+result=`ginkgo -v -- -kubeconfig="$HOME/.kube/config" --cstor-replicas=1 --cstor-maxpools=1`
+
+echo "BDD tests for volume provisioning via CSI "
+
+echo "CSI Controller logs "
+dumpCSIControllerLogs 20
+
+echo "CSI Node logs"
+dumpCSINodeLogs 20
