@@ -55,8 +55,7 @@ function dumpMayaAPIServerLogs() {
 cd $DST_PATH/maya/tests/csi/cstor/volume
 ginkgo -v -- -kubeconfig="$HOME/.kube/config" --cstor-replicas=1 --cstor-maxpools=1
 
-echo "BDD tests for volume provisioning via CSI "
-
+if [ $? -ne 0 ]; then
 echo "******************** CSI Controller logs***************************** "
 dumpCSIControllerLogs 1000
 
@@ -75,6 +74,5 @@ kubectl get pvc,pv --all-namespaces
 echo "get cvc details"
 kubectl get cvc -n openebs -oyaml
 
-
-
-
+exit 1
+fi

@@ -145,7 +145,7 @@ csi-driver-image: csi-driver
 	@echo "+ Generating ${CSI_DRIVER} image"
 	@echo "--------------------------------"
 	@cp bin/${CSI_DRIVER}/${CSI_DRIVER} buildscripts/${CSI_DRIVER}/
-	cd buildscripts/${CSI_DRIVER} && sudo docker build -t openebs/${CSI_DRIVER}:${IMAGE_TAG} --build-arg BUILD_DATE=${BUILD_DATE} .
+	cd buildscripts/${CSI_DRIVER} && sudo docker build -t openebs/${CSI_DRIVER}:${IMAGE_TAG} --build-arg BUILD_DATE=${BUILD_DATE} . && docker tag openebs/${CSI_DRIVER}:${IMAGE_TAG} quay.io/openebs/${CSI_DRIVER}:${IMAGE_TAG}
 	@rm buildscripts/${CSI_DRIVER}/${CSI_DRIVER}
 
 # Push images
