@@ -446,6 +446,10 @@ spec:
               # needed so that any mounts setup inside this container are
               # propagated back to the host machine.
               mountPropagation: "Bidirectional"
+            - name: iscsiadm
+              mountPath: /sbin/iscsiadm
+            - name: libisns-nocrypto
+              mountPath: /lib/x86_64-linux-gnu/libisns-nocrypto.so.0
       volumes:
         - name: device-dir
           hostPath:
@@ -463,4 +467,12 @@ spec:
           hostPath:
             path: /var/lib/kubelet/pods
             type: Directory
+        - name: iscsiadm
+          hostPath:
+            path: /sbin/iscsiadm
+            type: File
+        - name: libisns-nocrypto
+          hostPath:
+            path: /lib/x86_64-linux-gnu/libisns-nocrypto.so.0
+            type: File
 ---
