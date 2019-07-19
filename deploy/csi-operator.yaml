@@ -1,6 +1,5 @@
-# This manifest deploys the OpenEBS control plane components, with associated CRs & RBAC rules
-# NOTE: On GKE, deploy the openebs-operator.yaml in admin context
-
+# This manifest deploys the OpenEBS CSI control plane components, with associated CRs & RBAC rules
+# This manifest will only work with Ubuntu hosts. For other linux distros, this needs to be edited.
 ####################################################
 ###########                             ############
 ###########  CSI Node and Driver CRDs   ############

@@ -33,13 +33,17 @@ cd $DST_PATH/maya
 function dumpCSINodeLogs() {
   LC=$1
   CSINodePOD=$(kubectl get pods -l app=openebs-csi-node -o jsonpath='{.items[0].metadata.name}' -n kube-system)
-	kubectl logs --tail=${LC} $CSINodePOD -n kube-system -c openebs-csi-plugin
+  kubectl describe po $CSINodePOD -n kube-system
+  printf "\n\n"
+  kubectl logs --tail=${LC} $CSINodePOD -n kube-system -c openebs-csi-plugin
   printf "\n\n"
 }
 
 function dumpCSIControllerLogs() {
   LC=$1
-	CSIControllerPOD=$(kubectl get pods -l app=openebs-csi-controller -o jsonpath='{.items[0].metadata.name}' -n kube-system)
+  CSIControllerPOD=$(kubectl get pods -l app=openebs-csi-controller -o jsonpath='{.items[0].metadata.name}' -n kube-system)
+  kubectl describe po $CSIControllerPOD -n kube-system
+  printf "\n\n"
   kubectl logs --tail=${LC} $CSIControllerPOD -n kube-system -c openebs-csi-plugin
   printf "\n\n"
 }
