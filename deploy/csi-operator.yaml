@@ -1,5 +1,6 @@
 # This manifest deploys the OpenEBS CSI control plane components, with associated CRs & RBAC rules
-# This manifest will only work with Ubuntu hosts. For other linux distros, this needs to be edited.
+# This manifest will only work with Ubuntu 16.04 hosts.
+# For other ubuntu versions and linux distros, this needs to be edited.
 ####################################################
 ###########                             ############
 ###########  CSI Node and Driver CRDs   ############
@@ -447,8 +448,6 @@ spec:
               mountPropagation: "Bidirectional"
             - name: iscsiadm
               mountPath: /sbin/iscsiadm
-            - name: libisns-nocrypto
-              mountPath: /lib/x86_64-linux-gnu/libisns-nocrypto.so.0
       volumes:
         - name: device-dir
           hostPath:
@@ -469,9 +468,5 @@ spec:
         - name: iscsiadm
           hostPath:
             path: /sbin/iscsiadm
-            type: File
-        - name: libisns-nocrypto
-          hostPath:
-            path: /lib/x86_64-linux-gnu/libisns-nocrypto.so.0
             type: File
 ---
