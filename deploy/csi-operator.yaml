@@ -1,6 +1,8 @@
 # This manifest deploys the OpenEBS CSI control plane components, with associated CRs & RBAC rules
-# This manifest will only work with Ubuntu 16.04 hosts.
-# For other ubuntu versions and linux distros, this needs to be edited.
+# This manifest will only work with Ubuntu 16.04 and CentOS hosts.
+# For other ubuntu flavours and linux distros, this needs to be modified.
+# Instructions to modify: https://github.com/openebs/csi/blob/master/deploy/iscsiadm-deps.yaml
+
 ####################################################
 ###########                             ############
 ###########  CSI Node and Driver CRDs   ############
@@ -446,7 +448,7 @@ spec:
               # needed so that any mounts setup inside this container are
               # propagated back to the host machine.
               mountPropagation: "Bidirectional"
-            - name: iscsiadm
+            - name: iscsiadm-bin
               mountPath: /sbin/iscsiadm
       volumes:
         - name: device-dir
@@ -465,7 +467,7 @@ spec:
           hostPath:
             path: /var/lib/kubelet/pods
             type: Directory
-        - name: iscsiadm
+        - name: iscsiadm-bin
           hostPath:
             path: /sbin/iscsiadm
             type: File
