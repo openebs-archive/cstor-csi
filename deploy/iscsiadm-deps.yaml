@@ -1,4 +1,4 @@
-# Ubuntu 18.04 and above, gnu-linux
+# Ubuntu 18.04 and above
 spec:
   containers:
     - name: openebs-csi-plugin
