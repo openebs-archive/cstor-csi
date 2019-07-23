@@ -17,12 +17,12 @@ Modify and apply the OpenEBS CSI Operator based on the host OS, with the steps m
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
 ```
-Create a storage pool claim(spc) where the volume can be provisioned. In the below spc.yaml make sure that maxPools should be greater than or equl to the number of replicas required for the volume.
-This step can be avoided if we want to create the volume on already existing cstor pools. 
+Create a storage pool claim(spc) where the volume can be provisioned. In the below spc.yaml make sure that maxPools should be greater than or equal to the number of replicas required for the volume.
+This step can be avoided if volume needs to be created on already existing cstor pools. 
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/spc.yaml
 ```
-Create a Storage Class pointing to OpenEBS CSI provisioner with following updated values:
+Create a Storage Class pointing to OpenEBS CSI provisioner after updating these values in sc.yaml:
 1) replicaCount: Number of copies of the data required to be maintained
 2) storagePoolClaim: Where the volumes need to be created
 ```
