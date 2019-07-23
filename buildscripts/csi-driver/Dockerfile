@@ -6,7 +6,6 @@
 FROM ubuntu:16.04
 RUN apt-get update; exit 0
 RUN apt-get -y install rsyslog
-RUN apt-get install -y open-iscsi
 #RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY csi-driver /usr/local/bin/

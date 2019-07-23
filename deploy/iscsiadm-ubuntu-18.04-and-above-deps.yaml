@@ -1,0 +1,20 @@
+# Ubuntu 18.04 and above
+# These files need to be mounted from host OS inside the conatiner
+# at the specified paths as mentioned below for using CSI Volumes
+spec:
+  containers:
+    - name: openebs-csi-plugin
+      volumeMounts:
+        - name: iscsiadm-bin
+          mountPath: /sbin/iscsiadm
+        - name: iscsiadm-lib-isns-nocrypto
+          mountPath: /lib/x86_64-linux-gnu/libisns-nocrypto.so.0
+  volumes:
+    - name: iscsiadm-bin
+      hostPath:
+        path: /sbin/iscsiadm
+        type: File
+    - name: iscsiadm-lib-isns-nocrypto
+      hostPath:
+        path: /lib/x86_64-linux-gnu/libisns-nocrypto.so.0
+        type: File
