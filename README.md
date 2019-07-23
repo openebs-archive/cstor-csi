@@ -1,5 +1,5 @@
 ### csi
-CSI driver implementation for openebs storage engines.
+CSI driver implementation for openebs storage engines. Currently only cstor engine is supported.
 
 ### Overview
 OpenEBS CSI driver implementation comprises of 2 components:
