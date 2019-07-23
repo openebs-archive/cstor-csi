@@ -6,13 +6,22 @@ OpenEBS CSI driver implementation comprises of 2 components:
 1) Controller service: Runs as stateful set
 2) Node service: Runs as a daemonset
 
+### Prerequisites
+1) Kubernetes version 1.14+
+2) OpenEBS Version 1.1+ ([openebs-operator](https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml))
+
 ### Provision a volume using OpenEBS CSI driver
 
 Apply OpenEBS CSI Operator:
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
 ```
-Create a Storage Class pointing to OpenEBS CSI provisioner:
+Create a cstor pool where the volume can be provisioned. maxPools count in the below spc.yaml should be greater than the number of replicas required for the volume.
+This step can be avoided if we want to create the volume on an already existing cstor pool. 
+```
+kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/spc.yaml
+```
+Create a Storage Class pointing to OpenEBS CSI provisioner with updated values of replicaCount and openebs.io/storage-pool-claim
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/sc.yaml
 ```
@@ -42,7 +51,7 @@ metadata:
 spec:
   capacity:
     storage: 
-status:
+status: 
   phase: Pending
 ```
 
