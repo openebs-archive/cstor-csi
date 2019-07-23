@@ -1,0 +1,28 @@
+# SUSE Linux Enterprise Server 12
+# These files need to be mounted from host OS inside the conatiner
+# at the specified paths as mentioned below for using CSI Volumes
+
+spec:
+  containers:
+    - name: openebs-csi-plugin
+      volumeMounts:
+        - name: iscsiadm-bin
+          mountPath: /sbin/iscsiadm
+        - name: iscsiadm-lib-crypto
+          mountPath: /lib/x86_64-linux-gnu/libcrypto.so.1.0.0
+        - name: iscsiadm-lib-openiscsiusr
+          mountPath: /lib/x86_64-linux-gnu/libopeniscsiusr.so.0.2.0
+  volumes:
+    - name: iscsiadm-bin
+      hostPath:
+        path: /sbin/iscsiadm
+        type: File
+    - name: iscsiadm-lib-crypto
+      hostPath:
+        path: /lib64/libcrypto.so.1.0.0
+        type: File
+    - name: iscsiadm-lib-openiscsiusr
+      hostPath:
+        path: /usr/lib64/libopeniscsiusr.so.0.2.0
+        type: File
+

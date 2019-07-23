@@ -1,8 +1,18 @@
 # This manifest deploys the OpenEBS CSI control plane components, with associated CRs & RBAC rules
-# This manifest will only work with Ubuntu 16.04 and CentOS hosts.
+# This manifest will only work with Ubuntu 16.04 and CentOS hosts,
+# due to dependencies on kernel components of iSCSI protocol.
 # For other ubuntu flavours and linux distros, this needs to be modified.
-# Instructions to modify: https://github.com/openebs/csi/blob/master/deploy/iscsiadm-deps.yaml
-
+#
+# Instructions to modify:
+# Ubuntu-18.04 and above: https://github.com/openebs/csi/blob/master/deploy/iscsiadm-ubuntu-18.04-and-above-deps.yaml
+# SUSE Linux Enterprise Server 12:  https://github.com/openebs/csi/blob/master/deploy/iscsiadm-suse-enterprise-server-12-deps.yaml
+# SUSE Linux Enterprise Server 15:  https://github.com/openebs/csi/blob/master/deploy/iscsiadm-suse-enterprise-server-15-deps.yaml
+#
+# For supporting a differnet OS other than the above,
+# 1) Get the list of shared object files required for iscsiadm binary in that OS version.
+# 2) Check which files are already present in the openebs-csi-plugin container present in csi node pod.
+# 3) Mount the required missing files inside the container.
+#
 ####################################################
 ###########                             ############
 ###########  CSI Node and Driver CRDs   ############
