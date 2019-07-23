@@ -1,6 +1,18 @@
-# This manifest deploys the OpenEBS control plane components, with associated CRs & RBAC rules
-# NOTE: On GKE, deploy the openebs-operator.yaml in admin context
-
+# This manifest deploys the OpenEBS CSI control plane components, with associated CRs & RBAC rules
+# This manifest will only work with Ubuntu 16.04 and CentOS hosts,
+# due to dependencies on kernel components of iSCSI protocol.
+# For other ubuntu flavours and linux distros, this needs to be modified.
+#
+# Instructions to modify:
+# Ubuntu-18.04 and above: https://github.com/openebs/csi/blob/master/deploy/iscsiadm-ubuntu-18.04-and-above-deps.yaml
+# SUSE Linux Enterprise Server 12:  https://github.com/openebs/csi/blob/master/deploy/iscsiadm-suse-enterprise-server-12-deps.yaml
+# SUSE Linux Enterprise Server 15:  https://github.com/openebs/csi/blob/master/deploy/iscsiadm-suse-enterprise-server-15-deps.yaml
+#
+# For supporting a differnet OS other than the above,
+# 1) Get the list of shared object files required for iscsiadm binary in that OS version.
+# 2) Check which files are already present in the openebs-csi-plugin container present in csi node pod.
+# 3) Mount the required missing files inside the container.
+#
 ####################################################
 ###########                             ############
 ###########  CSI Node and Driver CRDs   ############
@@ -446,6 +458,8 @@ spec:
               # needed so that any mounts setup inside this container are
               # propagated back to the host machine.
               mountPropagation: "Bidirectional"
+            - name: iscsiadm-bin
+              mountPath: /sbin/iscsiadm
       volumes:
         - name: device-dir
           hostPath:
@@ -463,4 +477,8 @@ spec:
           hostPath:
             path: /var/lib/kubelet/pods
             type: Directory
+        - name: iscsiadm-bin
+          hostPath:
+            path: /sbin/iscsiadm
+            type: File
 ---
