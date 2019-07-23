@@ -98,6 +98,6 @@ While these steps are in progress, there might be some intermittent errors seen 
 1) `Waiting for CVC to be bound`: Implies volume components are still being created
 2) `Volume is not ready: Replicas yet to connect to controller`: Implies volume components are already created but yet to interact with each other.
 
-On successful completion of these steps the application pod can be seen in running status.
+On successful completion of these steps the application pod can be seen in running state.
 ### NOTE
 This is very much a work in progress and is currently considered as `experimental`.
