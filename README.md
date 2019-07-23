@@ -1,5 +1,6 @@
 ### csi
-CSI driver implementation for openebs storage engines. Currently only cstor engine is supported.
+CSI driver implementation for openebs storage engines.
+Currently, Volumes can only be provisioned for openebs cstor engine.
 
 ### Overview
 OpenEBS CSI driver implementation comprises of 2 components:
@@ -12,7 +13,7 @@ OpenEBS CSI driver implementation comprises of 2 components:
 
 ### Provision a volume using OpenEBS CSI driver
 
-Apply OpenEBS CSI Operator:
+Modify and apply the OpenEBS CSI Operator based on the host OS, with the steps mentioned in the yaml itself:
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
 ```
