@@ -32,15 +32,16 @@ apiVersion: openebs.io/v1alpha1
 kind: CStorVolumeClaim
 metadata:
   annotations:
-    openebs.io/config-class: openebs-csi-default
-    openebs.io/volumeID: pvc-b3e44fa5-98f2-11e9-b58e-42010a80006c
+    openebs.io/volumeID: pvc-*
   finalizers:
   - cvc.openebs.io/finalizer
-  name: pvc-b3e44fa5-98f2-11e9-b58e-42010a80006c
+  labels:
+    openebs.io/storage-pool-claim: cstor-sparse-pool
+  name: pvc-*
   namespace: openebs
 spec:
   capacity:
-    storage: 40Gi
+    storage: 
 status:
   phase: Pending
 ```
@@ -64,17 +65,20 @@ apiVersion: openebs.io/v1alpha1
 kind: CStorVolumeClaim
 metadata:
   annotations:
-    openebs.io/config-class: openebs-csi-default
-    openebs.io/volumeID: pvc-b3e44fa5-98f2-11e9-b58e-42010a80006c
+    openebs.io/volumeID: pvc-*
   finalizers:
   - cvc.openebs.io/finalizer
-  name: pvc-b3e44fa5-98f2-11e9-b58e-42010a80006c
+  labels:
+    openebs.io/storage-pool-claim: cstor-sparse-pool
+  name: pvc-*
   namespace: openebs
 publish:
   nodeId: csi-node-2
 spec:
   capacity:
-    storage: 40Gi
+    storage:
+  cstorVolumeRef:
+  replicaCount: 
 status:
   phase: Bound
 ```
