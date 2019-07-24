@@ -13,22 +13,22 @@ OpenEBS CSI driver implementation comprises of 2 components:
 
 ### Provision a volume using OpenEBS CSI driver
 
-Modify and apply the OpenEBS CSI Operator based on the host OS, with the steps mentioned in the yaml itself:
+1. Modify and apply the OpenEBS CSI Operator based on the host OS, with the steps mentioned in the yaml itself:
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
 ```
-Create a storage pool claim(spc) where the volume can be provisioned. In the below spc.yaml make sure that maxPools should be greater than or equal to the number of replicas required for the volume.
+2. Create a storage pool claim(spc) where the volume can be provisioned. In the below spc.yaml make sure that maxPools should be greater than or equal to the number of replicas required for the volume.
 This step can be avoided if volume needs to be created on already existing cstor pools. 
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/spc.yaml
 ```
-Create a Storage Class pointing to OpenEBS CSI provisioner after updating these values in sc.yaml:
+3. Create a Storage Class pointing to OpenEBS CSI provisioner after updating these values in sc.yaml:
 1) replicaCount: Number of copies of the data required to be maintained
 2) storagePoolClaim: Where the volumes need to be created
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/sc.yaml
 ```
-Create PVC with above Storage Class:
+4. Create PVC with above Storage Class:
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/pvc.yaml
 ```
@@ -58,7 +58,7 @@ status:
   phase: Pending
 ```
 
-Deploy a percona app with the above PVC:
+5. Deploy a sample app with the above PVC:
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/percona.yaml
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/sqltest_configmap.yaml
