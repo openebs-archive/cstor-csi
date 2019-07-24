@@ -67,10 +67,10 @@ kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/sql
 On deploying the app CSI Node Service receives a NodePublishVolume() request via grpc,
 which in turn patches nodeID to the previously created CVC CR and waits for the  status to be updated to bound by CVC watcher. 
 The bound status implies that the following required volume components have been created by CVC watcher:
-1) Target service
-2) Target deployment
-3) CstorVolume CR
-4) CstoVolumeReplica CR
+- Target service
+- Target deployment
+- CstorVolume CR
+- CstoVolumeReplica CR
 ```
 # Sample CVC CR after NodePublish is successful
 apiVersion: openebs.io/v1alpha1
@@ -96,8 +96,8 @@ status:
 ```
 Once the status is changed to bound, steps to mount the volume are processed.
 While these steps are in progress, there might be some intermittent errors seen on describing the application pod:
-1) `Waiting for CVC to be bound`: Implies volume components are still being created
-2) `Volume is not ready: Replicas yet to connect to controller`: Implies volume components are already created but yet to interact with each other.
+- `Waiting for CVC to be bound`: Implies volume components are still being created
+- `Volume is not ready: Replicas yet to connect to controller`: Implies volume components are already created but yet to interact with each other.
 
 On successful completion of these steps the application pod can be seen in running state.
 ### NOTE
