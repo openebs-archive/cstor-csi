@@ -29,7 +29,8 @@ type CSIVolume struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec CSIVolumeSpec `json:"spec"`
+	Spec   CSIVolumeSpec   `json:"spec"`
+	Status CSIVolumeStatus `json: "status"`
 }
 
 // CSIVolumeSpec is the spec for a CStorVolume resource
@@ -113,6 +114,20 @@ type ISCSIInfo struct {
 	// iSCSI Volume. (default: 0)
 	Lun string `json:"lun"`
 }
+
+// CSIVolumeStatus status represents the current mount status of the volume
+type CSIVolumeStatus string
+
+// CSIVolumeStatusMounting indicated that a mount operation has been triggered
+// on the volume and is under progress
+const (
+	CSIVolumeStatusUninitialized      CSIVolumeStatus = ""
+	CSIVolumeStatusMountUnderProgress CSIVolumeStatus = "MountUnderProgress"
+	CSIVolumeStatusMounted            CSIVolumeStatus = "Mounted"
+	CSIVolumeStatusUnMounted          CSIVolumeStatus = "UnMounted"
+	CSIVolumeStatusRaw                CSIVolumeStatus = "Raw"
+	CSIVolumeStatusMountFailed        CSIVolumeStatus = "MountFailed"
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +resource:path=csivolumes

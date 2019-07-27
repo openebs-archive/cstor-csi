@@ -21,6 +21,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
 	iscsi "github.com/openebs/csi/pkg/iscsi/v1alpha1"
 	"github.com/openebs/csi/pkg/utils/v1alpha1"
 	csivol "github.com/openebs/csi/pkg/volume/v1alpha1"
@@ -119,29 +120,43 @@ verifyPublish:
 		// which implies that either the mount operation is complete
 		// or under progress.
 		// Lets verify if the mount is already completed
-		if info.Spec.Volume.DevicePath != "" {
+		if info.Spec.Volume.MountPath != mountPath {
+			utils.VolumesListLock.Unlock()
+			if !reVerified {
+				time.Sleep(
+					utils.VolumeWaitRetryCount * utils.VolumeWaitTimeout * time.Second,
+				)
+				reVerified = true
+				goto verifyPublish
+			}
+			return nil,
+				status.Error(
+					codes.Internal,
+					"Volume Mounted by a different pod on same node",
+				)
+		} else if info.Spec.Volume.DevicePath != "" {
 			// Once the devicePath is set implies the volume mount has been
 			// completed, a success response can be sent back
 			utils.VolumesListLock.Unlock()
 			return &csi.NodePublishVolumeResponse{}, nil
+		} else if info.Status == apis.CSIVolumeStatusMountUnderProgress {
+			// The mount appears to be under progress lets wait for 13 seconds and
+			// reverify. 13s was decided based on the kubernetes timeout values
+			// which is 15s. Lets reply to kubernetes before it reattempts a
+			// duplicate request
+			utils.VolumesListLock.Unlock()
+			if !reVerified {
+				time.Sleep(
+					utils.VolumeWaitRetryCount * utils.VolumeWaitTimeout * time.Second,
+				)
+				reVerified = true
+				goto verifyPublish
+			}
+			// It appears that the mount will still take some more time,
+			// lets convey the same to kubernetes. The message responded will be
+			// added to the app description which has requested this volume
+			return nil, status.Error(codes.Internal, "Mount under progress")
 		}
-		// The mount appears to be under progress lets wait for 13 seconds and
-		// reverify. 13s was decided based on the kubernetes timeout values
-		// which is 15s. Lets reply to kubernetes before it reattempts a
-		// duplicate request
-		utils.VolumesListLock.Unlock()
-		if !reVerified {
-			time.Sleep(
-				utils.VolumeWaitRetryCount * utils.VolumeWaitTimeout * time.Second,
-			)
-			reVerified = true
-			goto verifyPublish
-		}
-		// It appears that the mount will still take some more time,
-		// lets convey the same to kubernetes. The message responded will be
-		// added to the app description which has requested this volume
-
-		return nil, status.Error(codes.Internal, "Mount under progress")
 	}
 
 	// This helps in cases when the node on which the volume was originally
@@ -158,6 +173,7 @@ verifyPublish:
 	// This CR creation will help iSCSI target(istgt) identify
 	// the current owner node of the volume and accordingly the target will
 	// allow only that node to login to the volume
+	vol.Status = apis.CSIVolumeStatusMountUnderProgress
 	err = utils.CreateCSIVolumeCR(vol, ns.driver.config.NodeID, mountPath)
 	if err != nil {
 		utils.VolumesListLock.Unlock()
@@ -175,10 +191,30 @@ verifyPublish:
 	// And as soon as it is unmounted permissions change
 	// back to what we are setting over here.
 	if err = utils.ChmodMountPath(vol.Spec.Volume.MountPath); err != nil {
+		utils.VolumesListLock.Lock()
+		vol.Status = apis.CSIVolumeStatusMountFailed
+		if err = utils.DeleteOldCSIVolumeCR(
+			vol, ns.driver.config.NodeID,
+		); err != nil {
+			utils.VolumesListLock.Unlock()
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		delete(utils.Volumes, volumeID)
+		utils.VolumesListLock.Unlock()
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	// Login to the volume and attempt mount operation on the requested path
 	if devicePath, err = iscsi.AttachAndMountDisk(vol); err != nil {
+		utils.VolumesListLock.Lock()
+		vol.Status = apis.CSIVolumeStatusMountFailed
+		if err = utils.DeleteOldCSIVolumeCR(
+			vol, ns.driver.config.NodeID,
+		); err != nil {
+			utils.VolumesListLock.Unlock()
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		delete(utils.Volumes, volumeID)
+		utils.VolumesListLock.Unlock()
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -190,8 +226,13 @@ verifyPublish:
 	// 2) The volumeMonitoring thread doesn't attemp remount unless this path is
 	//    set
 	utils.VolumesListLock.Lock()
-	// TODO set this state in etcd also
+	vol.Status = apis.CSIVolumeStatusMounted
 	vol.Spec.Volume.DevicePath = devicePath
+	err = utils.UpdateCSIVolumeCR(vol)
+	if err != nil {
+		utils.VolumesListLock.Unlock()
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	utils.VolumesListLock.Unlock()
 
 	return &csi.NodePublishVolumeResponse{}, nil
@@ -221,7 +262,6 @@ func (ns *node) NodeUnpublishVolume(
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 
-	delete(utils.Volumes, volumeID)
 	utils.VolumesListLock.Unlock()
 
 	// if node driver restarts before this step Kubelet will trigger the
@@ -239,18 +279,21 @@ func (ns *node) NodeUnpublishVolume(
 	// target(istgt) will pick up the new one and allow only that node to login,
 	// so all the cases are handled
 	if err = iscsi.UnmountAndDetachDisk(vol, req.GetTargetPath()); err != nil {
-		// TODO If this error occurs then the stale entry will never get deleted
 		return nil, status.Error(codes.Internal,
 			err.Error())
 	}
 
 	// It is safe to delete the CSIVolume CR now since the volume has already
 	// been unmounted and logged out
+	utils.VolumesListLock.Lock()
 	err = utils.DeleteCSIVolumeCR(vol)
 	if err != nil {
+		utils.VolumesListLock.Unlock()
 		return nil, status.Error(codes.Internal,
 			err.Error())
 	}
+	delete(utils.Volumes, volumeID)
+	utils.VolumesListLock.Unlock()
 
 	logrus.Infof("hostpath: volume %s/%s has been unmounted.",
 		targetPath, volumeID)
