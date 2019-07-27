@@ -30,7 +30,7 @@ type CSIVolume struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   CSIVolumeSpec   `json:"spec"`
-	Status CSIVolumeStatus `json: "status"`
+	Status CSIVolumeStatus `json:"status"`
 }
 
 // CSIVolumeSpec is the spec for a CStorVolume resource
@@ -41,7 +41,7 @@ type CSIVolumeSpec struct {
 	// ISCSIInfo specific to ISCSI protocol,
 	// this is filled only if the volume type
 	// is iSCSI
-	ISCSI ISCSIInfo `json: "iscsi"`
+	ISCSI ISCSIInfo `json:"iscsi"`
 }
 
 // VolumeInfo contains the volume related info
