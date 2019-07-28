@@ -86,6 +86,20 @@ func CreateCSIVolumeCR(csivol *apis.CSIVolume, nodeID, mountPath string) (err er
 	return
 }
 
+// UpdateCSIVolumeCR updates CSIVolume CR related to current nodeID
+func UpdateCSIVolumeCR(csivol *apis.CSIVolume) error {
+
+	oldcsivol, err := csivolume.NewKubeclient().WithNamespace(OpenEBSNamespace).Get(csivol.Name, v1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	oldcsivol.Spec.Volume.DevicePath = csivol.Spec.Volume.DevicePath
+	oldcsivol.Status = csivol.Status
+
+	_, err = csivolume.NewKubeclient().WithNamespace(OpenEBSNamespace).Update(oldcsivol)
+	return err
+}
+
 // DeleteOldCSIVolumeCR deletes all CSIVolumes
 // related to this volume so that a new one
 // can be created with node as current nodeID
@@ -100,7 +114,10 @@ func DeleteOldCSIVolumeCR(vol *apis.CSIVolume, nodeID string) (err error) {
 		return
 	}
 
-	// TODO Add description why multiple CRs can be there for one volume
+	// If a node goes down and kubernetes is unable to send an Unpublish request
+	// to this node, the CR is marked for deletion but finalizer is not removed
+	// and a new CR is created for current node. When the degraded node comes up
+	// it removes the finalizer and the CR is deleted.
 	for _, csivol := range csivols.Items {
 		if csivol.Labels["nodeID"] == nodeID {
 			csivol.Finalizers = nil
@@ -173,7 +190,13 @@ func FetchAndUpdateVolInfos(nodeID string) (err error) {
 	}
 
 	for _, csivol := range csivols.Items {
+		if !csivol.DeletionTimestamp.IsZero() {
+			continue
+		}
 		vol := csivol
+		if vol.Status == apis.CSIVolumeStatusMountUnderProgress {
+			vol.Status = apis.CSIVolumeStatusUninitialized
+		}
 		Volumes[csivol.Spec.Volume.Name] = &vol
 	}
 

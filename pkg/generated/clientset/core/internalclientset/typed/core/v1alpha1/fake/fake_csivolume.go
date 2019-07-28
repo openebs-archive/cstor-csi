@@ -100,6 +100,18 @@ func (c *FakeCSIVolumes) Update(cSIVolume *v1alpha1.CSIVolume) (result *v1alpha1
 	return obj.(*v1alpha1.CSIVolume), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeCSIVolumes) UpdateStatus(cSIVolume *v1alpha1.CSIVolume) (*v1alpha1.CSIVolume, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewUpdateSubresourceAction(csivolumesResource, "status", c.ns, cSIVolume), &v1alpha1.CSIVolume{})
+
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.CSIVolume), err
+}
+
 // Delete takes name of the cSIVolume and deletes it. Returns an error if one occurs.
 func (c *FakeCSIVolumes) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.

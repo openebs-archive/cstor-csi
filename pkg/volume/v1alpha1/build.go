@@ -282,6 +282,53 @@ func (b *Builder) WithReadOnly(readOnly bool) *Builder {
 	return b
 }
 
+// WithLabels merges existing labels of csi volume if any
+// with the ones that are provided here
+func (b *Builder) WithLabels(labels map[string]string) *Builder {
+	if len(labels) == 0 {
+		b.errs = append(
+			b.errs,
+			errors.New(
+				"failed to build csi volume object: missing labels",
+			),
+		)
+		return b
+	}
+
+	if b.volume.Object.Labels == nil {
+		return b.WithLabelsNew(labels)
+	}
+
+	for key, value := range labels {
+		b.volume.Object.Labels[key] = value
+	}
+	return b
+}
+
+// WithLabelsNew resets existing labels of csi volume if any with
+// ones that are provided here
+func (b *Builder) WithLabelsNew(labels map[string]string) *Builder {
+	if len(labels) == 0 {
+		b.errs = append(
+			b.errs,
+			errors.New(
+				"failed to build csi volume object: no new labels",
+			),
+		)
+		return b
+	}
+
+	// copy of original map
+	newlbls := map[string]string{}
+	for key, value := range labels {
+		newlbls[key] = value
+	}
+
+	// override
+	b.volume.Object.Labels = newlbls
+	return b
+}
+
 // Build returns csi volume API object
 func (b *Builder) Build() (*apis.CSIVolume, error) {
 	if len(b.errs) > 0 {
