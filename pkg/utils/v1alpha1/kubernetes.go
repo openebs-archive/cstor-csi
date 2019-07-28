@@ -190,7 +190,7 @@ func FetchAndUpdateVolInfos(nodeID string) (err error) {
 	}
 
 	for _, csivol := range csivols.Items {
-		if csivol.DeletionTimestamp != nil {
+		if !csivol.DeletionTimestamp.IsZero() {
 			continue
 		}
 		vol := csivol
