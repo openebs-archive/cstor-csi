@@ -50,8 +50,13 @@ func prepareVolSpecAndWaitForVolumeReady(
 	nodeID string,
 ) (*apis.CSIVolume, error) {
 	volumeID := req.GetVolumeId()
+	labels := map[string]string{
+		"nodeID": nodeID,
+	}
+
 	vol, err := csivol.NewBuilder().
 		WithName(req.GetVolumeId()).
+		WithLabels(labels).
 		WithVolName(req.GetVolumeId()).
 		WithMountPath(req.GetTargetPath()).
 		WithFSType(req.GetVolumeCapability().GetMount().GetFsType()).
