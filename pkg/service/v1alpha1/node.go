@@ -115,7 +115,7 @@ func cleanup(vol *apis.CSIVolume, nodeID string) error {
 func updateCSIVolume(
 	vol *apis.CSIVolume,
 	volStatus apis.CSIVolumeStatus,
-	mountPath, devicePath string,
+	devicePath string,
 ) error {
 	// Setting the devicePath in the volume spec is an indication that the mount
 	// operation for the volume has been completed for the first time. This
@@ -228,22 +228,22 @@ func (ns *node) NodePublishVolume(
 	var (
 		err        error
 		devicePath string
+		isMounted  bool
 	)
 
 	if err = ns.validateNodePublishReq(req); err != nil {
 		return nil, err
 	}
 
-	mountPath := req.GetTargetPath()
 	nodeID := ns.driver.config.NodeID
 
 	vol, err := prepareVolSpecAndWaitForVolumeReady(req, nodeID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if isMounted, err := verifyInprogressAndRecreateCSIVolumeCR(vol); err != nil {
+	if isMounted, err = verifyInprogressAndRecreateCSIVolumeCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
-	} else if isMounted == true {
+	} else if isMounted {
 		goto CreateVolumeResponseSuccess
 	}
 	// Permission is changed for the local directory before the volume is
@@ -255,22 +255,22 @@ func (ns *node) NodePublishVolume(
 	// And as soon as it is unmounted permissions change
 	// back to what we are setting over here.
 	if err = utils.ChmodMountPath(vol.Spec.Volume.MountPath); err != nil {
-		if err := cleanup(vol, nodeID); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+		if errCleanup := cleanup(vol, nodeID); errCleanup != nil {
+			return nil, status.Error(codes.Internal, errCleanup.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	// Login to the volume and attempt mount operation on the requested path
 	if devicePath, err = iscsi.AttachAndMountDisk(vol); err != nil {
-		if err := cleanup(vol, nodeID); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
+		if errCleanup := cleanup(vol, nodeID); errCleanup != nil {
+			return nil, status.Error(codes.Internal, errCleanup.Error())
 		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	if err := updateCSIVolume(
 		vol, apis.CSIVolumeStatusMounted,
-		mountPath, devicePath,
+		devicePath,
 	); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
