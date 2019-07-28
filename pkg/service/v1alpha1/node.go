@@ -119,8 +119,11 @@ verifyPublish:
 		// The volume appears to be present in the inmomory list of volumes
 		// which implies that either the mount operation is complete
 		// or under progress.
-		// Lets verify if the mount is already completed
 		if info.Spec.Volume.MountPath != mountPath {
+			// The volume appears to be mounted on a different path, which
+			// implies it is being used by some other pod on the same node.
+			// Let's wait fo the volume to be unmounted from the other path and
+			// then retry checking
 			utils.VolumesListLock.Unlock()
 			if !reVerified {
 				time.Sleep(
@@ -134,6 +137,7 @@ verifyPublish:
 					codes.Internal,
 					"Volume Mounted by a different pod on same node",
 				)
+			// Lets verify if the mount is already completed
 		} else if info.Spec.Volume.DevicePath != "" {
 			// Once the devicePath is set implies the volume mount has been
 			// completed, a success response can be sent back
