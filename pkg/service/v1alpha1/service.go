@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"log"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	config "github.com/openebs/csi/pkg/config/v1alpha1"
@@ -85,7 +87,9 @@ func New(config *config.Config) *CSIDriver {
 		driver.cs = NewController(driver)
 
 	case "node":
-		// utils.FetchAndUpdateVolInfos(config.NodeID)
+		if err := utils.FetchAndUpdateVolInfos(config.NodeID); err != nil {
+			log.Fatalln(err)
+		}
 
 		// Start monitor goroutine to monitor the
 		// mounted paths. If a path goes down or

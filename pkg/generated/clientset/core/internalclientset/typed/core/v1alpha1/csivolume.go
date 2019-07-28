@@ -39,6 +39,7 @@ type CSIVolumesGetter interface {
 type CSIVolumeInterface interface {
 	Create(*v1alpha1.CSIVolume) (*v1alpha1.CSIVolume, error)
 	Update(*v1alpha1.CSIVolume) (*v1alpha1.CSIVolume, error)
+	UpdateStatus(*v1alpha1.CSIVolume) (*v1alpha1.CSIVolume, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.CSIVolume, error)
@@ -126,6 +127,22 @@ func (c *cSIVolumes) Update(cSIVolume *v1alpha1.CSIVolume) (result *v1alpha1.CSI
 		Namespace(c.ns).
 		Resource("csivolumes").
 		Name(cSIVolume.Name).
+		Body(cSIVolume).
+		Do().
+		Into(result)
+	return
+}
+
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+
+func (c *cSIVolumes) UpdateStatus(cSIVolume *v1alpha1.CSIVolume) (result *v1alpha1.CSIVolume, err error) {
+	result = &v1alpha1.CSIVolume{}
+	err = c.client.Put().
+		Namespace(c.ns).
+		Resource("csivolumes").
+		Name(cSIVolume.Name).
+		SubResource("status").
 		Body(cSIVolume).
 		Do().
 		Into(result)

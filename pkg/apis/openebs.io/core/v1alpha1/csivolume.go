@@ -29,7 +29,8 @@ type CSIVolume struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec CSIVolumeSpec `json:"spec"`
+	Spec   CSIVolumeSpec   `json:"spec"`
+	Status CSIVolumeStatus `json:"status"`
 }
 
 // CSIVolumeSpec is the spec for a CStorVolume resource
@@ -40,7 +41,7 @@ type CSIVolumeSpec struct {
 	// ISCSIInfo specific to ISCSI protocol,
 	// this is filled only if the volume type
 	// is iSCSI
-	ISCSI ISCSIInfo `json: "iscsi"`
+	ISCSI ISCSIInfo `json:"iscsi"`
 }
 
 // VolumeInfo contains the volume related info
@@ -113,6 +114,35 @@ type ISCSIInfo struct {
 	// iSCSI Volume. (default: 0)
 	Lun string `json:"lun"`
 }
+
+// CSIVolumeStatus status represents the current mount status of the volume
+type CSIVolumeStatus string
+
+// CSIVolumeStatusMounting indicated that a mount operation has been triggered
+// on the volume and is under progress
+const (
+	// CSIVolumeStatusUninitialized indicates that no operation has been
+	// performed on the volume yet on this node
+	CSIVolumeStatusUninitialized CSIVolumeStatus = ""
+	// CSIVolumeStatusMountUnderProgress indicates that the volume is busy and
+	// unavailable for use by other goroutines, an iSCSI login followed by mount
+	// is under progress on this volume
+	CSIVolumeStatusMountUnderProgress CSIVolumeStatus = "MountUnderProgress"
+	// CSIVolumeStatusMounteid indicated that the volume has been successfulled
+	// mounted on the node
+	CSIVolumeStatusMounted CSIVolumeStatus = "Mounted"
+	// CSIVolumeStatusUnMounted indicated that the volume has been successfuly
+	// unmounted and logged out of the node
+	CSIVolumeStatusUnMounted CSIVolumeStatus = "UnMounted"
+	// CSIVolumeStatusRaw indicates that the volume is being used in raw format
+	// by the application, therefore CSI has only performed iSCSI login
+	// operation on this volume and avoided filesystem creation and mount.
+	CSIVolumeStatusRaw CSIVolumeStatus = "Raw"
+	// CSIVolumeStatusMountFailed indicates that login and mount process from
+	// the volume has bben started but failed kubernetes needs to retry sending
+	// nodepublish
+	CSIVolumeStatusMountFailed CSIVolumeStatus = "MountFailed"
+)
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +resource:path=csivolumes
