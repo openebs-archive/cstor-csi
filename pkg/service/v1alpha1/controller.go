@@ -70,15 +70,17 @@ func (cs *controller) CreateVolume(
 	volName := req.GetName()
 	size := req.GetCapacityRange().RequiredBytes
 	rCount := req.GetParameters()["replicaCount"]
-	spcName := req.GetParameters()["storagePoolClaim"]
-
+	cspcName := req.GetParameters()["cstorPoolCluster"]
+	VolumeContext := map[string]string{
+		"openebs.io/cas-type": req.GetParameters()["cas-type"],
+	}
 	// verify if the volume has already been created
 	cvc, err := utils.GetVolume(volName)
 	if err == nil && cvc != nil && cvc.DeletionTimestamp == nil {
 		goto createVolumeResponse
 	}
 
-	err = utils.ProvisionVolume(size, volName, rCount, spcName)
+	err = utils.ProvisionVolume(size, volName, rCount, cspcName)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -87,6 +89,7 @@ createVolumeResponse:
 	return csipayload.NewCreateVolumeResponseBuilder().
 		WithName(volName).
 		WithCapacity(size).
+		WithContext(VolumeContext).
 		Build(), nil
 }
 
@@ -355,10 +358,10 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 		)
 	}
 
-	if req.GetParameters()["storagePoolClaim"] == "" {
+	if req.GetParameters()["cstorPoolCluster"] == "" {
 		return status.Error(
 			codes.InvalidArgument,
-			"failed to handle create volume request: missing storage class parameter storagePoolClaim",
+			"failed to handle create volume request: missing storage class parameter cstorPoolCluster",
 		)
 	}
 
@@ -366,6 +369,13 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 		return status.Error(
 			codes.InvalidArgument,
 			"failed to handle create volume request: missing storage class parameter replicaCount",
+		)
+	}
+
+	if req.GetParameters()["cas-type"] == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle create volume request: missing storage class parameter cas-type",
 		)
 	}
 

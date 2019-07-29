@@ -23,8 +23,8 @@ const (
 	OpenebsConfigClass = "openebs.io/config-class"
 	// OpenebsVolumeID is the PV name passed to CSI
 	OpenebsVolumeID = "openebs.io/volumeID"
-	// OpenebsSPCName is the name of cstor storagepool cluster
-	OpenebsSPCName = "openebs.io/storage-pool-claim"
+	// OpenebsCSPCName is the name of cstor storagepool cluster
+	OpenebsCSPCName = "openebs.io/cstor-pool-cluster"
 	// CVCFinalizer is used for CVC protection so that cvc is not deleted until
 	// the underlying cv is deleted
 	CVCFinalizer = "cvc.openebs.io/finalizer"
@@ -41,7 +41,7 @@ func ProvisionVolume(
 	size int64,
 	volName,
 	replicaCount,
-	spcName string,
+	cspcName string,
 ) error {
 
 	annotations := map[string]string{
@@ -49,7 +49,7 @@ func ProvisionVolume(
 	}
 
 	labels := map[string]string{
-		OpenebsSPCName: spcName,
+		OpenebsCSPCName: cspcName,
 	}
 
 	finalizers := []string{
