@@ -10,6 +10,7 @@ OpenEBS CSI driver implementation comprises of 2 components:
 ### Prerequisites
 1) Kubernetes version 1.14+
 2) OpenEBS Version 1.1+ ([openebs-operator](https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml))
+3) iSCSI initiator utils installed on all the worker nodes
 
 ### Provision a volume using OpenEBS CSI driver
 
