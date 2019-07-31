@@ -3,7 +3,7 @@ kind: StoragePoolClaim
 metadata:
   name: cstor-sparse-pool
 spec:
-  maxPools: 3
+  maxPools: 1
   name: cstor-sparse-pool
   poolSpec:
     cacheFile: ""

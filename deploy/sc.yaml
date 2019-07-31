@@ -1,11 +1,9 @@
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: openebs-csi-default
-  namespace: kube-system
-  annotations:
+  name: openebs-csi-cstor-sparse
 provisioner: openebs-csi.openebs.io
 allowVolumeExpansion: true
 parameters:
-  replicaCount: "2"
+  replicaCount: "1"
   storagePoolClaim: cstor-sparse-pool
