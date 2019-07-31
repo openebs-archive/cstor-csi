@@ -1,23 +1,68 @@
-### csi
-CSI driver implementation for openebs storage engines.
-Currently, Volumes can only be provisioned for openebs cstor engine.
+# OpenEBS CSI Driver
 
-### Overview
-OpenEBS CSI driver implementation comprises of 2 components:
-1) Controller service: Runs as stateful set
-2) Node service: Runs as a daemonset
+CSI driver implementation for OpenEBS storage engines. 
+
+## Project Status
+
+This project is under active development and considered to be in Alpha state.
+
+The current implementation only supports provisioning and de-provisioning of cStor Volumes. 
+
+## Usage
 
 ### Prerequisites
-1) Kubernetes version 1.14+
-2) OpenEBS Version 1.1+ ([openebs-operator](https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml))
-3) iSCSI initiator utils installed on all the worker nodes
+
+Before setting up OpenEBS CSI driver make sure your Kubernetes Cluster 
+meets the following prerequisities:
+
+1. You will need to have Kubernetes version 1.14 or higher
+2. You will need to have OpenEBS Version 1.1 or higher installed. 
+   The steps to install OpenEBS are [here](https://docs.openebs.io/docs/next/quickstart.html)
+3. iSCSI initiator utils installed on all the worker nodes
+
+### Setup OpenEBS CSI Driver
+
+OpenEBS CSI driver comprises of 2 components:
+- A controller component launched as a Stateful set, 
+  implementing the CSI controller services. The Control Plane
+  services are responsible for creating/deleting the required 
+  OpenEBS Volume.
+- A node component that runs as a DaemonSet, 
+  implmenting the CSI node services. The node component is 
+  responsible for performing the iSCSI connection management and
+  connecting to the OpenEBS Volume.
+
+OpenEBS CSI driver components can be installed by running the 
+following command. 
+
+The node components make use of the host iSCSI binaries for iSCSI 
+connection management. Depending on the OS, the spec will have to 
+be modified to load the required iSCSI files into the node pods. 
+
+Depending on the OS select the appropriate deployment file.
+
+- For Ubuntu 16.04 and CentOS.
+  ```
+  kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
+  ```
+
+- For Ubuntu 18.04 
+  ```
+  kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator-ubuntu-18.04.yaml
+  ```
+
+Verify that the OpenEBS CSI Components are installed. 
+
+```
+$ kubectl get pods -n kube-system -l role=openebs-csi
+NAME                       READY   STATUS    RESTARTS   AGE
+openebs-csi-controller-0   4/4     Running   0          6m14s
+openebs-csi-node-56t5g     2/2     Running   0          6m13s
+
+```
 
 ### Provision a volume using OpenEBS CSI driver
 
-1. Modify and apply the OpenEBS CSI Operator based on the host OS, with the steps mentioned in the yaml itself:
-```
-kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/csi-operator.yaml
-```
 2. Create a storage pool claim(spc) where the volume can be provisioned. In the below spc.yaml make sure that maxPools should be greater than or equal to the number of replicas required for the volume.
 This step can be avoided if volume needs to be created on already existing cstor pools. 
 ```
