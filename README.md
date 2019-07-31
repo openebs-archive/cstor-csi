@@ -86,7 +86,6 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
    metadata:
      name: openebs-csi-cstor-sparse
      namespace: kube-system
-     annotations:
    provisioner: openebs-csi.openebs.io
    allowVolumeExpansion: true
    parameters:
@@ -141,12 +140,12 @@ through various components.
    `openebs-csi.openebs.io`  
 
 3. OpenEBS CSI Controller will create a custom resource called 
-   CStorVolumeClaim(CVC) and returns the details of the newly 
-   created object back to Kubernetes. The cStorVolumeClaim will be
+   `CStorVolumeClaim(CVC)` and returns the details of the newly 
+   created object back to Kubernetes. The `CVC`s will be
    monitored by the cstor-operator (embedded in m-apiserver). The
-   cstor-operator will process the request once the Kubernetes 
-   determines the node on which application using the PVC should 
-   be scheduled.
+   cstor-operator will wait to proceed with provisioning a `CStorVolume`
+   for a given `CVC` until the Kubernetes has scheduled the application 
+   using the PVC/CVC to a node in the cluster. 
 
    This is in effect working like `waitforFirstConsumer`.
 
