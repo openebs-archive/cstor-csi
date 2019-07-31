@@ -19,6 +19,9 @@ meets the following prerequisities:
 2. You will need to have OpenEBS Version 1.1 or higher installed. 
    The steps to install OpenEBS are [here](https://docs.openebs.io/docs/next/quickstart.html)
 3. iSCSI initiator utils installed on all the worker nodes
+4. You have access to install RBAC components into kube-system namespace.
+   The OpenEBS CSI driver components are installed in kube-system 
+   namespace to allow them to be flagged as system critical components. 
 
 ### Setup OpenEBS CSI Driver
 
@@ -61,19 +64,72 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
 
 ```
 
-### Provision a volume using OpenEBS CSI driver
+### Provision a cStor volume using OpenEBS CSI driver
 
-2. Create a storage pool claim(spc) where the volume can be provisioned. In the below spc.yaml make sure that maxPools should be greater than or equal to the number of replicas required for the volume.
-This step can be avoided if volume needs to be created on already existing cstor pools. 
-```
-kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/spc.yaml
-```
-3. Create a Storage Class pointing to OpenEBS CSI provisioner after updating these values in sc.yaml:
-1) replicaCount: Number of copies of the data required to be maintained
-2) storagePoolClaim: Where the volumes need to be created
-```
-kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/sc.yaml
-```
+1. Make sure you already have a cStor Pool Created or you can 
+   create one using the below command. In the below spc.yaml make sure 
+   that maxPools should be greater than or equal to the number of 
+   replicas required for the volume.
+
+   The following command will create the specified number of cStor Pools
+   using the Sparse files. 
+
+   ```
+   kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/spc.yaml
+   ```
+
+2. Create a Storage Class to dynamically provision volumes 
+   using OpenEBS CSI provisioner. A sample storage class looks like:
+   ```
+   kind: StorageClass
+   apiVersion: storage.k8s.io/v1
+   metadata:
+     name: openebs-csi-cstor-sparse
+     namespace: kube-system
+     annotations:
+   provisioner: openebs-csi.openebs.io
+   allowVolumeExpansion: true
+   parameters:
+     storagePoolClaim: cstor-sparse-pool
+     replicaCount: "1"
+   ```
+   You will need to specificy the correct cStor SPC from your cluster 
+   and specify the desired `replicaCount` for the volume. The `replicaCount`
+   should be less than or equal to the max pools available.  
+
+   The following file helps you to create a Storage Class
+   using the cStor sparse pool created in the previous step. 
+   ```
+   kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/sc.yaml
+   ```
+
+3. Run your application by specifying the above Storage Class for 
+   the PVCs. 
+
+   The following example launches a busybox pod using a cStor Volume 
+   provisioned via CSI Provisioner. 
+   ```
+   kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/busybox-csi-cstor-sparse.yaml
+   ```
+
+   Verify that the pods is running and is able to write the data. 
+   ```
+   $ kubectl get pods
+   NAME      READY   STATUS    RESTARTS   AGE
+   busybox   1/1     Running   0          97s
+   ```
+
+   The busybox is instructed to write the date when it starts into the 
+   mounted path at `/mnt/openebs-csi/date.txt`
+
+   ```
+   $ kubectl exec -it busybox -- cat /mnt/openebs-csi/date.txt
+   Wed Jul 31 04:56:26 UTC 2019
+   ```
+   
+
+### How does it work?
+
 4. Create PVC with above Storage Class:
 ```
 kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/pvc.yaml
@@ -146,5 +202,3 @@ While these steps are in progress, there might be some intermittent errors seen 
 - `Volume is not ready: Replicas yet to connect to controller`: Implies volume components are already created but yet to interact with each other.
 
 On successful completion of these steps the application pod can be seen in running state.
-### NOTE
-This is very much a work in progress and is currently considered as `experimental`.
