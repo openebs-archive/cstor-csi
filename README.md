@@ -13,7 +13,7 @@ The current implementation only supports provisioning and de-provisioning of cSt
 ### Prerequisites
 
 Before setting up OpenEBS CSI driver make sure your Kubernetes Cluster 
-meets the following prerequisities:
+meets the following prerequisites:
 
 1. You will need to have Kubernetes version 1.14 or higher
 2. You will need to have OpenEBS Version 1.1 or higher installed. 
@@ -26,12 +26,12 @@ meets the following prerequisities:
 ### Setup OpenEBS CSI Driver
 
 OpenEBS CSI driver comprises of 2 components:
-- A controller component launched as a Stateful set, 
+- A controller component launched as a StatefulSet, 
   implementing the CSI controller services. The Control Plane
   services are responsible for creating/deleting the required 
   OpenEBS Volume.
 - A node component that runs as a DaemonSet, 
-  implmenting the CSI node services. The node component is 
+  implementing the CSI node services. The node component is 
   responsible for performing the iSCSI connection management and
   connecting to the OpenEBS Volume.
 
@@ -93,7 +93,7 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
      storagePoolClaim: cstor-sparse-pool
      replicaCount: "1"
    ```
-   You will need to specificy the correct cStor SPC from your cluster 
+   You will need to specify the correct cStor SPC from your cluster 
    and specify the desired `replicaCount` for the volume. The `replicaCount`
    should be less than or equal to the max pools available.  
 
@@ -130,75 +130,50 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
 
 ### How does it work?
 
-4. Create PVC with above Storage Class:
-```
-kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/pvc.yaml
-```
-Since the provisioner specified in the SC is openebs-csi.openebs.io,
-CSI Controller service recieves a Volume creation request CreateVolume() via grpc. 
-which in turn creates a CStorVolumeClaim(CVC) CR. This will be created with empty nodeID and status marked as pending. 
-And a succees response is sent immediately after creating CVC. Once this API responds success kubernetes creates a PV object and binds it to PVC
+The following steps indicate the PV provisioning workflow as it passes
+through various components. 
 
-The watcher for CVC CR in m-apiserver waits for node-id to be filled to provision the volume.
-```
-# Sample CVC CR on receiving VolumeCreate Request
-apiVersion: openebs.io/v1alpha1
-kind: CStorVolumeClaim
-metadata:
-  annotations:
-    openebs.io/volumeID: pvc-*
-  finalizers:
-  - cvc.openebs.io/finalizer
-  labels:
-    openebs.io/storage-pool-claim: cstor-sparse-pool
-  name: pvc-*
-  namespace: openebs
-spec:
-  capacity:
-    storage: 
-status: 
-  phase: Pending
-```
+1. Create PVC with Storage Class referring to OpenEBS CSI Driver.
 
-5. Deploy a sample app with the above PVC:
-```
-kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/percona.yaml
-kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/sqltest_configmap.yaml
-```
+2. Kubernetes will pass the PV creation request to the OpenEBS
+   CSI Controller service via `CreateVolume()`, as this controller
+   registered with Kubernetes for receiving any requests related to
+   `openebs-csi.openebs.io`  
 
-On deploying the app CSI Node Service receives a NodePublishVolume() request via grpc,
-which in turn patches nodeID to the previously created CVC CR and waits for the  status to be updated to bound by CVC watcher. 
-The bound status implies that the following required volume components have been created by CVC watcher:
-- Target service
-- Target deployment
-- CstorVolume CR
-- CstoVolumeReplica CR
-```
-# Sample CVC CR after NodePublish is successful
-apiVersion: openebs.io/v1alpha1
-kind: CStorVolumeClaim
-metadata:
-  annotations:
-    openebs.io/volumeID: pvc-*
-  finalizers:
-  - cvc.openebs.io/finalizer
-  labels:
-    openebs.io/storage-pool-claim: cstor-sparse-pool
-  name: pvc-*
-  namespace: openebs
-publish:
-  nodeId: csi-node-2
-spec:
-  capacity:
-    storage:
-  cstorVolumeRef:
-  replicaCount: 
-status:
-  phase: Bound
-```
-Once the status is changed to bound, steps to mount the volume are processed.
-While these steps are in progress, there might be some intermittent errors seen on describing the application pod:
+3. OpenEBS CSI Controller will create a custom resource called 
+   CStorVolumeClaim(CVC) and returns the details of the newly 
+   created object back to Kubernetes. The cStorVolumeClaim will be
+   monitored by the cstor-operator (embedded in m-apiserver). The
+   cstor-operator will process the request once the Kubernetes 
+   determines the node on which application using the PVC should 
+   be scheduled.
+
+   This is in effect working like `waitforFirstConsumer`.
+
+4. When the node is assigned for the application, Kubernetes will 
+   invoke the `NodePublishVolume()` request with the node and the 
+   volume details - which includes the identifier of the CVC. 
+
+   This API will then specify the node details in the CVC. 
+
+   After updating the node id, the OpenEBS CSI Driver - Node
+   Service will wait for the CVC to be bound to an actual cStor Volume.
+
+5. The cstor-operator checks that node details are available on CVC, 
+   and proceeds with the cStor Volume Creation. Once the cStor Volume 
+   is created, the CVC is updated with the reference to the cStor Volume
+   and change the status on CVC to bound.
+
+6. Node Component which was waiting on the CVC status will proceed
+   to connect to the cStor volume. 
+
+
+Note: While the asynchronous handling of the Volume provisioning is 
+in progress, the application pod may throw some errors like:
+
 - `Waiting for CVC to be bound`: Implies volume components are still being created
-- `Volume is not ready: Replicas yet to connect to controller`: Implies volume components are already created but yet to interact with each other.
+- `Volume is not ready: Replicas yet to connect to controller`: 
+   Implies volume components are already created but yet to interact with each other.
 
-On successful completion of these steps the application pod can be seen in running state.
+On successful completion of the above steps the application pod can 
+be seen in running state.
