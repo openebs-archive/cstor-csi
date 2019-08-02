@@ -142,6 +142,10 @@ const (
 	// the volume has bben started but failed kubernetes needs to retry sending
 	// nodepublish
 	CSIVolumeStatusMountFailed CSIVolumeStatus = "MountFailed"
+	// CSIVolumeStatusUnmountInProgress indicates that the volume is busy and
+	// unavailable for use by other goroutines, an unmount operation on volume
+	// is under progress
+	CSIVolumeStatusUnmountUnderProgress CSIVolumeStatus = "UnmountUnderProgress"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
