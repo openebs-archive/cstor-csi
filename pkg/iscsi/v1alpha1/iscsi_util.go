@@ -407,16 +407,17 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 		return "", nil
 	}
 
-	if err := os.MkdirAll(mntPath, 0750); err != nil {
-		glog.Errorf("iscsi: failed to mkdir %s, error", mntPath)
-		return "", err
-	}
-
-	// Persist iscsi disk config to json file for DetachDisk path
-	if err := util.persistISCSI(*(b.iscsiDisk), b.targetPath); err != nil {
-		glog.Errorf("iscsi: failed to save iscsi config with error: %v", err)
-		return "", err
-	}
+	/*
+		if err := os.MkdirAll(mntPath, 0750); err != nil {
+			glog.Errorf("iscsi: failed to mkdir %s, error", mntPath)
+			return "", err
+		}
+			// Persist iscsi disk config to json file for DetachDisk path
+			if err := util.persistISCSI(*(b.iscsiDisk), b.targetPath); err != nil {
+				glog.Errorf("iscsi: failed to save iscsi config with error: %v", err)
+				return "", err
+			}
+	*/
 
 	for _, path := range devicePaths {
 		// There shouldnt be any empty device paths. However adding this check
