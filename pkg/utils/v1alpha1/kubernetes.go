@@ -59,17 +59,57 @@ func getVolStatus(volumeID string) (string, error) {
 	return string(volumeList.Items[0].Status.Phase), nil
 }
 
-// CreateCSIVolumeCR creates a new CSIVolume CR with this nodeID
-func CreateCSIVolumeCR(csivol *apis.CSIVolume, nodeID, mountPath string) (err error) {
+// GetVolList fetches the current Published Volume list
+func GetVolList(volumeID string) (*apis.CSIVolumeList, error) {
+	listOptions := v1.ListOptions{
+		LabelSelector: "nodeID=" + NodeID,
+	}
 
-	csivol.Name = csivol.Spec.Volume.Name + "-" + nodeID
+	return csivolume.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).List(listOptions)
+
+}
+
+// GetCSIVolume fetches the current Published csi Volume
+func GetCSIVolume(volumeID string) (*apis.CSIVolume, error) {
+	var (
+		err error
+	)
+	listOptions := v1.ListOptions{
+		LabelSelector: "nodeID=" + NodeID + "," + "Volname=" + volumeID,
+	}
+	if list, err := csivolume.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).List(listOptions); err != nil {
+		return nil, err
+	} else if len(list.Items) != 0 {
+		return &list.Items[0], nil
+	}
+	return nil, err
+}
+
+// CreateOrUpdateCSIVolumeCR creates a new CSIVolume CR with this nodeID
+func CreateOrUpdateCSIVolumeCR(csivol *apis.CSIVolume) error {
+	var (
+		err error
+		vol *apis.CSIVolume
+	)
+
+	if vol, err = GetCSIVolume(csivol.Spec.Volume.Name); err != nil {
+		return err
+	} else if vol != nil && vol.DeletionTimestamp.IsZero() {
+		vol.Spec.Volume.MountPath = csivol.Spec.Volume.MountPath
+		vol.Spec.Volume.DevicePath = csivol.Spec.Volume.DevicePath
+		_, err = csivolume.NewKubeclient().WithNamespace(OpenEBSNamespace).Update(vol)
+		return err
+	}
+	csivol.Name = csivol.Spec.Volume.Name + "-" + NodeID
 	csivol.Labels = make(map[string]string)
-	csivol.Spec.Volume.OwnerNodeID = nodeID
+	csivol.Spec.Volume.OwnerNodeID = NodeID
 	csivol.Labels["Volname"] = csivol.Spec.Volume.Name
-	csivol.Labels["nodeID"] = nodeID
-	nodeInfo, err := getNodeDetails(nodeID)
+	csivol.Labels["nodeID"] = NodeID
+	nodeInfo, err := getNodeDetails(NodeID)
 	if err != nil {
-		return
+		return err
 	}
 
 	csivol.OwnerReferences = []v1.OwnerReference{
@@ -80,10 +120,10 @@ func CreateCSIVolumeCR(csivol *apis.CSIVolume, nodeID, mountPath string) (err er
 			UID:        nodeInfo.UID,
 		},
 	}
-	csivol.Finalizers = []string{nodeID}
+	csivol.Finalizers = []string{NodeID}
 
 	_, err = csivolume.NewKubeclient().WithNamespace(OpenEBSNamespace).Create(csivol)
-	return
+	return err
 }
 
 // UpdateCSIVolumeCR updates CSIVolume CR related to current nodeID
@@ -103,10 +143,10 @@ func UpdateCSIVolumeCR(csivol *apis.CSIVolume) error {
 // DeleteOldCSIVolumeCR deletes all CSIVolumes
 // related to this volume so that a new one
 // can be created with node as current nodeID
-func DeleteOldCSIVolumeCR(vol *apis.CSIVolume, nodeID string) (err error) {
+func DeleteOldCSIVolumeCR(volumeID, nodeID string) (err error) {
 	listOptions := v1.ListOptions{
 		// TODO Update this label selector name as per naming standards
-		LabelSelector: "Volname=" + vol.Name,
+		LabelSelector: "Volname=" + volumeID,
 	}
 
 	csivols, err := csivolume.NewKubeclient().WithNamespace(OpenEBSNamespace).List(listOptions)
@@ -137,7 +177,7 @@ func DeleteOldCSIVolumeCR(vol *apis.CSIVolume, nodeID string) (err error) {
 
 // TODO Explain when a create of csi volume happens & when it
 // gets deleted or replaced or updated
-//
+
 // DeleteCSIVolumeCR removes the CSIVolume with this nodeID as
 // labelSelector from the list
 func DeleteCSIVolumeCR(vol *apis.CSIVolume) (err error) {
@@ -166,39 +206,5 @@ func DeleteCSIVolumeCR(vol *apis.CSIVolume) (err error) {
 			}
 		}
 	}
-	return
-}
-
-// FetchAndUpdateVolInfos gets the list of CSIVolInfos
-// that are supposed to be mounted on this node and
-// stores the info in memory. This is required when the
-// CSI driver gets restarted & hence start monitoring all
-// the existing volumes and at the same time use this
-// logic to reject duplicate volume creation requests
-func FetchAndUpdateVolInfos(nodeID string) (err error) {
-	var listOptions v1.ListOptions
-
-	if nodeID != "" {
-		listOptions = v1.ListOptions{
-			LabelSelector: "nodeID=" + nodeID,
-		}
-	}
-
-	csivols, err := csivolume.NewKubeclient().WithNamespace(OpenEBSNamespace).List(listOptions)
-	if err != nil {
-		return
-	}
-
-	for _, csivol := range csivols.Items {
-		if !csivol.DeletionTimestamp.IsZero() {
-			continue
-		}
-		vol := csivol
-		if vol.Status == apis.CSIVolumeStatusMountUnderProgress {
-			vol.Status = apis.CSIVolumeStatusUninitialized
-		}
-		Volumes[csivol.Spec.Volume.Name] = &vol
-	}
-
 	return
 }

@@ -33,20 +33,19 @@ var (
 	// OpenEBSNamespace is openebs system namespace
 	OpenEBSNamespace string
 
-	// Volumes contains the list of volumes created in case of controller plugin
-	// and list of volumes attached to this node in node plugin
-	// This list is protected by VolumesListLock
-	Volumes map[string]*apis.CSIVolume
+	// NodeID is the NodeID of the node on which the pod is present
+	NodeID string
 
-	// VolumesListLock is required to protect the above Volumes list
-	VolumesListLock sync.RWMutex
+	// TransitionVolList contains the list of volumes under transition
+	// This list is protected by TransitionVolListLock
+	TransitionVolList map[string]apis.CSIVolumeStatus
+
+	// TransitionVolListLock is required to protect the above Volumes list
+	TransitionVolListLock sync.RWMutex
 
 	// ReqMountList contains the list of volumes which are required
 	// to be remounted. This list is secured by ReqMountListLock
-	ReqMountList map[string]bool
-
-	// ReqMountListLock is required to protect the above ReqMount list
-	ReqMountListLock sync.RWMutex
+	ReqMountList map[string]apis.CSIVolumeStatus
 )
 
 const (
@@ -60,9 +59,13 @@ func init() {
 	if OpenEBSNamespace == "" {
 		logrus.Fatalf("OPENEBS_NAMESPACE environment variable not set")
 	}
+	NodeID = os.Getenv("OPENEBS_NODE_ID")
+	if NodeID == "" && os.Getenv("OPENEBS_NODE_DRIVER") != "" {
+		logrus.Fatalf("NodeID environment variable not set")
+	}
 
-	Volumes = map[string]*apis.CSIVolume{}
-	ReqMountList = make(map[string]bool)
+	TransitionVolList = make(map[string]apis.CSIVolumeStatus)
+	ReqMountList = make(map[string]apis.CSIVolumeStatus)
 
 }
 
@@ -155,6 +158,7 @@ checkVolumeStatus:
 	return nil
 }
 
+/*
 // GetVolumeByName fetches the volume from Volumes list based on th input name
 func GetVolumeByName(volName string) (*apis.CSIVolume, error) {
 	for _, Vol := range Volumes {
@@ -165,7 +169,7 @@ func GetVolumeByName(volName string) (*apis.CSIVolume, error) {
 	return nil,
 		fmt.Errorf("volume name %s does not exit in the volumes list", volName)
 }
-
+*/
 func listContains(mountPath string, list []mount.MountPoint) (*mount.MountPoint, bool) {
 	for _, info := range list {
 		if info.Path == mountPath {
@@ -187,41 +191,42 @@ func listContains(mountPath string, list []mount.MountPoint) (*mount.MountPoint,
 // For each remount operation a new goroutine is created, so that if multiple
 // volumes have lost their original state they can all be remounted in parallel
 func MonitorMounts() {
+	var (
+		err        error
+		csivolList *apis.CSIVolumeList
+		mountList  []mount.MountPoint
+	)
 	mounter := mount.New("")
 	ticker := time.NewTicker(MonitorMountRetryTimeout * time.Second)
 	for {
 		select {
 		case <-ticker.C:
 			// Get list of mounted paths present with the node
-			list, _ := mounter.List()
-			VolumesListLock.RLock()
-			for _, vol := range Volumes {
-				if vol.Spec.Volume.DevicePath == "" {
-					// If device path is not set implies the node publish
-					// operation is not completed yet
-					continue
-				}
+			TransitionVolListLock.Lock()
+			if mountList, err = mounter.List(); err != nil {
+				break
+			}
+			if csivolList, err = GetVolList(NodeID); err != nil {
+				break
+			}
+			for _, vol := range csivolList.Items {
 				// Search the volume in the list of mounted volumes at the node
 				// retrieved above
-				mountPoint, exists := listContains(vol.Spec.Volume.MountPath, list)
+				mountPoint, exists := listContains(vol.Spec.Volume.MountPath, mountList)
 				// If the volume is present in the list verify its state
 				if exists && verifyMountOpts(mountPoint.Opts, "rw") {
 					// Continue with remaining volumes since this volume looks
 					// to be in good shape
 					continue
 				}
-				// Skip remount if the volume is already being remounted
-				if _, isRemounting := ReqMountList[vol.Spec.Volume.Name]; isRemounting {
-					continue
+				if _, ok := TransitionVolList[vol.Spec.Volume.Name]; !ok {
+					TransitionVolList[vol.Spec.Volume.Name] = vol.Status
+					ReqMountList[vol.Spec.Volume.Name] = vol.Status
+					csivol := vol
+					go RemountVolume(exists, &csivol, mountPoint, vol.Spec.Volume.MountPath)
 				}
-				// Add volume to the reqMountList and start a goroutine to
-				// remount it
-				ReqMountListLock.Lock()
-				ReqMountList[vol.Spec.Volume.Name] = true
-				ReqMountListLock.Unlock()
-				go RemountVolume(exists, vol, mountPoint, vol.Spec.Volume.MountPath)
 			}
-			VolumesListLock.RUnlock()
+			TransitionVolListLock.Unlock()
 		}
 	}
 }
@@ -276,12 +281,33 @@ func RemountVolume(exists bool, vol *apis.CSIVolume, mountPoint *mount.MountPoin
 		// A complete attach and mount is performed if for some reason disk is
 		// not present in the mounted list with the OS.
 		devicePath, err = iscsi.AttachAndMountDisk(vol)
-		//TODO Updadate devicePath in inmemory list and CR
 	}
-	ReqMountListLock.Lock()
+	TransitionVolListLock.Lock()
 	// Remove the volume from ReqMountList once the remount operation is
 	// complete
+	delete(TransitionVolList, vol.Spec.Volume.Name)
 	delete(ReqMountList, vol.Spec.Volume.Name)
-	ReqMountListLock.Unlock()
+	TransitionVolListLock.Unlock()
 	return
+}
+
+// GetMounts gets mountpoints for the specified volume
+func GetMounts(volumeID string) ([]string, error) {
+
+	var (
+		currentMounts []string
+		err           error
+		mountList     []mount.MountPoint
+	)
+	mounter := mount.New("")
+	// Get list of mounted paths present with the node
+	if mountList, err = mounter.List(); err != nil {
+		return nil, err
+	}
+	for _, mntInfo := range mountList {
+		if strings.Contains(mntInfo.Path, volumeID) {
+			currentMounts = append(currentMounts, mntInfo.Path)
+		}
+	}
+	return currentMounts, nil
 }
