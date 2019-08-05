@@ -140,6 +140,9 @@ func (ns *node) NodePublishVolume(
 	nodeID := ns.driver.config.NodeID
 
 	addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusMountUnderProgress)
+	if err != nil {
+		goto PublishVolumeResponse
+	}
 	defer removeVolumeFromTransitionList(volumeID)
 
 	vol, err := prepareVolSpecAndWaitForVolumeReady(req, nodeID)
