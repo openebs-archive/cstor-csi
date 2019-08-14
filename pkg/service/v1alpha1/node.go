@@ -156,7 +156,9 @@ func (ns *node) NodePublishVolume(
 		if currentMounts[0] == targetPath {
 			goto PublishVolumeResponse
 		}
-		iscsi.Unmount(currentMounts[0])
+		if err = iscsi.Unmount(currentMounts[0]); err != nil {
+			goto PublishVolumeResponse
+		}
 	} else if len(currentMounts) > 1 {
 		logrus.Fatalf(
 			"More than one mounts for volume:%s mounts: %v",
