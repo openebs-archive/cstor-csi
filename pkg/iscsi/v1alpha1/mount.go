@@ -25,7 +25,7 @@ func UnmountAndDetachDisk(vol *apis.CSIVolume, path string) error {
 	util := &ISCSIUtil{}
 	err := util.DetachDisk(*diskUnmounter, path)
 	if err != nil {
-		return status.Error(codes.Internal, err.Error())
+		return err
 	}
 	return nil
 }
@@ -38,14 +38,28 @@ func AttachAndMountDisk(vol *apis.CSIVolume) (string, error) {
 	}
 	iscsiInfo, err := getISCSIInfo(vol)
 	if err != nil {
-		return "", status.Error(codes.Internal, err.Error())
+		return "", err
 	}
 	diskMounter := getISCSIDiskMounter(iscsiInfo, vol)
 
 	util := &ISCSIUtil{}
 	devicePath, err := util.AttachDisk(*diskMounter)
 	if err != nil {
-		return "", status.Error(codes.Internal, err.Error())
+		return "", err
 	}
 	return devicePath, err
+}
+
+// Unmount unmounts the path provided
+func Unmount(path string) error {
+	diskUnmounter := &iscsiDiskUnmounter{
+		mounter: &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: mount.NewOsExec()},
+		exec:    mount.NewOsExec(),
+	}
+	util := &ISCSIUtil{}
+	err := util.UnmountDisk(*diskUnmounter, path)
+	if err != nil {
+		return err
+	}
+	return nil
 }

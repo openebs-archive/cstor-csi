@@ -22,7 +22,6 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/docker/docker/pkg/mount"
 	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
 	iscsi "github.com/openebs/csi/pkg/iscsi/v1alpha1"
 	"github.com/openebs/csi/pkg/utils/v1alpha1"
@@ -129,6 +128,7 @@ func (ns *node) NodePublishVolume(
 		err           error
 		devicePath    string
 		currentMounts []string
+		vol           *apis.CSIVolume
 	)
 
 	if err = ns.validateNodePublishReq(req); err != nil {
@@ -145,7 +145,7 @@ func (ns *node) NodePublishVolume(
 	}
 	defer removeVolumeFromTransitionList(volumeID)
 
-	vol, err := prepareVolSpecAndWaitForVolumeReady(req, nodeID)
+	vol, err = prepareVolSpecAndWaitForVolumeReady(req, nodeID)
 	if err != nil {
 		goto PublishVolumeResponse
 	}
@@ -156,7 +156,7 @@ func (ns *node) NodePublishVolume(
 		if currentMounts[0] == targetPath {
 			goto PublishVolumeResponse
 		}
-		mount.Unmount(currentMounts[0])
+		iscsi.Unmount(currentMounts[0])
 	} else if len(currentMounts) > 1 {
 		logrus.Fatalf(
 			"More than one mounts for volume:%s mounts: %v",
@@ -215,6 +215,9 @@ func (ns *node) NodeUnpublishVolume(
 	volumeID := req.GetVolumeId()
 
 	addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusMountUnderProgress)
+	if err != nil {
+		goto NodeUnpublishResponse
+	}
 	defer removeVolumeFromTransitionList(volumeID)
 
 	currentMounts, err = utils.GetMounts(volumeID)
@@ -259,6 +262,9 @@ func (ns *node) NodeUnpublishVolume(
 		goto NodeUnpublishResponse
 	}
 NodeUnpublishResponse:
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	logrus.Infof("hostpath: volume %s path: %s has been unmounted.",
 		volumeID, targetPath)
 

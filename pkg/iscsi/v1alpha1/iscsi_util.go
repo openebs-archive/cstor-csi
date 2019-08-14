@@ -661,3 +661,28 @@ func cloneIface(b iscsiDiskMounter, newIface string) error {
 	}
 	return lastErr
 }
+
+// UnmountDisk logs out of the iSCSI volume and the corresponding path is removed
+func (util *ISCSIUtil) UnmountDisk(
+	c iscsiDiskUnmounter,
+	targetPath string,
+) error {
+	if pathExists, pathErr := mount.PathExists(targetPath); pathErr != nil {
+		return fmt.Errorf("Error checking if path exists: %v", pathErr)
+	} else if !pathExists {
+		glog.Warningf(
+			"Warning: Unmount skipped because path does not exist: %v",
+			targetPath,
+		)
+		return nil
+	}
+
+	if err := c.mounter.Unmount(targetPath); err != nil {
+		glog.Errorf(
+			"unmount disk: failed to unmount: %s\nError: %v",
+			targetPath, err,
+		)
+		return err
+	}
+	return nil
+}
