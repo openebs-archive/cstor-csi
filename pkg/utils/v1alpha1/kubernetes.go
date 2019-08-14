@@ -73,7 +73,8 @@ func GetVolList(volumeID string) (*apis.CSIVolumeList, error) {
 // GetCSIVolume fetches the current Published csi Volume
 func GetCSIVolume(volumeID string) (*apis.CSIVolume, error) {
 	var (
-		err error
+		err  error
+		list *apis.CSIVolumeList
 	)
 	listOptions := v1.ListOptions{
 		LabelSelector: "nodeID=" + NodeID + "," + "Volname=" + volumeID,
