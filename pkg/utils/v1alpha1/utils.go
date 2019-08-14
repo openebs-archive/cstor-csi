@@ -20,12 +20,21 @@ import (
 
 const (
 	// TODO make VolumeWaitTimeout as env
+
+	// VolumeWaitTimeout indicates the timegap between two consecutive volume
+	// status check attempts
 	VolumeWaitTimeout = 2
 
 	// TODO make VolumeWaitRetryCount as env
+
+	// VolumeWaitRetryCount indicates the number of retries made to check the
+	// status of volume before erroring out
 	VolumeWaitRetryCount = 6
 
 	// TODO make MonitorMountRetryTimeout as env
+
+	// MonitorMountRetryTimeout indicates the time gap between two consecutive
+	//monitoring attempts
 	MonitorMountRetryTimeout = 5
 )
 
@@ -69,9 +78,11 @@ func init() {
 
 }
 
-// parseEndpoint should have a valid prefix(unix/tcp) to return a valid endpoint parts
+// parseEndpoint should have a valid prefix(unix/tcp)
+// to return a valid endpoint parts
 func parseEndpoint(ep string) (string, string, error) {
-	if strings.HasPrefix(strings.ToLower(ep), "unix://") || strings.HasPrefix(strings.ToLower(ep), "tcp://") {
+	if strings.HasPrefix(strings.ToLower(ep), "unix://") ||
+		strings.HasPrefix(strings.ToLower(ep), "tcp://") {
 		s := strings.SplitN(ep, "://", 2)
 		if s[1] != "" {
 			return s[0], s[1], nil
@@ -82,7 +93,10 @@ func parseEndpoint(ep string) (string, string, error) {
 
 // logGRPC logs all the grpc related errors, i.e the final errors
 // which are returned to the grpc clients
-func logGRPC(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func logGRPC(
+	ctx context.Context, req interface{},
+	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
+) (interface{}, error) {
 	logrus.Infof("GRPC call: %s", info.FullMethod)
 	logrus.Infof("GRPC request: %s", protosanitizer.StripSecrets(req))
 	resp, err := handler(ctx, req)
@@ -122,11 +136,12 @@ func WaitForVolumeToBeReachable(targetPortal string) error {
 		time.Sleep(VolumeWaitTimeout * time.Second)
 		retries++
 		if retries >= VolumeWaitRetryCount {
-			// Let the caller function decide further if the volume is not reachable
-			// even after 12 seconds ( This number was arrived at
+			// Let the caller function decide further if the volume is
+			// not reachable even after 12 seconds ( This number was arrived at
 			// based on the kubelets retrying logic. Kubelet retries to publish
 			// volume after every 14s )
-			return fmt.Errorf("iSCSI Target not reachable, TargetPortal %v, err:%v",
+			return fmt.Errorf(
+				"iSCSI Target not reachable, TargetPortal %v, err:%v",
 				targetPortal, err)
 		}
 	}
@@ -149,7 +164,9 @@ checkVolumeStatus:
 		// ready to accdept IOs after 12 seconds ( This number was arrived at
 		// based on the kubelets retrying logic. Kubelet retries to publish
 		// volume after every 14s )
-		return fmt.Errorf("Volume is not ready: Replicas yet to connect to controller")
+		return fmt.Errorf(
+			"Volume is not ready: Replicas yet to connect to controller",
+		)
 	} else {
 		time.Sleep(VolumeWaitTimeout * time.Second)
 		retries++
@@ -170,7 +187,9 @@ func GetVolumeByName(volName string) (*apis.CSIVolume, error) {
 		fmt.Errorf("volume name %s does not exit in the volumes list", volName)
 }
 */
-func listContains(mountPath string, list []mount.MountPoint) (*mount.MountPoint, bool) {
+func listContains(
+	mountPath string, list []mount.MountPoint,
+) (*mount.MountPoint, bool) {
 	for _, info := range list {
 		if info.Path == mountPath {
 			mntInfo := info
@@ -212,7 +231,9 @@ func MonitorMounts() {
 			for _, vol := range csivolList.Items {
 				// Search the volume in the list of mounted volumes at the node
 				// retrieved above
-				mountPoint, exists := listContains(vol.Spec.Volume.MountPath, mountList)
+				mountPoint, exists := listContains(
+					vol.Spec.Volume.MountPath, mountList,
+				)
 				// If the volume is present in the list verify its state
 				if exists && verifyMountOpts(mountPoint.Opts, "rw") {
 					// Continue with remaining volumes since this volume looks
@@ -223,7 +244,16 @@ func MonitorMounts() {
 					TransitionVolList[vol.Spec.Volume.Name] = vol.Status
 					ReqMountList[vol.Spec.Volume.Name] = vol.Status
 					csivol := vol
-					go RemountVolume(exists, &csivol, mountPoint, vol.Spec.Volume.MountPath)
+					go func() {
+						devicePath, err := RemountVolume(
+							exists, &csivol, mountPoint,
+							vol.Spec.Volume.MountPath,
+						)
+						logrus.Errorf(
+							"Remount failed: DevPath: %v %v",
+							devicePath, err,
+						)
+					}()
 				}
 			}
 			TransitionVolListLock.Unlock()
@@ -236,19 +266,20 @@ func MonitorMounts() {
 // are met. This function stops the driver from overloading the OS with iSCSI
 // login commands.
 func WaitForVolumeReadyAndReachable(vol *apis.CSIVolume) {
+	var err error
 	for {
 		// This function return after 12s in case the volume is not ready
-		if err := WaitForVolumeToBeReady(vol.Spec.Volume.Name); err != nil {
+		if err = WaitForVolumeToBeReady(vol.Spec.Volume.Name); err != nil {
 			logrus.Error(err)
 			// Keep retrying until the volume is ready
 			continue
 		}
 		// This function return after 12s in case the volume is not reachable
-		if err := WaitForVolumeToBeReachable(vol.Spec.ISCSI.TargetPortal); err == nil {
+		err = WaitForVolumeToBeReachable(vol.Spec.ISCSI.TargetPortal)
+		if err == nil {
 			return
-		} else {
-			logrus.Error(err)
 		}
+		logrus.Error(err)
 	}
 }
 
@@ -264,7 +295,11 @@ func verifyMountOpts(opts []string, desiredOpt string) bool {
 // RemountVolume unmounts the volume if it is already mounted in an undesired
 // state and then tries to mount again. If it is not mounted the volume, first
 // the disk will be attached via iSCSI login and then it will be mounted
-func RemountVolume(exists bool, vol *apis.CSIVolume, mountPoint *mount.MountPoint, desiredMountOpt string) (devicePath string, err error) {
+func RemountVolume(
+	exists bool, vol *apis.CSIVolume,
+	mountPoint *mount.MountPoint,
+	desiredMountOpt string,
+) (devicePath string, err error) {
 	mounter := mount.New("")
 	options := []string{"rw"}
 	// Wait until it is possible to chhange the state of mountpoint or when

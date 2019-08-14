@@ -139,7 +139,7 @@ func (ns *node) NodePublishVolume(
 	targetPath := req.GetTargetPath()
 	nodeID := ns.driver.config.NodeID
 
-	addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusMountUnderProgress)
+	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusMountUnderProgress)
 	if err != nil {
 		goto PublishVolumeResponse
 	}
@@ -214,7 +214,7 @@ func (ns *node) NodeUnpublishVolume(
 	targetPath := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 
-	addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusMountUnderProgress)
+	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusMountUnderProgress)
 	if err != nil {
 		goto NodeUnpublishResponse
 	}
@@ -258,7 +258,7 @@ func (ns *node) NodeUnpublishVolume(
 
 	// It is safe to delete the CSIVolume CR now since the volume has already
 	// been unmounted and logged out
-	if err := utils.DeleteCSIVolumeCR(vol); err != nil {
+	if err = utils.DeleteCSIVolumeCR(vol); err != nil {
 		goto NodeUnpublishResponse
 	}
 NodeUnpublishResponse:

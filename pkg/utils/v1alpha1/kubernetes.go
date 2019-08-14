@@ -78,7 +78,7 @@ func GetCSIVolume(volumeID string) (*apis.CSIVolume, error) {
 	listOptions := v1.ListOptions{
 		LabelSelector: "nodeID=" + NodeID + "," + "Volname=" + volumeID,
 	}
-	if list, err := csivolume.NewKubeclient().
+	if list, err = csivolume.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).List(listOptions); err != nil {
 		return nil, err
 	} else if len(list.Items) != 0 {
