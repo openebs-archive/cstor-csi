@@ -493,18 +493,23 @@ func (util *ISCSIUtil) DetachDisk(
 	var volName, iqn, iface, initiatorName string
 	found := true
 
-	// load iscsi disk config from json file
-	if err := util.loadISCSI(c.iscsiDisk, targetPath); err == nil {
-		bkpPortal, iqn, iface, volName = c.iscsiDisk.Portals, c.iscsiDisk.Iqn,
-			c.iscsiDisk.Iface, c.iscsiDisk.VolName
-		initiatorName = c.iscsiDisk.InitiatorName
-	} else {
-		glog.Errorf(
-			"iscsi detach disk: failed to get iscsi config from path %s Error: %v",
-			targetPath, err,
-		)
-		return err
-	}
+	/*
+		// load iscsi disk config from json file
+		if err := util.loadISCSI(c.iscsiDisk, targetPath); err == nil {
+			bkpPortal, iqn, iface, volName = c.iscsiDisk.Portals, c.iscsiDisk.Iqn,
+				c.iscsiDisk.Iface, c.iscsiDisk.VolName
+			initiatorName = c.iscsiDisk.InitiatorName
+		} else {
+			glog.Errorf(
+				"iscsi detach disk: failed to get iscsi config from path %s Error: %v",
+				targetPath, err,
+			)
+			return err
+		}
+	*/
+	bkpPortal, iqn, iface, volName = c.iscsiDisk.Portals, c.iscsiDisk.Iqn,
+		c.iscsiDisk.Iface, c.iscsiDisk.VolName
+	initiatorName = c.iscsiDisk.InitiatorName
 	portals := removeDuplicate(bkpPortal)
 	if len(portals) == 0 {
 		return fmt.Errorf(

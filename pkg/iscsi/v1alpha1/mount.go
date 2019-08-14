@@ -15,6 +15,7 @@ func UnmountAndDetachDisk(vol *apis.CSIVolume, path string) error {
 		Portals: []string{vol.Spec.ISCSI.TargetPortal},
 		Iqn:     vol.Spec.ISCSI.Iqn,
 		lun:     vol.Spec.ISCSI.Lun,
+		Iface:   vol.Spec.ISCSI.IscsiInterface,
 	}
 
 	diskUnmounter := &iscsiDiskUnmounter{

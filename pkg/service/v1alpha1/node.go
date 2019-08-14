@@ -229,6 +229,8 @@ func (ns *node) NodeUnpublishVolume(
 		if currentMounts[0] != targetPath {
 			goto NodeUnpublishResponse
 		}
+	} else if len(currentMounts) == 0 {
+		goto NodeUnpublishResponse
 	} else if len(currentMounts) > 1 {
 		logrus.Fatalf(
 			"More than one mounts for volume:%s mounts: %v",
