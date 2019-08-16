@@ -682,12 +682,5 @@ func (util *ISCSIUtil) UnmountDisk(
 		return nil
 	}
 
-	if err := c.mounter.Unmount(targetPath); err != nil {
-		glog.Errorf(
-			"unmount disk: failed to unmount: %s\nError: %v",
-			targetPath, err,
-		)
-		return err
-	}
-	return nil
+	return c.mounter.Unmount(targetPath)
 }

@@ -26,6 +26,13 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// NODEID is the node name on which this pod is currently scheduled
+	NODEID = "nodeID"
+	// VOLNAME is the name of the provisioned volume
+	VOLNAME = "Volname"
+)
+
 // getNodeDetails fetches the nodeInfo for the current node
 func getNodeDetails(name string) (*corev1.Node, error) {
 	return node.NewKubeClient().Get(name, metav1.GetOptions{})
@@ -62,7 +69,7 @@ func getVolStatus(volumeID string) (string, error) {
 // GetVolList fetches the current Published Volume list
 func GetVolList(volumeID string) (*apis.CSIVolumeList, error) {
 	listOptions := v1.ListOptions{
-		LabelSelector: "nodeID=" + NodeID,
+		LabelSelector: NODEID + "=" + NodeID,
 	}
 
 	return csivolume.NewKubeclient().
@@ -77,7 +84,7 @@ func GetCSIVolume(volumeID string) (*apis.CSIVolume, error) {
 		list *apis.CSIVolumeList
 	)
 	listOptions := v1.ListOptions{
-		LabelSelector: "nodeID=" + NodeID + "," + "Volname=" + volumeID,
+		LabelSelector: NODEID + "=" + NodeID + "," + VOLNAME + "=" + volumeID,
 	}
 	if list, err = csivolume.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).List(listOptions); err != nil {
@@ -107,7 +114,7 @@ func CreateOrUpdateCSIVolumeCR(csivol *apis.CSIVolume) error {
 	csivol.Labels = make(map[string]string)
 	csivol.Spec.Volume.OwnerNodeID = NodeID
 	csivol.Labels["Volname"] = csivol.Spec.Volume.Name
-	csivol.Labels["nodeID"] = NodeID
+	csivol.Labels[NODEID] = NodeID
 	nodeInfo, err := getNodeDetails(NodeID)
 	if err != nil {
 		return err
@@ -160,7 +167,7 @@ func DeleteOldCSIVolumeCR(volumeID, nodeID string) (err error) {
 	// and a new CR is created for current node. When the degraded node comes up
 	// it removes the finalizer and the CR is deleted.
 	for _, csivol := range csivols.Items {
-		if csivol.Labels["nodeID"] == nodeID {
+		if csivol.Labels[NODEID] == nodeID {
 			csivol.Finalizers = nil
 			_, err = csivolume.NewKubeclient().WithNamespace(OpenEBSNamespace).Update(&csivol)
 			if err != nil {

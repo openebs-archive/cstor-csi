@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -74,7 +74,7 @@ func prepareVolSpecAndWaitForVolumeReady(
 		return nil, status.Error(codes.Internal, err.Error())
 	} else if !isCVCBound {
 		time.Sleep(10 * time.Second)
-		return nil, fmt.Errorf("Waiting for CVC to be bound")
+		return nil, errors.New("Waiting for CVC to be bound")
 	}
 
 	if err = utils.FetchAndUpdateISCSIDetails(volumeID, vol); err != nil {
@@ -100,18 +100,18 @@ func prepareVolSpecAndWaitForVolumeReady(
 
 func removeVolumeFromTransitionList(volumeID string) {
 	utils.TransitionVolListLock.Lock()
+	defer utils.TransitionVolListLock.Unlock()
 	delete(utils.TransitionVolList, volumeID)
-	utils.TransitionVolListLock.Unlock()
 }
 
 func addVolumeToTransitionList(volumeID string, status apis.CSIVolumeStatus) error {
 	utils.TransitionVolListLock.Lock()
+	defer utils.TransitionVolListLock.Unlock()
+
 	if _, ok := utils.TransitionVolList[volumeID]; ok {
-		utils.TransitionVolListLock.Unlock()
-		return fmt.Errorf("Volume Busy")
+		return errors.New("Volume Busy")
 	}
 	utils.TransitionVolList[volumeID] = status
-	utils.TransitionVolListLock.Unlock()
 	return nil
 }
 
