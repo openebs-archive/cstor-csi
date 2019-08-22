@@ -42,8 +42,8 @@ var (
 	// OpenEBSNamespace is openebs system namespace
 	OpenEBSNamespace string
 
-	// NodeID is the NodeID of the node on which the pod is present
-	NodeID string
+	// NodeIDENV is the NodeID of the node on which the pod is present
+	NodeIDENV string
 
 	// TransitionVolList contains the list of volumes under transition
 	// This list is protected by TransitionVolListLock
@@ -68,9 +68,9 @@ func init() {
 	if OpenEBSNamespace == "" {
 		logrus.Fatalf("OPENEBS_NAMESPACE environment variable not set")
 	}
-	NodeID = os.Getenv("OPENEBS_NODE_ID")
-	if NodeID == "" && os.Getenv("OPENEBS_NODE_DRIVER") != "" {
-		logrus.Fatalf("NodeID environment variable not set")
+	NodeIDENV = os.Getenv("OPENEBS_NODE_ID")
+	if NodeIDENV == "" && os.Getenv("OPENEBS_NODE_DRIVER") != "" {
+		logrus.Fatalf("OPENEBS_NODE_ID not set")
 	}
 
 	TransitionVolList = make(map[string]apis.CSIVolumeStatus)
@@ -225,7 +225,7 @@ func MonitorMounts() {
 			if mountList, err = mounter.List(); err != nil {
 				break
 			}
-			if csivolList, err = GetVolList(NodeID); err != nil {
+			if csivolList, err = GetVolList(NodeIDENV); err != nil {
 				break
 			}
 			for _, vol := range csivolList.Items {
