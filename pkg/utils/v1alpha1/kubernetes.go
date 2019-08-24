@@ -98,14 +98,18 @@ func CreateOrUpdateCSIVolumeCR(csivol *apis.CSIVolume) error {
 	)
 
 	vol, err = GetCSIVolume(csivol.Spec.Volume.Name)
+
 	if err != nil && !k8serror.IsNotFound(err) {
 		return err
-	} else if vol != nil && vol.DeletionTimestamp.IsZero() {
+	}
+
+	if err == nil && vol != nil && vol.DeletionTimestamp.IsZero() {
 		vol.Spec.Volume.MountPath = csivol.Spec.Volume.MountPath
 		_, err = csivolume.NewKubeclient().
 			WithNamespace(OpenEBSNamespace).Update(vol)
 		return err
 	}
+
 	csivol.Name = csivol.Spec.Volume.Name + "-" + NodeIDENV
 	csivol.Labels = make(map[string]string)
 	csivol.Spec.Volume.OwnerNodeID = NodeIDENV
@@ -168,10 +172,6 @@ func DeleteCSIVolumeCRForPath(volumeID, targetPath string) error {
 		return err
 	}
 
-	err = csivolume.NewKubeclient().
+	return csivolume.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).Delete(csivol.Name)
-	if err != nil {
-		return err
-	}
-	return nil
 }

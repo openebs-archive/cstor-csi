@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -60,7 +61,6 @@ func prepareVolSpecAndWaitForVolumeReady(
 		WithVolName(req.GetVolumeId()).
 		WithMountPath(req.GetTargetPath()).
 		WithFSType(req.GetVolumeCapability().GetMount().GetFsType()).
-		WithMountOptions(req.GetVolumeCapability().GetMount().GetMountFlags()).
 		WithReadOnly(req.GetReadonly()).Build()
 	if err != nil {
 		return nil, err
@@ -73,6 +73,7 @@ func prepareVolSpecAndWaitForVolumeReady(
 	if isCVCBound, err := utils.IsCVCBound(volumeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	} else if !isCVCBound {
+		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusWaitingForCVCBound
 		time.Sleep(10 * time.Second)
 		return nil, errors.New("Waiting for CVC to be bound")
 	}
@@ -109,12 +110,16 @@ func addVolumeToTransitionList(volumeID string, status apis.CSIVolumeStatus) err
 	defer utils.TransitionVolListLock.Unlock()
 
 	if _, ok := utils.TransitionVolList[volumeID]; ok {
-		return errors.New("Volume Busy")
+		return fmt.Errorf("Volume Busy, status: %v",
+			utils.TransitionVolList[volumeID])
 	}
 	utils.TransitionVolList[volumeID] = status
 	return nil
 }
-func VerifyAndUpdateMount(volumeID, targetPath string) (bool, error) {
+
+// VerifyIfMountRequired returns true if volume is already mounted on targetPath
+// and unmounts if it is mounted on a different path
+func VerifyIfMountRequired(volumeID, targetPath string) (bool, error) {
 	var (
 		currentMounts []string
 		err           error
@@ -164,7 +169,7 @@ func (ns *node) NodePublishVolume(
 	targetPath := req.GetTargetPath()
 	nodeID := ns.driver.config.NodeID
 
-	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusMountUnderProgress)
+	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -173,7 +178,7 @@ func (ns *node) NodePublishVolume(
 	if vol, err = prepareVolSpecAndWaitForVolumeReady(req, nodeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	isMountRequired, err = VerifyAndUpdateMount(volumeID, targetPath)
+	isMountRequired, err = VerifyIfMountRequired(volumeID, targetPath)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -189,12 +194,15 @@ func (ns *node) NodePublishVolume(
 		if err = utils.ChmodMountPath(vol.Spec.Volume.MountPath); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
+		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusMountUnderProgress
 		// Login to the volume and attempt mount operation on the requested path
 		if devicePath, err = iscsi.AttachAndMountDisk(vol); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 		// TODO update status also in below function
 		vol.Spec.Volume.DevicePath = devicePath
+		vol.Status = apis.CSIVolumeStatusMounted
+		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusMounted
 	}
 
 	err = utils.CreateOrUpdateCSIVolumeCR(vol)
@@ -204,6 +212,7 @@ func (ns *node) NodePublishVolume(
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 
+// IsUnmountRequired returns true if the volume needs to be unmounted
 func IsUnmountRequired(volumeID, targetPath string) (bool, error) {
 	var (
 		currentMounts []string
@@ -250,7 +259,7 @@ func (ns *node) NodeUnpublishVolume(
 	targetPath := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 
-	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusMountUnderProgress)
+	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -279,9 +288,11 @@ func (ns *node) NodeUnpublishVolume(
 		// immediately other node deleted this node's CR, in that case iSCSI
 		// target(istgt) will pick up the new one and allow only that node to login,
 		// so all the cases are handled
+		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusUnmountUnderProgress
 		if err = iscsi.UnmountAndDetachDisk(vol, req.GetTargetPath()); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
+		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusUnmounted
 	}
 	// It is safe to delete the CSIVolume CR now since the volume has already
 	// been unmounted and logged out

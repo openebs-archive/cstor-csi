@@ -168,6 +168,7 @@ checkVolumeStatus:
 			"Volume is not ready: Replicas yet to connect to controller",
 		)
 	} else {
+		TransitionVolList[volumeID] = apis.CSIVolumeStatusWaitingForVolumeToBeReady
 		time.Sleep(VolumeWaitTimeout * time.Second)
 		retries++
 		goto checkVolumeStatus
