@@ -133,7 +133,7 @@ const (
 	CSIVolumeStatusMounted CSIVolumeStatus = "Mounted"
 	// CSIVolumeStatusUnMounted indicated that the volume has been successfuly
 	// unmounted and logged out of the node
-	CSIVolumeStatusUnMounted CSIVolumeStatus = "UnMounted"
+	CSIVolumeStatusUnmounted CSIVolumeStatus = "Unmounted"
 	// CSIVolumeStatusRaw indicates that the volume is being used in raw format
 	// by the application, therefore CSI has only performed iSCSI login
 	// operation on this volume and avoided filesystem creation and mount.
@@ -142,6 +142,16 @@ const (
 	// the volume has bben started but failed kubernetes needs to retry sending
 	// nodepublish
 	CSIVolumeStatusMountFailed CSIVolumeStatus = "MountFailed"
+	// CSIVolumeStatusUnmountInProgress indicates that the volume is busy and
+	// unavailable for use by other goroutines, an unmount operation on volume
+	// is under progress
+	CSIVolumeStatusUnmountUnderProgress CSIVolumeStatus = "UnmountUnderProgress"
+	// CSIVolumeStatusWaitingForCVCBound indicates that the volume components
+	// are still being created
+	CSIVolumeStatusWaitingForCVCBound CSIVolumeStatus = "WaitingForCVCBound"
+	// CSIVolumeStatusWaitingForVolumeToBeReady indicates that the replicas are
+	// yet to connect to target
+	CSIVolumeStatusWaitingForVolumeToBeReady CSIVolumeStatus = "WaitingForVolumeToBeReady"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

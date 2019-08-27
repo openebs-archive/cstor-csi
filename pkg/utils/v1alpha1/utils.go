@@ -20,12 +20,21 @@ import (
 
 const (
 	// TODO make VolumeWaitTimeout as env
+
+	// VolumeWaitTimeout indicates the timegap between two consecutive volume
+	// status check attempts
 	VolumeWaitTimeout = 2
 
 	// TODO make VolumeWaitRetryCount as env
+
+	// VolumeWaitRetryCount indicates the number of retries made to check the
+	// status of volume before erroring out
 	VolumeWaitRetryCount = 6
 
 	// TODO make MonitorMountRetryTimeout as env
+
+	// MonitorMountRetryTimeout indicates the time gap between two consecutive
+	//monitoring attempts
 	MonitorMountRetryTimeout = 5
 )
 
@@ -33,20 +42,19 @@ var (
 	// OpenEBSNamespace is openebs system namespace
 	OpenEBSNamespace string
 
-	// Volumes contains the list of volumes created in case of controller plugin
-	// and list of volumes attached to this node in node plugin
-	// This list is protected by VolumesListLock
-	Volumes map[string]*apis.CSIVolume
+	// NodeIDENV is the NodeID of the node on which the pod is present
+	NodeIDENV string
 
-	// VolumesListLock is required to protect the above Volumes list
-	VolumesListLock sync.RWMutex
+	// TransitionVolList contains the list of volumes under transition
+	// This list is protected by TransitionVolListLock
+	TransitionVolList map[string]apis.CSIVolumeStatus
+
+	// TransitionVolListLock is required to protect the above Volumes list
+	TransitionVolListLock sync.RWMutex
 
 	// ReqMountList contains the list of volumes which are required
 	// to be remounted. This list is secured by ReqMountListLock
-	ReqMountList map[string]bool
-
-	// ReqMountListLock is required to protect the above ReqMount list
-	ReqMountListLock sync.RWMutex
+	ReqMountList map[string]apis.CSIVolumeStatus
 )
 
 const (
@@ -60,15 +68,21 @@ func init() {
 	if OpenEBSNamespace == "" {
 		logrus.Fatalf("OPENEBS_NAMESPACE environment variable not set")
 	}
+	NodeIDENV = os.Getenv("OPENEBS_NODE_ID")
+	if NodeIDENV == "" && os.Getenv("OPENEBS_NODE_DRIVER") != "" {
+		logrus.Fatalf("OPENEBS_NODE_ID not set")
+	}
 
-	Volumes = map[string]*apis.CSIVolume{}
-	ReqMountList = make(map[string]bool)
+	TransitionVolList = make(map[string]apis.CSIVolumeStatus)
+	ReqMountList = make(map[string]apis.CSIVolumeStatus)
 
 }
 
-// parseEndpoint should have a valid prefix(unix/tcp) to return a valid endpoint parts
+// parseEndpoint should have a valid prefix(unix/tcp)
+// to return a valid endpoint parts
 func parseEndpoint(ep string) (string, string, error) {
-	if strings.HasPrefix(strings.ToLower(ep), "unix://") || strings.HasPrefix(strings.ToLower(ep), "tcp://") {
+	if strings.HasPrefix(strings.ToLower(ep), "unix://") ||
+		strings.HasPrefix(strings.ToLower(ep), "tcp://") {
 		s := strings.SplitN(ep, "://", 2)
 		if s[1] != "" {
 			return s[0], s[1], nil
@@ -79,7 +93,10 @@ func parseEndpoint(ep string) (string, string, error) {
 
 // logGRPC logs all the grpc related errors, i.e the final errors
 // which are returned to the grpc clients
-func logGRPC(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func logGRPC(
+	ctx context.Context, req interface{},
+	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
+) (interface{}, error) {
 	logrus.Infof("GRPC call: %s", info.FullMethod)
 	logrus.Infof("GRPC request: %s", protosanitizer.StripSecrets(req))
 	resp, err := handler(ctx, req)
@@ -119,11 +136,12 @@ func WaitForVolumeToBeReachable(targetPortal string) error {
 		time.Sleep(VolumeWaitTimeout * time.Second)
 		retries++
 		if retries >= VolumeWaitRetryCount {
-			// Let the caller function decide further if the volume is not reachable
-			// even after 12 seconds ( This number was arrived at
+			// Let the caller function decide further if the volume is
+			// not reachable even after 12 seconds ( This number was arrived at
 			// based on the kubelets retrying logic. Kubelet retries to publish
 			// volume after every 14s )
-			return fmt.Errorf("iSCSI Target not reachable, TargetPortal %v, err:%v",
+			return fmt.Errorf(
+				"iSCSI Target not reachable, TargetPortal %v, err:%v",
 				targetPortal, err)
 		}
 	}
@@ -146,8 +164,11 @@ checkVolumeStatus:
 		// ready to accdept IOs after 12 seconds ( This number was arrived at
 		// based on the kubelets retrying logic. Kubelet retries to publish
 		// volume after every 14s )
-		return fmt.Errorf("Volume is not ready: Replicas yet to connect to controller")
+		return fmt.Errorf(
+			"Volume is not ready: Replicas yet to connect to controller",
+		)
 	} else {
+		TransitionVolList[volumeID] = apis.CSIVolumeStatusWaitingForVolumeToBeReady
 		time.Sleep(VolumeWaitTimeout * time.Second)
 		retries++
 		goto checkVolumeStatus
@@ -155,6 +176,7 @@ checkVolumeStatus:
 	return nil
 }
 
+/*
 // GetVolumeByName fetches the volume from Volumes list based on th input name
 func GetVolumeByName(volName string) (*apis.CSIVolume, error) {
 	for _, Vol := range Volumes {
@@ -165,8 +187,10 @@ func GetVolumeByName(volName string) (*apis.CSIVolume, error) {
 	return nil,
 		fmt.Errorf("volume name %s does not exit in the volumes list", volName)
 }
-
-func listContains(mountPath string, list []mount.MountPoint) (*mount.MountPoint, bool) {
+*/
+func listContains(
+	mountPath string, list []mount.MountPoint,
+) (*mount.MountPoint, bool) {
 	for _, info := range list {
 		if info.Path == mountPath {
 			mntInfo := info
@@ -187,41 +211,53 @@ func listContains(mountPath string, list []mount.MountPoint) (*mount.MountPoint,
 // For each remount operation a new goroutine is created, so that if multiple
 // volumes have lost their original state they can all be remounted in parallel
 func MonitorMounts() {
+	var (
+		err        error
+		csivolList *apis.CSIVolumeList
+		mountList  []mount.MountPoint
+	)
 	mounter := mount.New("")
 	ticker := time.NewTicker(MonitorMountRetryTimeout * time.Second)
 	for {
 		select {
 		case <-ticker.C:
 			// Get list of mounted paths present with the node
-			list, _ := mounter.List()
-			VolumesListLock.RLock()
-			for _, vol := range Volumes {
-				if vol.Spec.Volume.DevicePath == "" {
-					// If device path is not set implies the node publish
-					// operation is not completed yet
-					continue
-				}
+			TransitionVolListLock.Lock()
+			if mountList, err = mounter.List(); err != nil {
+				break
+			}
+			if csivolList, err = GetVolList(NodeIDENV); err != nil {
+				break
+			}
+			for _, vol := range csivolList.Items {
 				// Search the volume in the list of mounted volumes at the node
 				// retrieved above
-				mountPoint, exists := listContains(vol.Spec.Volume.MountPath, list)
+				mountPoint, exists := listContains(
+					vol.Spec.Volume.MountPath, mountList,
+				)
 				// If the volume is present in the list verify its state
 				if exists && verifyMountOpts(mountPoint.Opts, "rw") {
 					// Continue with remaining volumes since this volume looks
 					// to be in good shape
 					continue
 				}
-				// Skip remount if the volume is already being remounted
-				if _, isRemounting := ReqMountList[vol.Spec.Volume.Name]; isRemounting {
-					continue
+				if _, ok := TransitionVolList[vol.Spec.Volume.Name]; !ok {
+					TransitionVolList[vol.Spec.Volume.Name] = vol.Status
+					ReqMountList[vol.Spec.Volume.Name] = vol.Status
+					csivol := vol
+					go func() {
+						devicePath, err := RemountVolume(
+							exists, &csivol, mountPoint,
+							vol.Spec.Volume.MountPath,
+						)
+						logrus.Errorf(
+							"Remount failed: DevPath: %v %v",
+							devicePath, err,
+						)
+					}()
 				}
-				// Add volume to the reqMountList and start a goroutine to
-				// remount it
-				ReqMountListLock.Lock()
-				ReqMountList[vol.Spec.Volume.Name] = true
-				ReqMountListLock.Unlock()
-				go RemountVolume(exists, vol, mountPoint, vol.Spec.Volume.MountPath)
 			}
-			VolumesListLock.RUnlock()
+			TransitionVolListLock.Unlock()
 		}
 	}
 }
@@ -231,19 +267,20 @@ func MonitorMounts() {
 // are met. This function stops the driver from overloading the OS with iSCSI
 // login commands.
 func WaitForVolumeReadyAndReachable(vol *apis.CSIVolume) {
+	var err error
 	for {
 		// This function return after 12s in case the volume is not ready
-		if err := WaitForVolumeToBeReady(vol.Spec.Volume.Name); err != nil {
+		if err = WaitForVolumeToBeReady(vol.Spec.Volume.Name); err != nil {
 			logrus.Error(err)
 			// Keep retrying until the volume is ready
 			continue
 		}
 		// This function return after 12s in case the volume is not reachable
-		if err := WaitForVolumeToBeReachable(vol.Spec.ISCSI.TargetPortal); err == nil {
+		err = WaitForVolumeToBeReachable(vol.Spec.ISCSI.TargetPortal)
+		if err == nil {
 			return
-		} else {
-			logrus.Error(err)
 		}
+		logrus.Error(err)
 	}
 }
 
@@ -259,7 +296,11 @@ func verifyMountOpts(opts []string, desiredOpt string) bool {
 // RemountVolume unmounts the volume if it is already mounted in an undesired
 // state and then tries to mount again. If it is not mounted the volume, first
 // the disk will be attached via iSCSI login and then it will be mounted
-func RemountVolume(exists bool, vol *apis.CSIVolume, mountPoint *mount.MountPoint, desiredMountOpt string) (devicePath string, err error) {
+func RemountVolume(
+	exists bool, vol *apis.CSIVolume,
+	mountPoint *mount.MountPoint,
+	desiredMountOpt string,
+) (devicePath string, err error) {
 	mounter := mount.New("")
 	options := []string{"rw"}
 	// Wait until it is possible to chhange the state of mountpoint or when
@@ -276,12 +317,33 @@ func RemountVolume(exists bool, vol *apis.CSIVolume, mountPoint *mount.MountPoin
 		// A complete attach and mount is performed if for some reason disk is
 		// not present in the mounted list with the OS.
 		devicePath, err = iscsi.AttachAndMountDisk(vol)
-		//TODO Updadate devicePath in inmemory list and CR
 	}
-	ReqMountListLock.Lock()
+	TransitionVolListLock.Lock()
 	// Remove the volume from ReqMountList once the remount operation is
 	// complete
+	delete(TransitionVolList, vol.Spec.Volume.Name)
 	delete(ReqMountList, vol.Spec.Volume.Name)
-	ReqMountListLock.Unlock()
+	TransitionVolListLock.Unlock()
 	return
+}
+
+// GetMounts gets mountpoints for the specified volume
+func GetMounts(volumeID string) ([]string, error) {
+
+	var (
+		currentMounts []string
+		err           error
+		mountList     []mount.MountPoint
+	)
+	mounter := mount.New("")
+	// Get list of mounted paths present with the node
+	if mountList, err = mounter.List(); err != nil {
+		return nil, err
+	}
+	for _, mntInfo := range mountList {
+		if strings.Contains(mntInfo.Path, volumeID) {
+			currentMounts = append(currentMounts, mntInfo.Path)
+		}
+	}
+	return currentMounts, nil
 }

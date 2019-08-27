@@ -407,16 +407,17 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 		return "", nil
 	}
 
-	if err := os.MkdirAll(mntPath, 0750); err != nil {
-		glog.Errorf("iscsi: failed to mkdir %s, error", mntPath)
-		return "", err
-	}
-
-	// Persist iscsi disk config to json file for DetachDisk path
-	if err := util.persistISCSI(*(b.iscsiDisk), b.targetPath); err != nil {
-		glog.Errorf("iscsi: failed to save iscsi config with error: %v", err)
-		return "", err
-	}
+	/*
+		if err := os.MkdirAll(mntPath, 0750); err != nil {
+			glog.Errorf("iscsi: failed to mkdir %s, error", mntPath)
+			return "", err
+		}
+			// Persist iscsi disk config to json file for DetachDisk path
+			if err := util.persistISCSI(*(b.iscsiDisk), b.targetPath); err != nil {
+				glog.Errorf("iscsi: failed to save iscsi config with error: %v", err)
+				return "", err
+			}
+	*/
 
 	for _, path := range devicePaths {
 		// There shouldnt be any empty device paths. However adding this check
@@ -492,18 +493,23 @@ func (util *ISCSIUtil) DetachDisk(
 	var volName, iqn, iface, initiatorName string
 	found := true
 
-	// load iscsi disk config from json file
-	if err := util.loadISCSI(c.iscsiDisk, targetPath); err == nil {
-		bkpPortal, iqn, iface, volName = c.iscsiDisk.Portals, c.iscsiDisk.Iqn,
-			c.iscsiDisk.Iface, c.iscsiDisk.VolName
-		initiatorName = c.iscsiDisk.InitiatorName
-	} else {
-		glog.Errorf(
-			"iscsi detach disk: failed to get iscsi config from path %s Error: %v",
-			targetPath, err,
-		)
-		return err
-	}
+	/*
+		// load iscsi disk config from json file
+		if err := util.loadISCSI(c.iscsiDisk, targetPath); err == nil {
+			bkpPortal, iqn, iface, volName = c.iscsiDisk.Portals, c.iscsiDisk.Iqn,
+				c.iscsiDisk.Iface, c.iscsiDisk.VolName
+			initiatorName = c.iscsiDisk.InitiatorName
+		} else {
+			glog.Errorf(
+				"iscsi detach disk: failed to get iscsi config from path %s Error: %v",
+				targetPath, err,
+			)
+			return err
+		}
+	*/
+	bkpPortal, iqn, iface, volName = c.iscsiDisk.Portals, c.iscsiDisk.Iqn,
+		c.iscsiDisk.Iface, c.iscsiDisk.VolName
+	initiatorName = c.iscsiDisk.InitiatorName
 	portals := removeDuplicate(bkpPortal)
 	if len(portals) == 0 {
 		return fmt.Errorf(
@@ -659,4 +665,22 @@ func cloneIface(b iscsiDiskMounter, newIface string) error {
 		}
 	}
 	return lastErr
+}
+
+// UnmountDisk logs out of the iSCSI volume and the corresponding path is removed
+func (util *ISCSIUtil) UnmountDisk(
+	c iscsiDiskUnmounter,
+	targetPath string,
+) error {
+	if pathExists, pathErr := mount.PathExists(targetPath); pathErr != nil {
+		return fmt.Errorf("Error checking if path exists: %v", pathErr)
+	} else if !pathExists {
+		glog.Warningf(
+			"Warning: Unmount skipped because path does not exist: %v",
+			targetPath,
+		)
+		return nil
+	}
+
+	return c.mounter.Unmount(targetPath)
 }

@@ -15,6 +15,7 @@ func UnmountAndDetachDisk(vol *apis.CSIVolume, path string) error {
 		Portals: []string{vol.Spec.ISCSI.TargetPortal},
 		Iqn:     vol.Spec.ISCSI.Iqn,
 		lun:     vol.Spec.ISCSI.Lun,
+		Iface:   vol.Spec.ISCSI.IscsiInterface,
 	}
 
 	diskUnmounter := &iscsiDiskUnmounter{
@@ -23,11 +24,7 @@ func UnmountAndDetachDisk(vol *apis.CSIVolume, path string) error {
 		exec:      mount.NewOsExec(),
 	}
 	util := &ISCSIUtil{}
-	err := util.DetachDisk(*diskUnmounter, path)
-	if err != nil {
-		return status.Error(codes.Internal, err.Error())
-	}
-	return nil
+	return util.DetachDisk(*diskUnmounter, path)
 }
 
 // AttachAndMountDisk logs in to the iSCSI Volume
@@ -38,14 +35,20 @@ func AttachAndMountDisk(vol *apis.CSIVolume) (string, error) {
 	}
 	iscsiInfo, err := getISCSIInfo(vol)
 	if err != nil {
-		return "", status.Error(codes.Internal, err.Error())
+		return "", err
 	}
 	diskMounter := getISCSIDiskMounter(iscsiInfo, vol)
 
 	util := &ISCSIUtil{}
-	devicePath, err := util.AttachDisk(*diskMounter)
-	if err != nil {
-		return "", status.Error(codes.Internal, err.Error())
+	return util.AttachDisk(*diskMounter)
+}
+
+// Unmount unmounts the path provided
+func Unmount(path string) error {
+	diskUnmounter := &iscsiDiskUnmounter{
+		mounter: &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: mount.NewOsExec()},
+		exec:    mount.NewOsExec(),
 	}
-	return devicePath, err
+	util := &ISCSIUtil{}
+	return util.UnmountDisk(*diskUnmounter, path)
 }
