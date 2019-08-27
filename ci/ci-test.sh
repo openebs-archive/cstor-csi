@@ -15,6 +15,7 @@
 #!/usr/bin/env bash
 
 OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
+CSPC_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/cspc-operator.yaml
 CSI_OPERATOR="$GOPATH/src/github.com/openebs/csi/deploy/csi-operator.yaml"
 
 SRC_REPO="https://github.com/openebs/maya.git"
@@ -23,6 +24,7 @@ DST_PATH="$GOPATH/src/github.com/openebs"
 # Prepare env for runnging BDD tests
 # Minikube is already running
 kubectl apply -f $OPENEBS_OPERATOR
+kubectl apply -f $CSPC_OPERATOR
 kubectl apply -f $CSI_OPERATOR
 
 # Start running BDD tests in maya for CSI
