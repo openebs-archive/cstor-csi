@@ -206,6 +206,9 @@ func waitAndReverifyResizeStatus(cvcName, sSize string) error {
 func updateCVCSize(oldCVCObj *apismaya.CStorVolumeClaim, sSize string) error {
 	newCVCObj, err := cvc.BuildFrom(oldCVCObj.DeepCopy()).
 		WithCapacity(sSize).Build()
+	if err != nil {
+		return err
+	}
 	_, err = cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Patch(oldCVCObj, newCVCObj)
