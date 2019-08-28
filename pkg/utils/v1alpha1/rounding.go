@@ -32,6 +32,6 @@ func ByteCount(b uint64) string {
 		div *= unit
 		index++
 	}
-	return fmt.Sprintf("%d%c",
+	return fmt.Sprintf("%d%ci",
 		uint64(b)/uint64(div), "KMGTPE"[index])
 }

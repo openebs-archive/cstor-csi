@@ -154,11 +154,18 @@ func ResizeVolume(
 		return err
 	}
 	desiredSize, _ := resource.ParseQuantity(sSize)
+	cvcDesiredSize := cvc.Spec.Capacity[corev1.ResourceStorage]
+
+	if (desiredSize).Cmp(cvcDesiredSize) < 0 {
+		return fmt.Errorf("Volume shrink not supported from: %v to: %v",
+			cvc.Status.Capacity, cvc.Spec.Capacity)
+	}
+
 	if cvc.Status.Phase == apismaya.CStorVolumeClaimPhasePending {
 		return handleResize(cvc, sSize)
 	}
 	cvcActualSize := cvc.Status.Capacity[corev1.ResourceStorage]
-	cvcDesiredSize := cvc.Spec.Capacity[corev1.ResourceStorage]
+
 	if cvcDesiredSize.Cmp(cvcActualSize) > 0 {
 		return fmt.Errorf("ResizeInProgress from: %v to: %v",
 			cvcActualSize, cvcDesiredSize)
@@ -166,10 +173,6 @@ func ResizeVolume(
 
 	if (desiredSize).Cmp(cvcActualSize) == 0 {
 		return nil
-	}
-	if (desiredSize).Cmp(cvcDesiredSize) == 0 {
-		return fmt.Errorf("ResizeInProgress from: %v to: %v",
-			cvc.Status.Capacity, cvc.Spec.Capacity)
 	}
 	return handleResize(cvc, sSize)
 
