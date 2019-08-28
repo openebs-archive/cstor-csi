@@ -98,10 +98,13 @@ rules:
     verbs: ["get", "list"]
   - apiGroups: [""]
     resources: ["persistentvolumes", "services"]
-    verbs: ["get", "list", "watch", "create", "delete"]
+    verbs: ["get", "list", "watch", "create", "delete", "update", "patch"]
   - apiGroups: [""]
     resources: ["persistentvolumeclaims"]
     verbs: ["get", "list", "watch", "update"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims/status"]
+    verbs: ["update", "patch"]
   - apiGroups: ["storage.k8s.io"]
     resources: ["storageclasses", "csinodes"]
     verbs: ["get", "list", "watch"]
@@ -116,6 +119,9 @@ rules:
     verbs: ["get", "list"]
   - apiGroups: ["*"]
     resources: ["cstorvolumeclaims"]
+    verbs: ["*"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
     verbs: ["*"]
 ---
 
@@ -155,7 +161,7 @@ spec:
       serviceAccount: openebs-csi-controller-sa
       containers:
         - name: csi-resizer
-          image: quay.io/k8scsi/csi-resizer:canary
+          image: quay.io/k8scsi/csi-resizer:v0.1.0
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -163,7 +169,7 @@ spec:
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          imagePullPolicy: "Always"
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
@@ -176,6 +182,10 @@ spec:
             - "--v=5"
             - "--feature-gates=Topology=true"
           env:
+            - name: MY_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
           volumeMounts:
@@ -367,7 +377,7 @@ rules:
     verbs: ["get", "list", "watch", "create", "update", "patch"]
   - apiGroups: [""]
     resources: ["persistentvolumes", "nodes", "services"]
-    verbs: ["get", "list"]
+    verbs: ["get", "list", "patch"]
   - apiGroups: ["*"]
     resources: ["csivolumes", "cstorvolumes","cstorvolumeclaims"]
     verbs: ["get", "list", "watch", "create", "update", "delete", "patch"]
