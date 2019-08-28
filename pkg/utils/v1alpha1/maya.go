@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
@@ -60,7 +59,7 @@ func ProvisionVolume(
 		CVCFinalizer,
 	}
 
-	sSize := strconv.FormatInt(size, 10)
+	sSize := ByteCount(uint64(size))
 	cvcObj, err := cvc.NewBuilder().
 		WithName(volName).
 		WithNamespace(OpenEBSNamespace).
@@ -149,7 +148,7 @@ func ResizeVolume(
 	size int64,
 ) error {
 
-	sSize := strconv.FormatInt(size, 10)
+	sSize := ByteCount(uint64(size))
 	cvc, err := getCVC(volumeID)
 	if err != nil {
 		return err
