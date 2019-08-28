@@ -52,3 +52,23 @@ func Unmount(path string) error {
 	util := &ISCSIUtil{}
 	return util.UnmountDisk(*diskUnmounter, path)
 }
+
+// ResizeVolume rescans the iSCSI session and runs the resize to filesystem
+// command on that particular device
+func ResizeVolume(volumePath string) error {
+	mounter := mount.New("")
+	list, _ := mounter.List()
+	for _, mpt := range list {
+		if mpt.Path == volumePath {
+			util := &ISCSIUtil{}
+			if err := util.ReScan(); err != nil {
+				return err
+			}
+			if err := util.ReSizeFS(mpt.Device); err != nil {
+				return err
+			}
+			break
+		}
+	}
+	return nil
+}

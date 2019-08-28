@@ -138,6 +138,9 @@ const (
 	// by the application, therefore CSI has only performed iSCSI login
 	// operation on this volume and avoided filesystem creation and mount.
 	CSIVolumeStatusRaw CSIVolumeStatus = "Raw"
+	// CSIVolumeStatusResizeInProgress indicates that the volume is being
+	// resized
+	CSIVolumeStatusResizeInProgress CSIVolumeStatus = "ResizeInProgress"
 	// CSIVolumeStatusMountFailed indicates that login and mount process from
 	// the volume has bben started but failed kubernetes needs to retry sending
 	// nodepublish
