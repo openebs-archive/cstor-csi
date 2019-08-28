@@ -1,13 +1,16 @@
 package utils
 
 import (
-	"strconv"
+	"fmt"
+	"time"
 
 	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
 	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
 	cv "github.com/openebs/csi/pkg/cstor/volume/v1alpha1"
 	cvc "github.com/openebs/csi/pkg/cvc/v1alpha1"
 	csivol "github.com/openebs/csi/pkg/volume/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -56,7 +59,7 @@ func ProvisionVolume(
 		CVCFinalizer,
 	}
 
-	sSize := strconv.FormatInt(size, 10)
+	sSize := ByteCount(uint64(size))
 	cvcObj, err := cvc.NewBuilder().
 		WithName(volName).
 		WithNamespace(OpenEBSNamespace).
@@ -136,4 +139,86 @@ func FetchAndUpdateISCSIDetails(volumeID string, vol *apis.CSIVolume) error {
 		WithIscsiInterface(DefaultIscsiInterface).
 		Build()
 	return err
+}
+
+// ResizeVolume updates the CstorVolumeClaim(cvc) CR,
+// watcher for cvc is present in maya-apiserver
+func ResizeVolume(
+	volumeID string,
+	size int64,
+) error {
+
+	sSize := ByteCount(uint64(size))
+	cvc, err := getCVC(volumeID)
+	if err != nil {
+		return err
+	}
+	desiredSize, _ := resource.ParseQuantity(sSize)
+	cvcDesiredSize := cvc.Spec.Capacity[corev1.ResourceStorage]
+
+	if (desiredSize).Cmp(cvcDesiredSize) < 0 {
+		return fmt.Errorf("Volume shrink not supported from: %v to: %v",
+			cvc.Status.Capacity, cvc.Spec.Capacity)
+	}
+
+	if cvc.Status.Phase == apismaya.CStorVolumeClaimPhasePending {
+		return handleResize(cvc, sSize)
+	}
+	cvcActualSize := cvc.Status.Capacity[corev1.ResourceStorage]
+
+	if cvcDesiredSize.Cmp(cvcActualSize) > 0 {
+		return fmt.Errorf("ResizeInProgress from: %v to: %v",
+			cvcActualSize, cvcDesiredSize)
+	}
+
+	if (desiredSize).Cmp(cvcActualSize) == 0 {
+		return nil
+	}
+	return handleResize(cvc, sSize)
+
+}
+
+func handleResize(
+	cvc *apismaya.CStorVolumeClaim, sSize string,
+) error {
+	if err := updateCVCSize(cvc, sSize); err != nil {
+		return err
+	}
+	if cvc.Publish.NodeID == "" {
+		return nil
+	}
+	return waitAndReverifyResizeStatus(cvc.Name, sSize)
+}
+
+func waitAndReverifyResizeStatus(cvcName, sSize string) error {
+
+	time.Sleep(5 * time.Second)
+	cvcObj, err := getCVC(cvcName)
+	if err != nil {
+		return err
+	}
+	desiredSize, _ := resource.ParseQuantity(sSize)
+	cvcActualSize := cvcObj.Status.Capacity[corev1.ResourceStorage]
+	if (desiredSize).Cmp(cvcActualSize) != 0 {
+		return fmt.Errorf("ResizeInProgress from: %v to: %v",
+			cvcActualSize, desiredSize)
+	}
+	return nil
+}
+func updateCVCSize(oldCVCObj *apismaya.CStorVolumeClaim, sSize string) error {
+	newCVCObj, err := cvc.BuildFrom(oldCVCObj.DeepCopy()).
+		WithCapacity(sSize).Build()
+	if err != nil {
+		return err
+	}
+	_, err = cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Patch(oldCVCObj, newCVCObj)
+	return err
+}
+
+func getCVC(cvcName string) (*apismaya.CStorVolumeClaim, error) {
+	return cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Get(cvcName, metav1.GetOptions{})
 }

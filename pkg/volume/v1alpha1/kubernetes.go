@@ -157,7 +157,7 @@ func defaultList(
 		List(opts)
 }
 
-// defaultCreate is the default implementation to delete
+// defaultDel is the default implementation to delete
 // a csi volume instance in kubernetes cluster
 func defaultDel(
 	cli *clientset.Clientset,

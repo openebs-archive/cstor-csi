@@ -332,7 +332,7 @@ func (ns *node) NodeGetCapabilities(
 			{
 				Type: &csi.NodeServiceCapability_Rpc{
 					Rpc: &csi.NodeServiceCapability_RPC{
-						Type: csi.NodeServiceCapability_RPC_UNKNOWN,
+						Type: csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
 					},
 				},
 			},
@@ -382,8 +382,30 @@ func (ns *node) NodeExpandVolume(
 	ctx context.Context,
 	req *csi.NodeExpandVolumeRequest,
 ) (*csi.NodeExpandVolumeResponse, error) {
+	volumeID := req.GetVolumeId()
+	err := addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusResizeInProgress)
+	if err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle NodeExpandVolumeRequest for %s, {%s}",
+			req.VolumeId,
+			err.Error(),
+		)
+	}
+	defer removeVolumeFromTransitionList(volumeID)
 
-	return nil, nil
+	if err = iscsi.ResizeVolume(req.GetVolumePath()); err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle NodeExpandVolumeRequest for %s, {%s}",
+			req.VolumeId,
+			err.Error(),
+		)
+	}
+
+	return &csi.NodeExpandVolumeResponse{
+		CapacityBytes: req.GetCapacityRange().GetRequiredBytes(),
+	}, nil
 }
 
 // NodeGetVolumeStats returns statistics for the

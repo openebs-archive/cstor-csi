@@ -165,8 +165,19 @@ func (cs *controller) ControllerExpandVolume(
 	ctx context.Context,
 	req *csi.ControllerExpandVolumeRequest,
 ) (*csi.ControllerExpandVolumeResponse, error) {
-
-	return nil, status.Error(codes.Unimplemented, "")
+	updatedSize := req.GetCapacityRange().GetRequiredBytes()
+	if err := utils.ResizeVolume(req.VolumeId, updatedSize); err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle ControllerExpandVolumeRequest for %s, {%s}",
+			req.VolumeId,
+			err.Error(),
+		)
+	}
+	return csipayload.NewControllerExpandVolumeResponseBuilder().
+		WithCapacityBytes(updatedSize).
+		WithNodeExpansionRequired(true).
+		Build(), nil
 }
 
 // CreateSnapshot creates a snapshot for given volume
@@ -315,6 +326,7 @@ func newControllerCapabilities() []*csi.ControllerServiceCapability {
 	var capabilities []*csi.ControllerServiceCapability
 	for _, cap := range []csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
+		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
 	} {
 		capabilities = append(capabilities, fromType(cap))
 	}

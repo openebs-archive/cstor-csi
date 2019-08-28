@@ -684,3 +684,30 @@ func (util *ISCSIUtil) UnmountDisk(
 
 	return c.mounter.Unmount(targetPath)
 }
+
+// ReScan rescans all the iSCSI sessions on the host
+func (util *ISCSIUtil) ReScan() error {
+	b := &iscsiDiskMounter{
+		exec: mount.NewOsExec(),
+	}
+	out, err := b.exec.Run("iscsiadm", "-m", "session", "--rescan")
+	if err != nil {
+		glog.Errorf("iscsi: rescan failed error: %s", string(out))
+		return err
+	}
+	return nil
+}
+
+// ReSizeFS can be used to run a resize command on the filesystem to expand the
+// filesystem to the actual size of the device
+func (util *ISCSIUtil) ReSizeFS(path string) error {
+	b := &iscsiDiskMounter{
+		exec: mount.NewOsExec(),
+	}
+	out, err := b.exec.Run("resize2fs", path)
+	if err != nil {
+		glog.Errorf("iscsi: resize failed error: %s", string(out))
+		return err
+	}
+	return nil
+}
