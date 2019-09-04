@@ -347,3 +347,56 @@ func GetMounts(volumeID string) ([]string, error) {
 	}
 	return currentMounts, nil
 }
+
+// VerifyIfMountRequired returns true if volume is already mounted on targetPath
+// and unmounts if it is mounted on a different path
+func VerifyIfMountRequired(volumeID, targetPath string) (bool, error) {
+	var (
+		currentMounts []string
+		err           error
+	)
+	currentMounts, err = GetMounts(volumeID)
+	if err != nil {
+		return false, err
+	}
+	if len(currentMounts) > 1 {
+		logrus.Fatalf(
+			"More than one mounts for volume:%s mounts: %v",
+			volumeID, currentMounts,
+		)
+	}
+	if len(currentMounts) == 1 {
+		if currentMounts[0] == targetPath {
+			return false, nil
+		}
+		if err = iscsi.Unmount(currentMounts[0]); err != nil {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
+// IsUnmountRequired returns true if the volume needs to be unmounted
+func IsUnmountRequired(volumeID, targetPath string) (bool, error) {
+	var (
+		currentMounts []string
+		err           error
+	)
+	currentMounts, err = GetMounts(volumeID)
+	if err != nil {
+		return false, err
+	}
+	if len(currentMounts) > 1 {
+		logrus.Fatalf(
+			"More than one mounts for volume:%s mounts: %v",
+			volumeID, currentMounts,
+		)
+	}
+	if len(currentMounts) == 0 {
+		return false, nil
+	}
+	if currentMounts[0] != targetPath {
+		return false, err
+	}
+	return true, nil
+}

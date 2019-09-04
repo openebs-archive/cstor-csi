@@ -28,6 +28,8 @@ type Interface interface {
 	CStorVolumes() CStorVolumeInformer
 	// CStorVolumeClaims returns a CStorVolumeClaimInformer.
 	CStorVolumeClaims() CStorVolumeClaimInformer
+	// JivaVolumeClaims returns a JivaVolumeClaimInformer.
+	JivaVolumeClaims() JivaVolumeClaimInformer
 }
 
 type version struct {
@@ -49,4 +51,9 @@ func (v *version) CStorVolumes() CStorVolumeInformer {
 // CStorVolumeClaims returns a CStorVolumeClaimInformer.
 func (v *version) CStorVolumeClaims() CStorVolumeClaimInformer {
 	return &cStorVolumeClaimInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// JivaVolumeClaims returns a JivaVolumeClaimInformer.
+func (v *version) JivaVolumeClaims() JivaVolumeClaimInformer {
+	return &jivaVolumeClaimInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

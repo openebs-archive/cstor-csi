@@ -88,6 +88,7 @@ deepcopy-install:
 deepcopy:
 	@echo "+ Generating deepcopy funcs for $(GEN_SRC)"
 	@deepcopy-gen \
+		-v 5 \
 		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
 		--output-file-base zz_generated.deepcopy \
 		--go-header-file ./buildscripts/custom-boilerplate.go.txt

@@ -36,6 +36,10 @@ func (c *FakeOpenebsV1alpha1) CStorVolumeClaims(namespace string) v1alpha1.CStor
 	return &FakeCStorVolumeClaims{c, namespace}
 }
 
+func (c *FakeOpenebsV1alpha1) JivaVolumeClaims(namespace string) v1alpha1.JivaVolumeClaimInterface {
+	return &FakeJivaVolumeClaims{c, namespace}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeOpenebsV1alpha1) RESTClient() rest.Interface {

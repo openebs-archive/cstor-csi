@@ -8,7 +8,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	config "github.com/openebs/csi/pkg/config/v1alpha1"
-	service "github.com/openebs/csi/pkg/service/v1alpha1"
+	service "github.com/openebs/csi/pkg/service"
 	"github.com/openebs/csi/pkg/version"
 	"github.com/spf13/cobra"
 )
@@ -51,6 +51,10 @@ func main() {
 		&config.PluginType, "plugin", "csi-plugin", "Type of this driver i.e. controller or node",
 	)
 
+	cmd.Flags().StringVar(
+		&config.CASEngine, "casengine", "cas-engine", "Type of engine i.e. cstor or jiva",
+	)
+
 	err := cmd.Execute()
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "%s", err.Error())
@@ -63,14 +67,18 @@ func run(config *config.Config) {
 		config.Version = version.Current()
 	}
 
+	if config.CASEngine == "" {
+		config.CASEngine = "cstor"
+	}
 	logrus.Infof("%s - %s", version.Current(), version.GetGitCommit())
 	logrus.Infof(
-		"DriverName: %s Plugin: %s EndPoint: %s URL: %s NodeID: %s",
+		"DriverName: %s Plugin: %s EndPoint: %s URL: %s NodeID: %s CASEngine: %s",
 		config.DriverName,
 		config.PluginType,
 		config.Endpoint,
 		config.RestURL,
 		config.NodeID,
+		config.CASEngine,
 	)
 
 	err := service.New(config).Run()

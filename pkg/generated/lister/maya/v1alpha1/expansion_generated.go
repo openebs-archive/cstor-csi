@@ -33,3 +33,11 @@ type CStorVolumeClaimListerExpansion interface{}
 // CStorVolumeClaimNamespaceListerExpansion allows custom methods to be added to
 // CStorVolumeClaimNamespaceLister.
 type CStorVolumeClaimNamespaceListerExpansion interface{}
+
+// JivaVolumeClaimListerExpansion allows custom methods to be added to
+// JivaVolumeClaimLister.
+type JivaVolumeClaimListerExpansion interface{}
+
+// JivaVolumeClaimNamespaceListerExpansion allows custom methods to be added to
+// JivaVolumeClaimNamespaceLister.
+type JivaVolumeClaimNamespaceListerExpansion interface{}

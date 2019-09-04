@@ -46,6 +46,9 @@ type Config struct {
 	// A REST Server is exposed on this URL for internal
 	// operations and Day-2 ops
 	RestURL string
+
+	// CASEngine is the storage engine to be provisioned
+	CASEngine string
 }
 
 // Default returns a new instance of config

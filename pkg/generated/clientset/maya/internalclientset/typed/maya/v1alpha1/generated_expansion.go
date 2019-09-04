@@ -21,3 +21,5 @@ package v1alpha1
 type CStorVolumeExpansion interface{}
 
 type CStorVolumeClaimExpansion interface{}
+
+type JivaVolumeClaimExpansion interface{}
