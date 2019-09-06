@@ -182,7 +182,7 @@ be seen in running state.
 #### Notes:
 - Only dynamically provisioned volumes can be resized.
 - You can only resize volumes containing a file system if the file system is XFS, Ext3, or Ext4.
-- Make sure that the storage class has the allowVolumeExpansion field set to true when the volume is provisioned.
+- Make sure that the storage class has the `allowVolumeExpansion` field set to `true` when the volume is provisioned.
 
 #### Steps:
 1. Update the increased pvc size in the pvc spec section (pvc.spec.resources.requests.storage).
