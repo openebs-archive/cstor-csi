@@ -6,7 +6,7 @@ CSI driver implementation for OpenEBS storage engines.
 
 This project is under active development and considered to be in Alpha state.
 
-The current implementation only supports provisioning and de-provisioning of cStor Volumes. 
+The current implementation only supports provisioning, de-provisioning and expansion of cStor Volumes. 
 
 ## Usage
 
@@ -16,12 +16,13 @@ Before setting up OpenEBS CSI driver make sure your Kubernetes Cluster
 meets the following prerequisites:
 
 1. You will need to have Kubernetes version 1.14 or higher
-2. You will need to have OpenEBS Version 1.1 or higher installed. 
+2. You will need to have OpenEBS Version 1.2 or higher installed. 
    The steps to install OpenEBS are [here](https://docs.openebs.io/docs/next/quickstart.html)
 3. iSCSI initiator utils installed on all the worker nodes
 4. You have access to install RBAC components into kube-system namespace.
    The OpenEBS CSI driver components are installed in kube-system 
-   namespace to allow them to be flagged as system critical components. 
+   namespace to allow them to be flagged as system critical components.
+5. You will need to turn on  ExpandCSIVolumes and ExpandInUsePersistentVolumes feature gates on  kubelets and kube-apiserver:
 
 ### Setup OpenEBS CSI Driver
 
@@ -67,15 +68,14 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
 ### Provision a cStor volume using OpenEBS CSI driver
 
 1. Make sure you already have a cStor Pool Created or you can 
-   create one using the below command. In the below spc.yaml make sure 
-   that maxPools should be greater than or equal to the number of 
-   replicas required for the volume.
+   create one using the below command. In the below cspc.yaml make sure 
+   that the specified pools list should be greater than or equal to
+   the number of replicas required for the volume.
 
-   The following command will create the specified number of cStor Pools
-   using the Sparse files. 
+   The following command will create the specified cStor Pools in the cspc yaml:
 
    ```
-   kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/spc.yaml
+   kubectl apply -f https://raw.githubusercontent.com/openebs/csi/master/deploy/cspc.yaml
    ```
 
 2. Create a Storage Class to dynamically provision volumes 
@@ -88,10 +88,11 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
    provisioner: openebs-csi.openebs.io
    allowVolumeExpansion: true
    parameters:
-     storagePoolClaim: cstor-sparse-pool
+     cas-type: cstor
+     cstorPoolCluster: cstor-sparse-cspc
      replicaCount: "1"
    ```
-   You will need to specify the correct cStor SPC from your cluster 
+   You will need to specify the correct cStor CSPC from your cluster 
    and specify the desired `replicaCount` for the volume. The `replicaCount`
    should be less than or equal to the max pools available.  
 
@@ -175,3 +176,18 @@ in progress, the application pod may throw some errors like:
 
 On successful completion of the above steps the application pod can 
 be seen in running state.
+
+### Expand a cStor volume using OpenEBS CSI driver
+
+#### Notes:
+- Only dynamically provisioned volumes can be resized.
+- You can only resize volumes containing a file system if the file system is XFS, Ext3, or Ext4.
+- Make sure that the storage class has the allowVolumeExpansion field set to true when the volume is provisioned.
+
+#### Steps:
+1. Update the increased pvc size in the pvc spec section (pvc.spec.resources.requests.storage).
+2. Wait for the updated capacity to reflect in PVC status (pvc.status.capacity.storage).
+
+It is internally a two step process for volumes containing a file system:
+1. Volume expansion
+2. FileSystem expansion
