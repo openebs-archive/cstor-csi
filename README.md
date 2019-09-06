@@ -70,7 +70,8 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
 1. Make sure you already have a cStor Pool Created or you can 
    create one using the below command. In the below cspc.yaml make sure 
    that the specified pools list should be greater than or equal to
-   the number of replicas required for the volume.
+   the number of replicas required for the volume. Update `kubernetes.io/hostname`
+   and `blockDeviceName` in the below yaml before applying the same.
 
    The following command will create the specified cStor Pools in the cspc yaml:
 
