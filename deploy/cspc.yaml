@@ -1,0 +1,22 @@
+apiVersion: openebs.io/v1alpha1
+kind: CStorPoolCluster
+metadata:
+  name: cstor-sparse-cspc
+  namespace: openebs
+spec:
+  pools:
+  - nodeSelector:
+      kubernetes.io/hostname: "csi-master"
+    raidGroups:
+    - type: "stripe"
+      isWriteCache: false
+      isSpare: false
+      isReadCache: false
+      blockDevices:
+      - blockDeviceName: "sparse-4a8868bd7cdd457e9f5365262d62187e"
+    poolConfig:
+      cacheFile: ""
+      defaultRaidGroupType: "stripe"
+      overProvisioning: false
+      compression: "off"
+

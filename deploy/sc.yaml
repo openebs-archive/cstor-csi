@@ -5,5 +5,6 @@ metadata:
 provisioner: openebs-csi.openebs.io
 allowVolumeExpansion: true
 parameters:
+  cas-type: cstor
   replicaCount: "1"
-  storagePoolClaim: cstor-sparse-pool
+  cstorPoolCluster: cstor-sparse-cspc
