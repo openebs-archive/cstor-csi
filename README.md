@@ -1,4 +1,6 @@
 # OpenEBS CSI Driver
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fopenebs%2Fcsi.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fopenebs%2Fcsi?ref=badge_shield)
+
 
 CSI driver implementation for OpenEBS storage engines. 
 
@@ -192,3 +194,7 @@ be seen in running state.
 It is internally a two step process for volumes containing a file system:
 1. Volume expansion
 2. FileSystem expansion
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fopenebs%2Fcsi.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fopenebs%2Fcsi?ref=badge_large)
