@@ -1,7 +1,7 @@
-# This manifest deploys the OpenEBS CSI control plane components, 
-# with associated CRs & RBAC rules. This manifest has been verified 
-# only with Ubuntu 16.04 and CentOS hosts, due to dependencies on 
-# kernel components of iSCSI protocol.  For other ubuntu flavours and 
+# This manifest deploys the OpenEBS CSI control plane components,
+# with associated CRs & RBAC rules. This manifest has been verified
+# only with Ubuntu 16.04 and CentOS hosts, due to dependencies on
+# kernel components of iSCSI protocol.  For other ubuntu flavours and
 # linux distros, this needs to be modified.
 #
 # Instructions to modify:
@@ -140,7 +140,7 @@ roleRef:
 
 ---
 kind: StatefulSet
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 metadata:
   name: openebs-csi-controller
   namespace: kube-system
@@ -400,7 +400,7 @@ roleRef:
 ---
 
 kind: DaemonSet
-apiVersion: apps/v1beta2
+apiVersion: apps/v1
 metadata:
   name: openebs-csi-node
   namespace: kube-system
