@@ -346,6 +346,29 @@ func (b *Builder) WithNodeID(nodeID string) *Builder {
 	return b
 }
 
+// WithNewVersion sets the current and desired version field of
+// CStorVolume with provided arguments
+func (b *Builder) WithNewVersion(version string) *Builder {
+	if version == "" {
+		b.errs = append(
+			b.errs,
+			errors.New(
+				"failed to build cstorvolume object: version can't be empty",
+			),
+		)
+		return b
+	}
+	b.cvc.object.VersionDetails.Status.Current = version
+	b.cvc.object.VersionDetails.Desired = version
+	return b
+}
+
+// WithDependentsUpgraded sets the field to true for new volume
+func (b *Builder) WithDependentsUpgraded() *Builder {
+	b.cvc.object.VersionDetails.Status.DependentsUpgraded = true
+	return b
+}
+
 // Build returns the CStorVolumeClaim API instance
 func (b *Builder) Build() (*apismaya.CStorVolumeClaim, error) {
 	if len(b.errs) > 0 {
