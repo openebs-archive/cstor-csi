@@ -37,6 +37,7 @@ type CStorVolumeClaim struct {
 	// i.e. NodeId etc.
 	Publish CStorVolumeClaimPublish `json:"publish,omitempty"`
 
+	VersionDetails VersionDetails `json:"versionDetails"`
 	// Status represents the current information/status for the cstor volume
 	// claim, populated by the controller.
 	Status CStorVolumeClaimStatus `json:"status"`

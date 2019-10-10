@@ -8,7 +8,9 @@ import (
 	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
 	cv "github.com/openebs/csi/pkg/cstor/volume/v1alpha1"
 	cvc "github.com/openebs/csi/pkg/cvc/v1alpha1"
+	"github.com/openebs/csi/pkg/version"
 	csivol "github.com/openebs/csi/pkg/volume/v1alpha1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,6 +70,8 @@ func ProvisionVolume(
 		WithFinalizers(finalizers).
 		WithCapacity(sSize).
 		WithReplicaCount(replicaCount).
+		WithNewVersion(version.Current()).
+		WithDependentsUpgraded().
 		WithStatusPhase(apismaya.CStorVolumeClaimPhasePending).Build()
 	if err != nil {
 		return err
