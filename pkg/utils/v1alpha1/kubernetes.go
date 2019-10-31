@@ -15,6 +15,7 @@
 package utils
 
 import (
+	"github.com/Sirupsen/logrus"
 	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
 	csv "github.com/openebs/cstor-csi/pkg/maya/cstorvolume/v1alpha1"
 	errors "github.com/openebs/cstor-csi/pkg/maya/errors/v1alpha1"
@@ -73,7 +74,7 @@ func getVolStatus(volumeID string) (string, error) {
 }
 
 // GetVolList fetches the current Published Volume list
-func GetVolList(volumeID string) (*apis.CSIVolumeList, error) {
+func GetVolListForNode() (*apis.CSIVolumeList, error) {
 	listOptions := v1.ListOptions{
 		LabelSelector: NODEID + "=" + NodeIDENV,
 	}
@@ -83,11 +84,42 @@ func GetVolList(volumeID string) (*apis.CSIVolumeList, error) {
 
 }
 
+// GetVolList fetches the current Published Volume list
+func GetVolList(volume string) (*apis.CSIVolumeList, error) {
+	listOptions := v1.ListOptions{
+		LabelSelector: VOLNAME + "=" + volume,
+	}
+
+	return csivolume.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).List(listOptions)
+
+}
+
 // GetCSIVolume fetches the current Published csi Volume
 func GetCSIVolume(volumeID string) (*apis.CSIVolume, error) {
-	csivolname := volumeID + "-" + NodeIDENV
-	return csivolume.NewKubeclient().
-		WithNamespace(OpenEBSNamespace).Get(csivolname, v1.GetOptions{})
+	volList, err := GetVolList(volumeID)
+	if err != nil {
+		return nil, err
+	}
+	if len(volList.Items) == 0 {
+		return nil, nil
+	}
+
+	if len(volList.Items) != 1 {
+		logrus.Infof("VOLUME List greater than 1")
+	}
+	return &volList.Items[0], nil
+}
+
+func GetVolumeIP(volumeID string) (string, error) {
+	vol, err := GetCSIVolume(volumeID)
+	if err != nil {
+		return "", err
+	}
+	if vol == nil {
+		return "", nil
+	}
+	return vol.Spec.ISCSI.TargetPortal, nil
 }
 
 // CreateOrUpdateCSIVolumeCR creates a new CSIVolume CR with this nodeID
@@ -160,6 +192,9 @@ func UpdateCSIVolumeCR(csivol *apis.CSIVolume) error {
 func DeleteCSIVolumeCRForPath(volumeID, targetPath string) error {
 	csivol, err := GetCSIVolume(volumeID)
 	if k8serror.IsNotFound(err) {
+		return nil
+	}
+	if csivol == nil {
 		return nil
 	}
 	if csivol.Spec.Volume.MountPath != targetPath {

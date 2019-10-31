@@ -18,6 +18,8 @@ package v1alpha1
 
 import (
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -188,7 +190,20 @@ func (cs *controller) CreateSnapshot(
 	req *csi.CreateSnapshotRequest,
 ) (*csi.CreateSnapshotResponse, error) {
 
-	return nil, status.Error(codes.Unimplemented, "")
+	if err := utils.CreateSnapshot(req.SourceVolumeId, req.Name); err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
+			req.SourceVolumeId, req.Name,
+			err.Error(),
+		)
+	}
+	return csipayload.NewCreateSnapshotResponseBuilder().
+		WithSourceVolumeID(req.SourceVolumeId).
+		WithSnapshotID(req.SourceVolumeId+"-snap-"+req.Name).
+		WithCreationTime(time.Now().Unix(), 0).
+		WithReadyToUse(true).
+		Build(), nil
 }
 
 // DeleteSnapshot deletes given snapshot
@@ -198,8 +213,25 @@ func (cs *controller) DeleteSnapshot(
 	ctx context.Context,
 	req *csi.DeleteSnapshotRequest,
 ) (*csi.DeleteSnapshotResponse, error) {
+	snapshotID := strings.Split(req.SnapshotId, "-snap-")
+	if len(snapshotID) != 2 {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle CreateSnapshotRequest for %s, {%s}",
+			req.SnapshotId,
+			"Manual intervention required",
+		)
+	}
+	if err := utils.DeleteSnapshot(snapshotID[0], snapshotID[1]); err != nil {
+		return nil, status.Errorf(
+			codes.Internal,
+			"failed to handle CreateSnapshotRequest for %s, {%s}",
+			req.SnapshotId,
+			err.Error(),
+		)
+	}
+	return &csi.DeleteSnapshotResponse{}, nil
 
-	return nil, status.Error(codes.Unimplemented, "")
 }
 
 // ListSnapshots lists all snapshots for the
@@ -327,6 +359,7 @@ func newControllerCapabilities() []*csi.ControllerServiceCapability {
 	for _, cap := range []csi.ControllerServiceCapability_RPC_Type{
 		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
 		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
+		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
 	} {
 		capabilities = append(capabilities, fromType(cap))
 	}

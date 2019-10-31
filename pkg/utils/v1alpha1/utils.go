@@ -13,6 +13,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
 	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
+	snapshotclient "github.com/openebs/cstor-csi/pkg/client/snapshot/v1alpha1"
 	iscsi "github.com/openebs/cstor-csi/pkg/iscsi/v1alpha1"
 	"google.golang.org/grpc"
 	"k8s.io/kubernetes/pkg/util/mount"
@@ -226,7 +227,7 @@ func MonitorMounts() {
 			if mountList, err = mounter.List(); err != nil {
 				break
 			}
-			if csivolList, err = GetVolList(NodeIDENV); err != nil {
+			if csivolList, err = GetVolListForNode(); err != nil {
 				break
 			}
 			for _, vol := range csivolList.Items {
@@ -346,4 +347,31 @@ func GetMounts(volumeID string) ([]string, error) {
 		}
 	}
 	return currentMounts, nil
+}
+
+// CreateSnapshot creates a snapshot of cstor volume
+func CreateSnapshot(volumeName, snapName string) error {
+	ip, err := GetVolumeIP(volumeName)
+	if err != nil {
+		return err
+	}
+	ipdetail := strings.Split(ip, ":")
+	logrus.Infof("IP: %s", ipdetail[0])
+	_, err = snapshotclient.CreateSnapshot(ipdetail[0], volumeName, snapName)
+	// If there is no err that means call was successful
+	return err
+}
+
+// DeleteSnapshot deletes a snapshot of cstor volume
+func DeleteSnapshot(volumeName, snapName string) error {
+	ip, err := GetVolumeIP(volumeName)
+	if err != nil {
+		return err
+	}
+	if ip == "" {
+		return nil
+	}
+	ipdetail := strings.Split(ip, ":")
+	_, err = snapshotclient.DestroySnapshot(ipdetail[0], volumeName, snapName)
+	return err
 }
