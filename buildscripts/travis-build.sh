@@ -15,7 +15,7 @@ set -e
 # limitations under the License.
 
 SRC_REPO="$TRAVIS_BUILD_DIR"
-DST_REPO="$GOPATH/src/github.com/openebs/csi"
+DST_REPO="$GOPATH/src/github.com/openebs/cstor-csi"
 
 function checkGitDiff() {
 	if [[ `git diff --shortstat | wc -l` != 0 ]]; then echo "Some files got changed after $1";printf "\n";git diff --stat;printf "\n"; exit 1; fi

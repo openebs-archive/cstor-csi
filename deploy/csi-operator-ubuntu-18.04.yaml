@@ -5,9 +5,9 @@
 # linux distros, this needs to be modified.
 #
 # Instructions to modify:
-# Ubuntu-18.04 and above: https://github.com/openebs/csi/blob/master/deploy/iscsiadm-ubuntu-18.04-and-above-deps.yaml
-# SUSE Linux Enterprise Server 12:  https://github.com/openebs/csi/blob/master/deploy/iscsiadm-suse-enterprise-server-12-deps.yaml
-# SUSE Linux Enterprise Server 15:  https://github.com/openebs/csi/blob/master/deploy/iscsiadm-suse-enterprise-server-15-deps.yaml
+# Ubuntu-18.04 and above: https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-ubuntu-18.04-and-above-deps.yaml
+# SUSE Linux Enterprise Server 12:  https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-suse-enterprise-server-12-deps.yaml
+# SUSE Linux Enterprise Server 15:  https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-suse-enterprise-server-15-deps.yaml
 #
 # For supporting a differnet OS other than the above,
 # 1) Get the list of shared object files required for iscsiadm binary in that OS version.
@@ -216,7 +216,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: openebs-csi-plugin
-          image: quay.io/openebs/csi-driver:ci
+          image: quay.io/openebs/cstor-csi-driver:ci
           imagePullPolicy: IfNotPresent
           env:
             - name: OPENEBS_CONTROLLER_DRIVER
@@ -450,7 +450,7 @@ spec:
             capabilities:
               add: ["CAP_MKNOD", "CAP_SYS_ADMIN", "SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: quay.io/openebs/csi-driver:ci
+          image: quay.io/openebs/cstor-csi-driver:ci
           imagePullPolicy: IfNotPresent
           args:
             - "--nodeid=$(OPENEBS_NODE_ID)"

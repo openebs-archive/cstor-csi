@@ -17,9 +17,9 @@ package v1alpha1
 import (
 	"encoding/json"
 
-	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
-	clientset "github.com/openebs/csi/pkg/generated/clientset/core/internalclientset"
-	client "github.com/openebs/csi/pkg/maya/kubernetes/client/v1alpha1"
+	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
+	clientset "github.com/openebs/cstor-csi/pkg/generated/clientset/core/internalclientset"
+	client "github.com/openebs/cstor-csi/pkg/maya/kubernetes/client/v1alpha1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

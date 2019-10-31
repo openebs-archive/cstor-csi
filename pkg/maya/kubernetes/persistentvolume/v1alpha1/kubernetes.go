@@ -17,8 +17,8 @@ package v1alpha1
 import (
 	"strings"
 
-	errors "github.com/openebs/csi/pkg/maya/errors/v1alpha1"
-	client "github.com/openebs/csi/pkg/maya/kubernetes/client/v1alpha1"
+	errors "github.com/openebs/cstor-csi/pkg/maya/errors/v1alpha1"
+	client "github.com/openebs/cstor-csi/pkg/maya/kubernetes/client/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"

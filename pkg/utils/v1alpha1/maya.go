@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
-	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	cv "github.com/openebs/csi/pkg/cstor/volume/v1alpha1"
-	cvc "github.com/openebs/csi/pkg/cvc/v1alpha1"
-	"github.com/openebs/csi/pkg/version"
-	csivol "github.com/openebs/csi/pkg/volume/v1alpha1"
+	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
+	apismaya "github.com/openebs/cstor-csi/pkg/apis/openebs.io/maya/v1alpha1"
+	cv "github.com/openebs/cstor-csi/pkg/cstor/volume/v1alpha1"
+	cvc "github.com/openebs/cstor-csi/pkg/cvc/v1alpha1"
+	"github.com/openebs/cstor-csi/pkg/version"
+	csivol "github.com/openebs/cstor-csi/pkg/volume/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

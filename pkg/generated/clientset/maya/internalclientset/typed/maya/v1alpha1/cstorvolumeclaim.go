@@ -21,8 +21,8 @@ package v1alpha1
 import (
 	"time"
 
-	v1alpha1 "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	scheme "github.com/openebs/csi/pkg/generated/clientset/maya/internalclientset/scheme"
+	v1alpha1 "github.com/openebs/cstor-csi/pkg/apis/openebs.io/maya/v1alpha1"
+	scheme "github.com/openebs/cstor-csi/pkg/generated/clientset/maya/internalclientset/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

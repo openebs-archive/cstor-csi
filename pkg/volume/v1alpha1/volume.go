@@ -17,8 +17,8 @@ package v1alpha1
 import (
 	"strconv"
 
-	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
-	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
+	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
+	apismaya "github.com/openebs/cstor-csi/pkg/apis/openebs.io/maya/v1alpha1"
 )
 
 // CSIVolume is a wrapper over

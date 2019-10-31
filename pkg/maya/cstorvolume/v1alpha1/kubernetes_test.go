@@ -20,8 +20,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	apis "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	clientset "github.com/openebs/csi/pkg/generated/clientset/maya/internalclientset"
+	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/maya/v1alpha1"
+	clientset "github.com/openebs/cstor-csi/pkg/generated/clientset/maya/internalclientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

@@ -15,12 +15,12 @@
 package utils
 
 import (
-	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
-	csv "github.com/openebs/csi/pkg/maya/cstorvolume/v1alpha1"
-	errors "github.com/openebs/csi/pkg/maya/errors/v1alpha1"
-	node "github.com/openebs/csi/pkg/maya/kubernetes/node/v1alpha1"
-	pv "github.com/openebs/csi/pkg/maya/kubernetes/persistentvolume/v1alpha1"
-	csivolume "github.com/openebs/csi/pkg/volume/v1alpha1"
+	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
+	csv "github.com/openebs/cstor-csi/pkg/maya/cstorvolume/v1alpha1"
+	errors "github.com/openebs/cstor-csi/pkg/maya/errors/v1alpha1"
+	node "github.com/openebs/cstor-csi/pkg/maya/kubernetes/node/v1alpha1"
+	pv "github.com/openebs/cstor-csi/pkg/maya/kubernetes/persistentvolume/v1alpha1"
+	csivolume "github.com/openebs/cstor-csi/pkg/volume/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

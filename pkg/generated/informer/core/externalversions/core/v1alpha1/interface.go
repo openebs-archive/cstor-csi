@@ -19,7 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	internalinterfaces "github.com/openebs/csi/pkg/generated/informer/core/externalversions/internalinterfaces"
+	internalinterfaces "github.com/openebs/cstor-csi/pkg/generated/informer/core/externalversions/internalinterfaces"
 )
 
 // Interface provides access to all the informers in this group version.

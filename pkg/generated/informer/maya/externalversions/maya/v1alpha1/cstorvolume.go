@@ -21,10 +21,10 @@ package v1alpha1
 import (
 	time "time"
 
-	mayav1alpha1 "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	internalclientset "github.com/openebs/csi/pkg/generated/clientset/maya/internalclientset"
-	internalinterfaces "github.com/openebs/csi/pkg/generated/informer/maya/externalversions/internalinterfaces"
-	v1alpha1 "github.com/openebs/csi/pkg/generated/lister/maya/maya/v1alpha1"
+	mayav1alpha1 "github.com/openebs/cstor-csi/pkg/apis/openebs.io/maya/v1alpha1"
+	internalclientset "github.com/openebs/cstor-csi/pkg/generated/clientset/maya/internalclientset"
+	internalinterfaces "github.com/openebs/cstor-csi/pkg/generated/informer/maya/externalversions/internalinterfaces"
+	v1alpha1 "github.com/openebs/cstor-csi/pkg/generated/lister/maya/maya/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

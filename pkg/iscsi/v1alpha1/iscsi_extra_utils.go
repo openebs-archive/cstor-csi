@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
+	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
 	"k8s.io/kubernetes/pkg/util/mount"
 	"k8s.io/kubernetes/pkg/volume/util"
 )

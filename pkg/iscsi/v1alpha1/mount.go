@@ -1,7 +1,7 @@
 package iscsi
 
 import (
-	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
+	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/kubernetes/pkg/util/mount"

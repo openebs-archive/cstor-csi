@@ -19,8 +19,8 @@ limitations under the License.
 package openebs
 
 import (
-	internalinterfaces "github.com/openebs/csi/pkg/generated/informer/maya/externalversions/internalinterfaces"
-	v1alpha1 "github.com/openebs/csi/pkg/generated/informer/maya/externalversions/maya/v1alpha1"
+	internalinterfaces "github.com/openebs/cstor-csi/pkg/generated/informer/maya/externalversions/internalinterfaces"
+	v1alpha1 "github.com/openebs/cstor-csi/pkg/generated/informer/maya/externalversions/maya/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

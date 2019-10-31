@@ -12,8 +12,8 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
-	apis "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
-	iscsi "github.com/openebs/csi/pkg/iscsi/v1alpha1"
+	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
+	iscsi "github.com/openebs/cstor-csi/pkg/iscsi/v1alpha1"
 	"google.golang.org/grpc"
 	"k8s.io/kubernetes/pkg/util/mount"
 )

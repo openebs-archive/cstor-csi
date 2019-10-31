@@ -15,8 +15,8 @@
 package v1alpha1
 
 import (
-	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	errors "github.com/openebs/csi/pkg/maya/errors/v1alpha1"
+	apismaya "github.com/openebs/cstor-csi/pkg/apis/openebs.io/maya/v1alpha1"
+	errors "github.com/openebs/cstor-csi/pkg/maya/errors/v1alpha1"
 )
 
 // Builder is the builder object for CStorVolume
