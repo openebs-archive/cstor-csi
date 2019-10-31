@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	internalclientset "github.com/openebs/csi/pkg/generated/clientset/maya/internalclientset"
-	internalinterfaces "github.com/openebs/csi/pkg/generated/informer/maya/externalversions/internalinterfaces"
-	maya "github.com/openebs/csi/pkg/generated/informer/maya/externalversions/maya"
+	internalclientset "github.com/openebs/cstor-csi/pkg/generated/clientset/maya/internalclientset"
+	internalinterfaces "github.com/openebs/cstor-csi/pkg/generated/informer/maya/externalversions/internalinterfaces"
+	maya "github.com/openebs/cstor-csi/pkg/generated/informer/maya/externalversions/maya"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

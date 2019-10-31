@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
+	apismaya "github.com/openebs/cstor-csi/pkg/apis/openebs.io/maya/v1alpha1"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 

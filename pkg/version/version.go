@@ -44,8 +44,8 @@ var (
 )
 
 const (
-	versionFile   string = "/src/github.com/openebs/csi/VERSION"
-	buildMetaFile string = "/src/github.com/openebs/csi/BUILDMETA"
+	versionFile   string = "/src/github.com/openebs/cstor-csi/VERSION"
+	buildMetaFile string = "/src/github.com/openebs/cstor-csi/BUILDMETA"
 )
 
 // Current returns current version of csi driver

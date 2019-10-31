@@ -19,8 +19,8 @@ package v1alpha1
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	config "github.com/openebs/csi/pkg/config/v1alpha1"
-	"github.com/openebs/csi/pkg/utils/v1alpha1"
+	config "github.com/openebs/cstor-csi/pkg/config/v1alpha1"
+	"github.com/openebs/cstor-csi/pkg/utils/v1alpha1"
 )
 
 const (

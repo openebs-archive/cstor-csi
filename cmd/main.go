@@ -7,9 +7,9 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
-	config "github.com/openebs/csi/pkg/config/v1alpha1"
-	service "github.com/openebs/csi/pkg/service/v1alpha1"
-	"github.com/openebs/csi/pkg/version"
+	config "github.com/openebs/cstor-csi/pkg/config/v1alpha1"
+	service "github.com/openebs/cstor-csi/pkg/service/v1alpha1"
+	"github.com/openebs/cstor-csi/pkg/version"
 	"github.com/spf13/cobra"
 )
 

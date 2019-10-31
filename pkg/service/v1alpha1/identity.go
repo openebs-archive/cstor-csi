@@ -18,7 +18,7 @@ package v1alpha1
 
 import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/openebs/csi/pkg/version"
+	"github.com/openebs/cstor-csi/pkg/version"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

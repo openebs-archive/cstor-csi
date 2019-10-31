@@ -19,8 +19,8 @@ package v1alpha1
 import (
 	"strconv"
 
-	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
-	errors "github.com/openebs/csi/pkg/maya/errors/v1alpha1"
+	apismaya "github.com/openebs/cstor-csi/pkg/apis/openebs.io/maya/v1alpha1"
+	errors "github.com/openebs/cstor-csi/pkg/maya/errors/v1alpha1"
 	metav1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
 )

@@ -65,7 +65,7 @@ bootstrap:
 	done
 
 # SRC_PKG is the path of code files
-SRC_PKG := github.com/openebs/csi/pkg
+SRC_PKG := github.com/openebs/cstor-csi/pkg
 
 # code generation for custom resources
 .PHONY: kubegen

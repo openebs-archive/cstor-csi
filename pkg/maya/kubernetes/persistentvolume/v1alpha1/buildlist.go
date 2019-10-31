@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	errors "github.com/openebs/csi/pkg/maya/errors/v1alpha1"
+	errors "github.com/openebs/cstor-csi/pkg/maya/errors/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 

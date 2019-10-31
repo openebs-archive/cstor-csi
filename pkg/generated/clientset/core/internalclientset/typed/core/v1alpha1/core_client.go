@@ -19,8 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/openebs/csi/pkg/apis/openebs.io/core/v1alpha1"
-	"github.com/openebs/csi/pkg/generated/clientset/core/internalclientset/scheme"
+	v1alpha1 "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
+	"github.com/openebs/cstor-csi/pkg/generated/clientset/core/internalclientset/scheme"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
 )

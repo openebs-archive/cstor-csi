@@ -19,8 +19,8 @@ limitations under the License.
 package openebs
 
 import (
-	v1alpha1 "github.com/openebs/csi/pkg/generated/informer/core/externalversions/core/v1alpha1"
-	internalinterfaces "github.com/openebs/csi/pkg/generated/informer/core/externalversions/internalinterfaces"
+	v1alpha1 "github.com/openebs/cstor-csi/pkg/generated/informer/core/externalversions/core/v1alpha1"
+	internalinterfaces "github.com/openebs/cstor-csi/pkg/generated/informer/core/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

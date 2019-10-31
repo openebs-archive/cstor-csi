@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	internalclientset "github.com/openebs/csi/pkg/generated/clientset/core/internalclientset"
-	core "github.com/openebs/csi/pkg/generated/informer/core/externalversions/core"
-	internalinterfaces "github.com/openebs/csi/pkg/generated/informer/core/externalversions/internalinterfaces"
+	internalclientset "github.com/openebs/cstor-csi/pkg/generated/clientset/core/internalclientset"
+	core "github.com/openebs/cstor-csi/pkg/generated/informer/core/externalversions/core"
+	internalinterfaces "github.com/openebs/cstor-csi/pkg/generated/informer/core/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

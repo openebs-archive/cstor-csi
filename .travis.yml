@@ -57,7 +57,7 @@ deploy:
   skip_cleanup: true
   overwrite: true
   on:
-    repo: openebs/csi
+    repo: openebs/cstor-csi
     tags: true
 branches:
   except:

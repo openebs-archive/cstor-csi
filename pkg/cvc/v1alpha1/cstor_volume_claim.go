@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	apismaya "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
+	apismaya "github.com/openebs/cstor-csi/pkg/apis/openebs.io/maya/v1alpha1"
 )
 
 // CStorVolumeClaim a wrapper for ume object

@@ -16,7 +16,7 @@
 
 OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
 CSPC_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/cspc-operator.yaml
-CSI_OPERATOR="$GOPATH/src/github.com/openebs/csi/deploy/csi-operator.yaml"
+CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
 
 SRC_REPO="https://github.com/openebs/maya.git"
 DST_PATH="$GOPATH/src/github.com/openebs"

@@ -5,9 +5,9 @@
 # linux distros, this needs to be modified.
 #
 # Instructions to modify:
-# Ubuntu-18.04 and above: https://github.com/openebs/csi/blob/master/deploy/iscsiadm-ubuntu-18.04-and-above-deps.yaml
-# SUSE Linux Enterprise Server 12:  https://github.com/openebs/csi/blob/master/deploy/iscsiadm-suse-enterprise-server-12-deps.yaml
-# SUSE Linux Enterprise Server 15:  https://github.com/openebs/csi/blob/master/deploy/iscsiadm-suse-enterprise-server-15-deps.yaml
+# Ubuntu-18.04 and above: https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-ubuntu-18.04-and-above-deps.yaml
+# SUSE Linux Enterprise Server 12:  https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-suse-enterprise-server-12-deps.yaml
+# SUSE Linux Enterprise Server 15:  https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-suse-enterprise-server-15-deps.yaml
 #
 # For supporting a differnet OS other than the above,
 # 1) Get the list of shared object files required for iscsiadm binary in that OS version.

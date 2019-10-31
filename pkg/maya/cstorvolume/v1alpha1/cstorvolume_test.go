@@ -18,7 +18,7 @@ import (
 	"reflect"
 	"testing"
 
-	apis "github.com/openebs/csi/pkg/apis/openebs.io/maya/v1alpha1"
+	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/maya/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
