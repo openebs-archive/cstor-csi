@@ -73,7 +73,7 @@ func getVolStatus(volumeID string) (string, error) {
 	return string(volumeList.Items[0].Status.Phase), nil
 }
 
-// GetVolList fetches the current Published Volume list
+// GetVolListForNode fetches the current Published Volume list
 func GetVolListForNode() (*apis.CSIVolumeList, error) {
 	listOptions := v1.ListOptions{
 		LabelSelector: NODEID + "=" + NodeIDENV,
@@ -111,15 +111,17 @@ func GetCSIVolume(volumeID string) (*apis.CSIVolume, error) {
 	return &volList.Items[0], nil
 }
 
+// GetVolumeIP fetches the cstor target IP Address
 func GetVolumeIP(volumeID string) (string, error) {
-	vol, err := GetCSIVolume(volumeID)
+	cstorvolume, err := csv.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).Get(volumeID, v1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
-	if vol == nil {
+	if cstorvolume == nil {
 		return "", nil
 	}
-	return vol.Spec.ISCSI.TargetPortal, nil
+	return cstorvolume.Spec.TargetIP, nil
 }
 
 // CreateOrUpdateCSIVolumeCR creates a new CSIVolume CR with this nodeID

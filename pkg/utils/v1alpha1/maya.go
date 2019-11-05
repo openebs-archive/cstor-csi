@@ -183,6 +183,9 @@ func RemoveFinalizerFromSource(volumeID string) error {
 	if err != nil {
 		return err
 	}
+	if len(cvcObj.Spec.CstorVolumeSource) == 0 {
+		return nil
+	}
 	srcVolName, _, err := GetVolumeSourceDetails(cvcObj.Spec.CstorVolumeSource)
 	if err != nil {
 		return err

@@ -351,27 +351,21 @@ func GetMounts(volumeID string) ([]string, error) {
 
 // CreateSnapshot creates a snapshot of cstor volume
 func CreateSnapshot(volumeName, snapName string) error {
-	ip, err := GetVolumeIP(volumeName)
+	volIP, err := GetVolumeIP(volumeName)
 	if err != nil {
 		return err
 	}
-	ipdetail := strings.Split(ip, ":")
-	logrus.Infof("IP: %s", ipdetail[0])
-	_, err = snapshotclient.CreateSnapshot(ipdetail[0], volumeName, snapName)
+	_, err = snapshotclient.CreateSnapshot(volIP, volumeName, snapName)
 	// If there is no err that means call was successful
 	return err
 }
 
 // DeleteSnapshot deletes a snapshot of cstor volume
 func DeleteSnapshot(volumeName, snapName string) error {
-	ip, err := GetVolumeIP(volumeName)
+	volIP, err := GetVolumeIP(volumeName)
 	if err != nil {
 		return err
 	}
-	if ip == "" {
-		return nil
-	}
-	ipdetail := strings.Split(ip, ":")
-	_, err = snapshotclient.DestroySnapshot(ipdetail[0], volumeName, snapName)
+	_, err = snapshotclient.DestroySnapshot(volIP, volumeName, snapName)
 	return err
 }
