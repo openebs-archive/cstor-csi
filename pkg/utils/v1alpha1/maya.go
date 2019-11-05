@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
@@ -46,7 +48,8 @@ func ProvisionVolume(
 	size int64,
 	volName,
 	replicaCount,
-	cspcName string,
+	cspcName,
+	snapshotID string,
 ) error {
 
 	annotations := map[string]string{
@@ -69,6 +72,7 @@ func ProvisionVolume(
 		WithLabelsNew(labels).
 		WithFinalizers(finalizers).
 		WithCapacity(sSize).
+		WithSource(snapshotID).
 		WithReplicaCount(replicaCount).
 		WithNewVersion(version.Current()).
 		WithDependentsUpgraded().
@@ -86,6 +90,19 @@ func GetVolume(volumeID string) (*apismaya.CStorVolumeClaim, error) {
 	return cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Get(volumeID, metav1.GetOptions{})
+}
+
+// IsSourceAvailable returns true if the source volume is available
+func IsSourceAvailable(snapshotID string) (bool, error) {
+	srcVolName, _, err := GetVolumeSourceDetails(snapshotID)
+	if err != nil {
+		return false, err
+	}
+	cvc, err := GetVolume(srcVolName)
+	if cvc != nil {
+		return true, nil
+	}
+	return false, err
 }
 
 // DeleteVolume deletes the corresponding CstorVolumeClaim(cvc) CR
@@ -122,6 +139,73 @@ func PatchCVCNodeID(volumeID, nodeID string) error {
 	_, err = cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Patch(oldCVCObj, newCVCObj)
+
+	return err
+}
+
+// GetVolumeSourceDetails splits the volumeName and snapshot
+func GetVolumeSourceDetails(snapshotID string) (string, string, error) {
+	volSrc := strings.Split(snapshotID, "@")
+	if len(volSrc) == 0 {
+		return "", "", errors.New(
+			"failed to get volumeSource",
+		)
+	}
+	return volSrc[0], volSrc[1], nil
+}
+
+// AddFinalizerToSource adds a finalizer to source cvc to avoid its deletion
+// when clone is present
+func AddFinalizerToSource(volumeID, srcVolName string) error {
+	oldCVCObj, err := cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Get(srcVolName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	srcFinalizer := []string{"cvc.openebs.io/" + volumeID}
+
+	newCVCObj, err := cvc.BuildFrom(oldCVCObj.DeepCopy()).
+		WithFinalizers(srcFinalizer).Build()
+	_, err = cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Update(newCVCObj)
+
+	return err
+}
+
+// RemoveFinalizerFromSource removes the corresponding finalizer from source cvc
+func RemoveFinalizerFromSource(volumeID string) error {
+	cvcObj, err := cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Get(volumeID, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	srcVolName, _, err := GetVolumeSourceDetails(cvcObj.Spec.CstorVolumeSource)
+	if err != nil {
+		return err
+	}
+	oldSrcCVCObj, err := cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Get(srcVolName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	finalizers := oldSrcCVCObj.Finalizers
+	for indx, finalizer := range finalizers {
+		if finalizer == "cvc.openebs.io/"+volumeID {
+			finalizers = append(finalizers[:indx], finalizers[indx+1:]...)
+			break
+		}
+	}
+
+	newSrcCVCObj, err := cvc.BuildFrom(oldSrcCVCObj.DeepCopy()).
+		WithFinalizersNew(finalizers).Build()
+	_, err = cvc.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Update(newSrcCVCObj)
 
 	return err
 }

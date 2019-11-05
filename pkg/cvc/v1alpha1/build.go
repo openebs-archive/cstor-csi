@@ -303,6 +303,12 @@ func (b *Builder) WithCapacity(capacity string) *Builder {
 	return b.WithCapacityQty(resCapacity)
 }
 
+// WithSource sets the source of CstorVOlume
+func (b *Builder) WithSource(volumeSource string) *Builder {
+	b.cvc.object.Spec.CstorVolumeSource = volumeSource
+	return b
+}
+
 // WithCapacityQty sets Capacity of CStorVOlumeClaim
 func (b *Builder) WithCapacityQty(resCapacity resource.Quantity) *Builder {
 	resourceList := metav1.ResourceList{
