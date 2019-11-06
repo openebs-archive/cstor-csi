@@ -187,6 +187,8 @@ rules:
     resources: ["customresourcedefinitions"]
     verbs: ["create", "list", "watch", "delete", "get", "update"]
 
+---
+
 ##############################################
 ###########                       ############
 ###########   Controller plugin   ############
