@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
@@ -46,7 +48,8 @@ func ProvisionVolume(
 	size int64,
 	volName,
 	replicaCount,
-	cspcName string,
+	cspcName,
+	snapshotID string,
 ) error {
 
 	annotations := map[string]string{
@@ -55,6 +58,11 @@ func ProvisionVolume(
 
 	labels := map[string]string{
 		OpenebsCSPCName: cspcName,
+	}
+
+	if snapshotID != "" {
+		srcVolName, _, _ := GetVolumeSourceDetails(snapshotID)
+		labels["openebs.io/source-volume"] = srcVolName
 	}
 
 	finalizers := []string{
@@ -69,6 +77,7 @@ func ProvisionVolume(
 		WithLabelsNew(labels).
 		WithFinalizers(finalizers).
 		WithCapacity(sSize).
+		WithSource(snapshotID).
 		WithReplicaCount(replicaCount).
 		WithNewVersion(version.Current()).
 		WithDependentsUpgraded().
@@ -86,6 +95,19 @@ func GetVolume(volumeID string) (*apismaya.CStorVolumeClaim, error) {
 	return cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Get(volumeID, metav1.GetOptions{})
+}
+
+// IsSourceAvailable returns true if the source volume is available
+func IsSourceAvailable(snapshotID string) (bool, error) {
+	srcVolName, _, err := GetVolumeSourceDetails(snapshotID)
+	if err != nil {
+		return false, err
+	}
+	cvc, err := GetVolume(srcVolName)
+	if cvc != nil {
+		return true, nil
+	}
+	return false, err
 }
 
 // DeleteVolume deletes the corresponding CstorVolumeClaim(cvc) CR
@@ -124,6 +146,17 @@ func PatchCVCNodeID(volumeID, nodeID string) error {
 		Patch(oldCVCObj, newCVCObj)
 
 	return err
+}
+
+// GetVolumeSourceDetails splits the volumeName and snapshot
+func GetVolumeSourceDetails(snapshotID string) (string, string, error) {
+	volSrc := strings.Split(snapshotID, "@")
+	if len(volSrc) == 0 {
+		return "", "", errors.New(
+			"failed to get volumeSource",
+		)
+	}
+	return volSrc[0], volSrc[1], nil
 }
 
 //FetchAndUpdateISCSIDetails fetches the iSCSI details from cstor volume

@@ -30,7 +30,7 @@ else
 endif
 
 # Specify the name for the binary
-CSI_DRIVER=csi-driver
+CSI_DRIVER=cstor-csi-driver
 
 # Specify the date o build
 BUILD_DATE = $(shell date +'%Y%m%d%H%M%S')
