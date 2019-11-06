@@ -102,16 +102,6 @@ func (cs *controller) CreateVolume(
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if snapshotID != "" {
-		srcVolName, _, err := utils.GetVolumeSourceDetails(snapshotID)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-		err = utils.AddFinalizerToSource(volName, srcVolName)
-		if err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-	}
 
 createVolumeResponse:
 	return csipayload.NewCreateVolumeResponseBuilder().
@@ -154,12 +144,6 @@ func (cs *controller) DeleteVolume(
 				"failed to handle delete volume request for {%s}",
 				volumeID,
 			)
-		}
-	}
-	err = utils.RemoveFinalizerFromSource(volumeID)
-	if err != nil {
-		if !k8serror.IsNotFound(err) {
-			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
 deleteResponse:

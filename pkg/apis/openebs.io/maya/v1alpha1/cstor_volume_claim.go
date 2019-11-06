@@ -55,7 +55,8 @@ type CStorVolumeClaimSpec struct {
 	// This field will be updated by maya after cstor Volume has been
 	// provisioned
 	CStorVolumeRef *corev1.ObjectReference `json:"cstorVolumeRef,omitempty"`
-	// CstorVolumeSource contains the source volumeID+Snapshot combaination
+	// CstorVolumeSource contains the source volumeName@snapShotname
+	// combaination.  This will be filled only if it is a clone creation.
 	CstorVolumeSource string `json:"cstorVolumeSource,omitempty"`
 }
 

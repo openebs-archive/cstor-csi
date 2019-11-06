@@ -60,6 +60,11 @@ func ProvisionVolume(
 		OpenebsCSPCName: cspcName,
 	}
 
+	if snapshotID != "" {
+		srcVolName, _, _ := GetVolumeSourceDetails(snapshotID)
+		labels["openebs.io/source-volume"] = srcVolName
+	}
+
 	finalizers := []string{
 		CVCFinalizer,
 	}
@@ -152,65 +157,6 @@ func GetVolumeSourceDetails(snapshotID string) (string, string, error) {
 		)
 	}
 	return volSrc[0], volSrc[1], nil
-}
-
-// AddFinalizerToSource adds a finalizer to source cvc to avoid its deletion
-// when clone is present
-func AddFinalizerToSource(volumeID, srcVolName string) error {
-	oldCVCObj, err := cvc.NewKubeclient().
-		WithNamespace(OpenEBSNamespace).
-		Get(srcVolName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	srcFinalizer := []string{"cvc.openebs.io/" + volumeID}
-
-	newCVCObj, err := cvc.BuildFrom(oldCVCObj.DeepCopy()).
-		WithFinalizers(srcFinalizer).Build()
-	_, err = cvc.NewKubeclient().
-		WithNamespace(OpenEBSNamespace).
-		Update(newCVCObj)
-
-	return err
-}
-
-// RemoveFinalizerFromSource removes the corresponding finalizer from source cvc
-func RemoveFinalizerFromSource(volumeID string) error {
-	cvcObj, err := cvc.NewKubeclient().
-		WithNamespace(OpenEBSNamespace).
-		Get(volumeID, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	if len(cvcObj.Spec.CstorVolumeSource) == 0 {
-		return nil
-	}
-	srcVolName, _, err := GetVolumeSourceDetails(cvcObj.Spec.CstorVolumeSource)
-	if err != nil {
-		return err
-	}
-	oldSrcCVCObj, err := cvc.NewKubeclient().
-		WithNamespace(OpenEBSNamespace).
-		Get(srcVolName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	finalizers := oldSrcCVCObj.Finalizers
-	for indx, finalizer := range finalizers {
-		if finalizer == "cvc.openebs.io/"+volumeID {
-			finalizers = append(finalizers[:indx], finalizers[indx+1:]...)
-			break
-		}
-	}
-
-	newSrcCVCObj, err := cvc.BuildFrom(oldSrcCVCObj.DeepCopy()).
-		WithFinalizersNew(finalizers).Build()
-	_, err = cvc.NewKubeclient().
-		WithNamespace(OpenEBSNamespace).
-		Update(newSrcCVCObj)
-
-	return err
 }
 
 //FetchAndUpdateISCSIDetails fetches the iSCSI details from cstor volume
