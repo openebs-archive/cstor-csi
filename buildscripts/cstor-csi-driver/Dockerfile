@@ -8,7 +8,7 @@ RUN apt-get update; exit 0
 RUN apt-get -y install rsyslog
 #RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY csi-driver /usr/local/bin/
+COPY cstor-csi-driver /usr/local/bin/
 COPY entrypoint.sh /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
@@ -21,5 +21,5 @@ LABEL org.label-schema.vcs-url="https://github.com/openebs/cstor-csi"
 LABEL org.label-schema.schema-version="1.0"
 LABEL org.label-schema.build-date=$BUILD_DATE
 
-ENTRYPOINT ["/usr/local/bin/csi-driver"]
+ENTRYPOINT ["/usr/local/bin/cstor-csi-driver"]
 EXPOSE 7676 7777
