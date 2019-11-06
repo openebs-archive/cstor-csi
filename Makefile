@@ -150,5 +150,5 @@ csi-driver-image: csi-driver
 
 # Push images
 deploy-images:
-	@DIMAGE="openebs/csi-driver" ./buildscripts/push
+	@DIMAGE="openebs/cstor-csi-driver" ./buildscripts/push
 
