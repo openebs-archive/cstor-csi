@@ -25,7 +25,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
 	iscsi "github.com/openebs/cstor-csi/pkg/iscsi/v1alpha1"
-	"github.com/openebs/cstor-csi/pkg/utils/v1alpha1"
+	utils "github.com/openebs/cstor-csi/pkg/utils/v1alpha1"
 	csivol "github.com/openebs/cstor-csi/pkg/volume/v1alpha1"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -270,7 +270,7 @@ func (ns *node) NodeUnpublishVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if unmountRequired {
-		if vol, err = utils.GetCSIVolume(volumeID); (err != nil) || (vol == nil) {
+		if vol, err = utils.GetCSIVolume(volumeID); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
