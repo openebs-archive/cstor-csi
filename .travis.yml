@@ -49,16 +49,3 @@ notifications:
   email:
     recipients:
     - kiran.mova@openebs.io
-deploy:
-  provider: releases
-  api_key:
-    secure: JYNHyi2m9pqOitOen9zX6FYjU0Q/uNjUhMpUDvHYq+RlqQ7zliJfiecRe91l+LKW1AmnGhNp4f2Shu2R9dQJwmle6y5ohsts3wRlRLAKxoex6jXo8uxCMVS5wE7+MlMmPWXaBSGy4Hcds+Jpzr90knO1avCDVdsM3ETbaE5tVQJuW8tgiCkWs+3V1xsjtpfT2s61tyikdbrRX1BevyN4/0mm0fJiowq8IelWwe+FEDUsVY3qg9D/aw7yEG9ApL34livin/VkWFqKq9ih1uB3timOjY3tVMyAgpmKcYqPxJPy3GjWYOeutwJcQZj8Zb4BowpVBj7rA70Fgqs9nVQXUyfc6LQ80+QIU+WBswqFGLA+SzyEGo/k+P45gYiawW4m3Bfap58X5hiQpUpHs5QBZuWC6cDt7q+BInf/+wlRI9pJF3QIv7KTEaySNdUtysMoAw0WGl5Sr7FtGrKKdyZB5E/eKbXGraCMXiY+jX2+YtUgyynO+G3gSY5PVr2BTseSFCCXLcvY8PG+x2ecc5nk4nNhpFkWrzGdwZJiriIMxrXStKB8dUWd55LEvuO475nbNUpnYVMY+br4NpUyqPyG33BM4my5sK8BimT6YO1tFsoFPx9TXSpuDAuk3QTzjZZET8P7SlFqJRwSjfLV1UkjrvHMkRaN7nSGmBaxtAP8Ucw=
-  file: bin/csi/csi-linux_*.zip
-  skip_cleanup: true
-  overwrite: true
-  on:
-    repo: openebs/cstor-csi
-    tags: true
-branches:
-  except:
-  - "/^*-v[0-9]/"
