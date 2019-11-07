@@ -25,7 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -52,7 +51,7 @@ func FetchPVDetails(name string) (*corev1.PersistentVolume, error) {
 // getVolStatus fetches the current VolumeStatus which specifies if the volume
 // is ready to serve IOs
 func getVolStatus(volumeID string) (string, error) {
-	listOptions := v1.ListOptions{
+	listOptions := metav1.ListOptions{
 		LabelSelector: "openebs.io/persistent-volume=" + volumeID,
 	}
 
@@ -75,7 +74,7 @@ func getVolStatus(volumeID string) (string, error) {
 
 // GetVolListForNode fetches the current Published Volume list
 func GetVolListForNode() (*apis.CSIVolumeList, error) {
-	listOptions := v1.ListOptions{
+	listOptions := metav1.ListOptions{
 		LabelSelector: NODEID + "=" + NodeIDENV,
 	}
 
@@ -86,10 +85,9 @@ func GetVolListForNode() (*apis.CSIVolumeList, error) {
 
 // GetVolList fetches the current Published Volume list
 func GetVolList(volume string) (*apis.CSIVolumeList, error) {
-	listOptions := v1.ListOptions{
+	listOptions := metav1.ListOptions{
 		LabelSelector: VOLNAME + "=" + volume,
 	}
-
 	return csivolume.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).List(listOptions)
 
@@ -101,8 +99,10 @@ func GetCSIVolume(volumeID string) (*apis.CSIVolume, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if len(volList.Items) == 0 {
-		return nil, nil
+		return nil, k8serror.NewNotFound(apis.Resource("csivolumes"), volumeID)
+
 	}
 
 	if len(volList.Items) != 1 {
@@ -114,7 +114,7 @@ func GetCSIVolume(volumeID string) (*apis.CSIVolume, error) {
 // GetVolumeIP fetches the cstor target IP Address
 func GetVolumeIP(volumeID string) (string, error) {
 	cstorvolume, err := csv.NewKubeclient().
-		WithNamespace(OpenEBSNamespace).Get(volumeID, v1.GetOptions{})
+		WithNamespace(OpenEBSNamespace).Get(volumeID, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -154,7 +154,7 @@ func CreateOrUpdateCSIVolumeCR(csivol *apis.CSIVolume) error {
 		return err
 	}
 
-	csivol.OwnerReferences = []v1.OwnerReference{
+	csivol.OwnerReferences = []metav1.OwnerReference{
 		{
 			APIVersion: "v1",
 			Kind:       "Node",
@@ -175,7 +175,7 @@ func UpdateCSIVolumeCR(csivol *apis.CSIVolume) error {
 
 	oldcsivol, err := csivolume.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
-		Get(csivol.Name, v1.GetOptions{})
+		Get(csivol.Name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
