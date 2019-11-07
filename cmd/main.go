@@ -44,7 +44,7 @@ func main() {
 	)
 
 	cmd.PersistentFlags().StringVar(
-		&config.DriverName, "name", "openebs-csi.openebs.io", "Name of this driver",
+		&config.DriverName, "name", "cstor.csi.openebs.io", "Name of this driver",
 	)
 
 	cmd.PersistentFlags().StringVar(

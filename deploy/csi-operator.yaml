@@ -122,28 +122,17 @@ spec:
   version: v1alpha1
 
 ---
-
-kind: VolumeSnapshotClass
-apiVersion: snapshot.storage.k8s.io/v1alpha1
-metadata:
-  name: csi-cstor
-  namespace: kube-system
-  annotations:
-    snapshot.storage.kubernetes.io/is-default-class: "true"
-snapshotter: openebs-csi.openebs.io
-
----
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: openebs-csi-snapshotter-binding
+  name: openebs-cstor-csi-snapshotter-binding
 subjects:
   - kind: ServiceAccount
-    name: openebs-csi-controller-sa
+    name: openebs-cstor-csi-controller-sa
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: openebs-csi-snapshotter-role
+  name: openebs-cstor-csi-snapshotter-role
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -151,7 +140,7 @@ roleRef:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: openebs-csi-snapshotter-role
+  name: openebs-cstor-csi-snapshotter-role
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
@@ -189,6 +178,16 @@ rules:
 
 ---
 
+kind: VolumeSnapshotClass
+apiVersion: snapshot.storage.k8s.io/v1alpha1
+metadata:
+  name: csi-cstor
+  namespace: kube-system
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+snapshotter: cstor.csi.openebs.io
+
+---
 ##############################################
 ###########                       ############
 ###########   Controller plugin   ############
@@ -198,14 +197,14 @@ rules:
 kind: ServiceAccount
 apiVersion: v1
 metadata:
-  name: openebs-csi-controller-sa
+  name: openebs-cstor-csi-controller-sa
   namespace: kube-system
 
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: openebs-csi-provisioner-role
+  name: openebs-cstor-csi-provisioner-role
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -246,37 +245,37 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: openebs-csi-provisioner-binding
+  name: openebs-cstor-csi-provisioner-binding
 subjects:
   - kind: ServiceAccount
-    name: openebs-csi-controller-sa
+    name: openebs-cstor-csi-controller-sa
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: openebs-csi-provisioner-role
+  name: openebs-cstor-csi-provisioner-role
   apiGroup: rbac.authorization.k8s.io
 
 ---
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
-  name: openebs-csi-controller
+  name: openebs-cstor-csi-controller
   namespace: kube-system
 spec:
   selector:
     matchLabels:
-      app: openebs-csi-controller
-      role: openebs-csi
+      app: openebs-cstor-csi-controller
+      role: openebs-cstor-csi
   serviceName: "openebs-csi"
   replicas: 1
   template:
     metadata:
       labels:
-        app: openebs-csi-controller
-        role: openebs-csi
+        app: openebs-cstor-csi-controller
+        role: openebs-cstor-csi
     spec:
       priorityClassName: system-cluster-critical
-      serviceAccount: openebs-csi-controller-sa
+      serviceAccount: openebs-cstor-csi-controller-sa
       containers:
         - name: csi-resizer
           image: quay.io/k8scsi/csi-resizer:v0.1.0
@@ -306,7 +305,7 @@ spec:
           image: quay.io/k8scsi/csi-provisioner:v1.0.1
           imagePullPolicy: IfNotPresent
           args:
-            - "--provisioner=openebs-csi.openebs.io"
+            - "--provisioner=cstor.csi.openebs.io"
             - "--csi-address=$(ADDRESS)"
             - "--v=5"
             - "--feature-gates=Topology=true"
@@ -376,7 +375,7 @@ spec:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: openebs-csi-attacher-role
+  name: openebs-cstor-csi-attacher-role
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
@@ -395,14 +394,14 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: openebs-csi-attacher-binding
+  name: openebs-cstor-csi-attacher-binding
 subjects:
   - kind: ServiceAccount
-    name: openebs-csi-controller-sa
+    name: openebs-cstor-csi-controller-sa
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: openebs-csi-attacher-role
+  name: openebs-cstor-csi-attacher-role
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -410,56 +409,7 @@ roleRef:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: openebs-csi-snapshotter-role
-rules:
-  - apiGroups: [""]
-    resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["persistentvolumeclaims"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["storage.k8s.io"]
-    resources: ["storageclasses"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["list", "watch", "create", "update", "patch"]
-  - apiGroups: [""]
-    resources: ["secrets"]
-    verbs: ["get", "list"]
-  - apiGroups: ["snapshot.storage.k8s.io"]
-    resources: ["volumesnapshotclasses"]
-    verbs: ["get", "list", "watch"]
-  - apiGroups: ["snapshot.storage.k8s.io"]
-    resources: ["volumesnapshotcontents"]
-    verbs: ["create", "get", "list", "watch", "update", "delete"]
-  - apiGroups: ["snapshot.storage.k8s.io"]
-    resources: ["volumesnapshots"]
-    verbs: ["get", "list", "watch", "update"]
-  - apiGroups: ["apiextensions.k8s.io"]
-    resources: ["customresourcedefinitions"]
-    verbs: ["create", "list", "watch", "delete"]
-
----
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: openebs-csi-snapshotter-binding
-subjects:
-  - kind: ServiceAccount
-    name: openebs-csi-controller-sa
-    namespace: kube-system
-roleRef:
-  kind: ClusterRole
-  name: openebs-csi-snapshotter-role
-  apiGroup: rbac.authorization.k8s.io
-
----
-
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: openebs-csi-cluster-driver-registrar-role
+  name: openebs-cstor-csi-cluster-registrar-role
 rules:
   - apiGroups: ["csi.storage.k8s.io"]
     resources: ["csidrivers"]
@@ -470,14 +420,14 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: openebs-csi-cluster-driver-registrar-binding
+  name: openebs-cstor-csi-cluster-registrar-binding
 subjects:
   - kind: ServiceAccount
-    name: openebs-csi-controller-sa
+    name: openebs-cstor-csi-controller-sa
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: openebs-csi-cluster-driver-registrar-role
+  name: openebs-cstor-csi-cluster-registrar-role
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -491,7 +441,7 @@ roleRef:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: openebs-csi-node-sa
+  name: openebs-cstor-csi-node-sa
   namespace: kube-system
 
 ---
@@ -499,7 +449,7 @@ metadata:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: openebs-csi-driver-registrar-role
+  name: openebs-cstor-csi-registrar-role
 rules:
   - apiGroups: [""]
     resources: ["events"]
@@ -516,14 +466,14 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: openebs-csi-driver-registrar-binding
+  name: openebs-cstor-csi-registrar-binding
 subjects:
   - kind: ServiceAccount
-    name: openebs-csi-node-sa
+    name: openebs-cstor-csi-node-sa
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: openebs-csi-driver-registrar-role
+  name: openebs-cstor-csi-registrar-role
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -531,24 +481,25 @@ roleRef:
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: openebs-csi-node
+  name: openebs-cstor-csi-node
   namespace: kube-system
 spec:
   selector:
     matchLabels:
-      app: openebs-csi-node
+      app: openebs-cstor-csi-node
   template:
     metadata:
       labels:
-        app: openebs-csi-node
-        role: openebs-csi
+        app: openebs-cstor-csi-node
+        role: openebs-cstor-csi
     spec:
       priorityClassName: system-node-critical
-      serviceAccount: openebs-csi-node-sa
+      serviceAccount: openebs-cstor-csi-node-sa
       hostNetwork: true
       containers:
         - name: csi-node-driver-registrar
           image: quay.io/k8scsi/csi-node-driver-registrar:v1.0.1
+          imagePullPolicy: IfNotPresent
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -556,18 +507,18 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/openebs-csi.openebs.io /registration/openebs-csi.openebs.io-reg.sock"]
+                command: ["/bin/sh", "-c", "rm -rf /registration/cstor.csi.openebs.io /registration/cstor.csi.openebs.io-reg.sock"]
           env:
             - name: ADDRESS
               value: /plugin/csi.sock
             - name: DRIVER_REG_SOCK_PATH
-              value: /var/lib/kubelet/plugins/openebs-csi.openebs.io/csi.sock
+              value: /var/lib/kubelet/plugins/cstor.csi.openebs.io/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: NODE_DRIVER
-              value: openebs-csi
+              value: openebs-cstor-csi
           volumeMounts:
             - name: plugin-dir
               mountPath: /plugin
@@ -624,7 +575,7 @@ spec:
             type: DirectoryOrCreate
         - name: plugin-dir
           hostPath:
-            path: /var/lib/kubelet/plugins/openebs-csi.openebs.io/
+            path: /var/lib/kubelet/plugins/cstor.csi.openebs.io/
             type: DirectoryOrCreate
         - name: pods-mount-dir
           hostPath:
