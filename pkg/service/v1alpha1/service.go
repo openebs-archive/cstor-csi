@@ -20,7 +20,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	config "github.com/openebs/cstor-csi/pkg/config/v1alpha1"
-	"github.com/openebs/cstor-csi/pkg/utils/v1alpha1"
+	utils "github.com/openebs/cstor-csi/pkg/utils/v1alpha1"
 )
 
 const (
@@ -29,7 +29,7 @@ const (
 	//
 	// This is the canonical, official name of this
 	// plugin
-	Name = "openebs-csi.openebs.io"
+	Name = "cstor.csi.openebs.io"
 )
 
 // volume can only be published once as
