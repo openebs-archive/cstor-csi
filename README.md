@@ -192,3 +192,33 @@ be seen in running state.
 It is internally a two step process for volumes containing a file system:
 1. Volume expansion
 2. FileSystem expansion
+
+### Clone a cstor volume using OpenEBS CSI Driver
+
+#### Notes:
+1. Following feature gate needs to be enabled at kubelet and kube-apiserver
+--feature-gates=VolumeSnapshotDataSource=true
+2. Default VolumeSnapshotClass has already been applied while deploying the csi-operator 
+
+#### Steps:
+1. Create a snapshot after updating the PVC and snapshot name in the following yaml:
+```
+   kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/deploy/snapshot.yaml
+```
+2. Verify that the snapshot has been created successfully:
+```
+kubectl get volumesnapshots.snapshot 
+NAME            AGE
+demo-snapshot   3d1h
+```
+3. Create the cloned PV using the above Snapshot by updating and modifying the following yaml:
+```
+   kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/deploy/pvc-clone.yaml
+```
+4. Verify that the PVC has been successfully created:
+```
+kubectl get pvc
+NAME                    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS              AGE
+demo-csivol-claim       Bound    pvc-52d88903-0518-11ea-b887-42010a80006c   5Gi        RWO            openebs-csi-cstor-sparse  3d1h
+pvc-clone               Bound    pvc-2f2d65fc-0784-11ea-b887-42010a80006c   5Gi        RWO            openebs-csi-cstor-sparse  3s
+```
