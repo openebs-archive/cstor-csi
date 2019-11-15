@@ -1,12 +1,15 @@
 # OpenEBS CStor CSI Driver
 
-CSI driver implementation for OpenEBS CSTOR storage engine.
+CSI driver implementation for OpenEBS CStor storage engine.
 
 ## Project Status
 
 This project is under active development and considered to be in Alpha state.
 
-The current implementation only supports provisioning, de-provisioning and expansion of cStor Volumes.
+The current implementation supports the following for CStor Volumes:
+1. Provisioning and De-provisioning
+2. Snapshots and clones
+3. Volume Expansion
 
 ## Usage
 
@@ -18,11 +21,13 @@ meets the following prerequisites:
 1. You will need to have Kubernetes version 1.14 or higher
 2. You will need to have OpenEBS Version 1.2 or higher installed.
    The steps to install OpenEBS are [here](https://docs.openebs.io/docs/next/quickstart.html)
-3. iSCSI initiator utils installed on all the worker nodes
-4. You have access to install RBAC components into kube-system namespace.
+3. CStor CSI driver operates on the cStor Pools provisioned using the new schema called CSPC.
+   Steps to provision the pools using the same are [here](https://docs.google.com/document/d/1CZLBqGgBy7mTAMth4G2kR_jBn5bOV0th03ce3idX8KA/edit?usp=sharing)
+4. iSCSI initiator utils installed on all the worker nodes
+5. You have access to install RBAC components into kube-system namespace.
    The OpenEBS CStor CSI driver components are installed in kube-system
    namespace to allow them to be flagged as system critical components.
-5. You will need to turn on  ExpandCSIVolumes and ExpandInUsePersistentVolumes feature gates on  kubelets and kube-apiserver:
+6. You will need to turn on  ExpandCSIVolumes and ExpandInUsePersistentVolumes feature gates on  kubelets and kube-apiserver.
 
 ### Setup OpenEBS CStor CSI Driver
 
