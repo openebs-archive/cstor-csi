@@ -3,7 +3,7 @@ kind: VolumeSnapshot
 metadata:
   name: demo-snapshot
 spec:
-  snapshotClassName: csi-cstor
+  snapshotClassName: csi-cstor-snapshotclass
   source:
     name: demo-csivol-claim
     kind: PersistentVolumeClaim
