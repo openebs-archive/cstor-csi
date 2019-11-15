@@ -138,7 +138,7 @@ through various components.
 2. Kubernetes will pass the PV creation request to the OpenEBS
    CSI Controller service via `CreateVolume()`, as this controller
    registered with Kubernetes for receiving any requests related to
-   `openebs-csi.openebs.io`
+   `cstor.csi.openebs.io`
 
 3. OpenEBS CSI Controller will create a custom resource called
    `CStorVolumeClaim(CVC)` and returns the details of the newly
