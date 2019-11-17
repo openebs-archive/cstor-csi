@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"os"
+
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	config "github.com/openebs/cstor-csi/pkg/config/v1alpha1"
@@ -90,7 +92,10 @@ func New(config *config.Config) *CSIDriver {
 		// becomes read only (in case of RW mount
 		// points), this thread will fetch the path
 		// and relogin or remount
-		// go utils.MonitorMounts()
+		if os.Getenv("REMOUNT") == "true" {
+			logrus.Infof("Monitoring mounts")
+			go utils.MonitorMounts()
+		}
 
 		driver.ns = NewNode(driver)
 	}
