@@ -91,7 +91,7 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
    apiVersion: storage.k8s.io/v1
    metadata:
      name: openebs-csi-cstor-sparse
-   provisioner: openebs-csi.openebs.io
+   provisioner: cstor.csi.openebs.io
    allowVolumeExpansion: true
    parameters:
      cas-type: cstor
