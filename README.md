@@ -7,7 +7,7 @@ CSI driver implementation for OpenEBS CStor storage engine.
 This project is under active development and considered to be in Alpha state.
 
 The current implementation supports the following for CStor Volumes:
-1. Provisioning and De-provisioning
+1. Provisioning and De-provisioning with ext4 filesystems
 2. Snapshots and clones
 3. Volume Expansion
 
@@ -91,7 +91,7 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
    apiVersion: storage.k8s.io/v1
    metadata:
      name: openebs-csi-cstor-sparse
-   provisioner: openebs-csi.openebs.io
+   provisioner: cstor.csi.openebs.io
    allowVolumeExpansion: true
    parameters:
      cas-type: cstor
@@ -187,7 +187,7 @@ be seen in running state.
 
 #### Notes:
 - Only dynamically provisioned volumes can be resized.
-- You can only resize volumes containing a file system if the file system is XFS, Ext3, or Ext4.
+- You can only resize volumes containing a file system if the file system is ext4.
 - Make sure that the storage class has the `allowVolumeExpansion` field set to `true` when the volume is provisioned.
 
 #### Steps:
