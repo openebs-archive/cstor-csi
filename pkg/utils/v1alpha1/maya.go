@@ -69,14 +69,16 @@ func ProvisionVolume(
 		CVCFinalizer,
 	}
 
-	sSize := ByteCount(uint64(size))
+	requestGIB := RoundUpGiB(size)
+	sSize := resource.MustParse(fmt.Sprintf("%dGi", requestGIB))
+
 	cvcObj, err := cvc.NewBuilder().
 		WithName(volName).
 		WithNamespace(OpenEBSNamespace).
 		WithAnnotations(annotations).
 		WithLabelsNew(labels).
 		WithFinalizers(finalizers).
-		WithCapacity(sSize).
+		WithCapacityQty(sSize).
 		WithSource(snapshotID).
 		WithReplicaCount(replicaCount).
 		WithNewVersion(version.Current()).
@@ -185,12 +187,14 @@ func ResizeVolume(
 	size int64,
 ) error {
 
-	sSize := ByteCount(uint64(size))
+	requestGIB := RoundUpGiB(size)
+	desiredSize := resource.MustParse(fmt.Sprintf("%dGi", requestGIB))
+
 	cvc, err := getCVC(volumeID)
 	if err != nil {
 		return err
 	}
-	desiredSize, _ := resource.ParseQuantity(sSize)
+
 	cvcDesiredSize := cvc.Spec.Capacity[corev1.ResourceStorage]
 
 	if (desiredSize).Cmp(cvcDesiredSize) < 0 {
@@ -199,7 +203,7 @@ func ResizeVolume(
 	}
 
 	if cvc.Status.Phase == apismaya.CStorVolumeClaimPhasePending {
-		return handleResize(cvc, sSize)
+		return handleResize(cvc, desiredSize)
 	}
 	cvcActualSize := cvc.Status.Capacity[corev1.ResourceStorage]
 
@@ -211,12 +215,12 @@ func ResizeVolume(
 	if (desiredSize).Cmp(cvcActualSize) == 0 {
 		return nil
 	}
-	return handleResize(cvc, sSize)
+	return handleResize(cvc, desiredSize)
 
 }
 
 func handleResize(
-	cvc *apismaya.CStorVolumeClaim, sSize string,
+	cvc *apismaya.CStorVolumeClaim, sSize resource.Quantity,
 ) error {
 	if err := updateCVCSize(cvc, sSize); err != nil {
 		return err
@@ -227,14 +231,14 @@ func handleResize(
 	return waitAndReverifyResizeStatus(cvc.Name, sSize)
 }
 
-func waitAndReverifyResizeStatus(cvcName, sSize string) error {
+func waitAndReverifyResizeStatus(cvcName string, sSize resource.Quantity) error {
 
 	time.Sleep(5 * time.Second)
 	cvcObj, err := getCVC(cvcName)
 	if err != nil {
 		return err
 	}
-	desiredSize, _ := resource.ParseQuantity(sSize)
+	desiredSize := sSize
 	cvcActualSize := cvcObj.Status.Capacity[corev1.ResourceStorage]
 	if (desiredSize).Cmp(cvcActualSize) != 0 {
 		return fmt.Errorf("ResizeInProgress from: %v to: %v",
@@ -242,9 +246,10 @@ func waitAndReverifyResizeStatus(cvcName, sSize string) error {
 	}
 	return nil
 }
-func updateCVCSize(oldCVCObj *apismaya.CStorVolumeClaim, sSize string) error {
+
+func updateCVCSize(oldCVCObj *apismaya.CStorVolumeClaim, sSize resource.Quantity) error {
 	newCVCObj, err := cvc.BuildFrom(oldCVCObj.DeepCopy()).
-		WithCapacity(sSize).Build()
+		WithCapacityQty(sSize).Build()
 	if err != nil {
 		return err
 	}
