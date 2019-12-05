@@ -239,6 +239,8 @@ func MonitorMounts() {
 					vol.Spec.Volume.TargetPath, mountList,
 				)
 				// If the volume is present in the list verify its state
+				// If stagingPath is in rw then TargetPath will also be in rw
+				// mode
 				if stagingPathExists && targetPathExists &&
 					verifyMountOpts(stagingMountPoint.Opts, "rw") {
 					// Continue with remaining volumes since this volume looks
