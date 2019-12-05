@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -50,12 +49,32 @@ func NewController(d *CSIDriver) csi.ControllerServer {
 	}
 }
 
-// SupportedVolumeCapabilityAccessModes contains the list of supported access
-// modes for the volume
-var SupportedVolumeCapabilityAccessModes = []*csi.VolumeCapability_AccessMode{
-	&csi.VolumeCapability_AccessMode{
-		Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
-	},
+// TODO Implementation will be taken up later
+
+// ValidateVolumeCapabilities validates the capabilities
+// required to create a new volume
+// This implements csi.ControllerServer
+func (cs *controller) ValidateVolumeCapabilities(
+	ctx context.Context,
+	req *csi.ValidateVolumeCapabilitiesRequest,
+) (*csi.ValidateVolumeCapabilitiesResponse, error) {
+
+	return nil, status.Error(codes.Unimplemented, "")
+}
+
+// ControllerGetCapabilities fetches controller capabilities
+//
+// This implements csi.ControllerServer
+func (cs *controller) ControllerGetCapabilities(
+	ctx context.Context,
+	req *csi.ControllerGetCapabilitiesRequest,
+) (*csi.ControllerGetCapabilitiesResponse, error) {
+
+	resp := &csi.ControllerGetCapabilitiesResponse{
+		Capabilities: cs.capabilities,
+	}
+
+	return resp, nil
 }
 
 // CreateVolume provisions a volume
@@ -150,32 +169,34 @@ deleteResponse:
 	return csipayload.NewDeleteVolumeResponseBuilder().Build(), nil
 }
 
-// TODO Implementation will be taken up later
-
-// ValidateVolumeCapabilities validates the capabilities
-// required to create a new volume
-// This implements csi.ControllerServer
-func (cs *controller) ValidateVolumeCapabilities(
-	ctx context.Context,
-	req *csi.ValidateVolumeCapabilitiesRequest,
-) (*csi.ValidateVolumeCapabilitiesResponse, error) {
-
-	return nil, status.Error(codes.Unimplemented, "")
-}
-
-// ControllerGetCapabilities fetches controller capabilities
+// ControllerPublishVolume attaches given volume
+// at the specified node
 //
 // This implements csi.ControllerServer
-func (cs *controller) ControllerGetCapabilities(
+func (cs *controller) ControllerPublishVolume(
 	ctx context.Context,
-	req *csi.ControllerGetCapabilitiesRequest,
-) (*csi.ControllerGetCapabilitiesResponse, error) {
+	req *csi.ControllerPublishVolumeRequest,
+) (*csi.ControllerPublishVolumeResponse, error) {
 
-	resp := &csi.ControllerGetCapabilitiesResponse{
-		Capabilities: cs.capabilities,
+	if err := prepareVolumeForNode(req); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return resp, nil
+	return &csi.ControllerPublishVolumeResponse{}, nil
+}
+
+// ControllerUnpublishVolume removes a previously
+// attached volume from the given node
+//
+// This implements csi.ControllerServer
+func (cs *controller) ControllerUnpublishVolume(
+	ctx context.Context,
+	req *csi.ControllerUnpublishVolumeRequest,
+) (*csi.ControllerUnpublishVolumeResponse, error) {
+	if err := utils.DeleteCSIVolumeCR(req.GetVolumeId() + "-" + req.GetNodeId()); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
 // ControllerExpandVolume resizes previously provisioned volume
@@ -265,30 +286,6 @@ func (cs *controller) ListSnapshots(
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-// ControllerUnpublishVolume removes a previously
-// attached volume from the given node
-//
-// This implements csi.ControllerServer
-func (cs *controller) ControllerUnpublishVolume(
-	ctx context.Context,
-	req *csi.ControllerUnpublishVolumeRequest,
-) (*csi.ControllerUnpublishVolumeResponse, error) {
-
-	return nil, status.Error(codes.Unimplemented, "")
-}
-
-// ControllerPublishVolume attaches given volume
-// at the specified node
-//
-// This implements csi.ControllerServer
-func (cs *controller) ControllerPublishVolume(
-	ctx context.Context,
-	req *csi.ControllerPublishVolumeRequest,
-) (*csi.ControllerPublishVolumeResponse, error) {
-
-	return nil, status.Error(codes.Unimplemented, "")
-}
-
 // GetCapacity return the capacity of the
 // given volume
 //
@@ -310,145 +307,4 @@ func (cs *controller) ListVolumes(
 ) (*csi.ListVolumesResponse, error) {
 
 	return nil, status.Error(codes.Unimplemented, "")
-}
-
-// validateCapabilities validates if provided capabilities
-// are supported by this driver
-func validateCapabilities(caps []*csi.VolumeCapability) bool {
-
-	for _, cap := range caps {
-		if !IsSupportedVolumeCapabilityAccessMode(cap.AccessMode.Mode) {
-			return false
-		}
-	}
-	return true
-}
-
-func (cs *controller) validateDeleteVolumeReq(req *csi.DeleteVolumeRequest) error {
-	volumeID := req.GetVolumeId()
-	if volumeID == "" {
-		return status.Error(
-			codes.InvalidArgument,
-			"failed to handle delete volume request: missing volume id",
-		)
-	}
-
-	err := cs.validateRequest(
-		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
-	)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"failed to handle delete volume request for {%s}",
-			volumeID,
-		)
-	}
-	return nil
-}
-
-// IsSupportedVolumeCapabilityAccessMode valides the requested access mode
-func IsSupportedVolumeCapabilityAccessMode(
-	accessMode csi.VolumeCapability_AccessMode_Mode,
-) bool {
-
-	for _, access := range SupportedVolumeCapabilityAccessModes {
-		if accessMode == access.Mode {
-			return true
-		}
-	}
-	return false
-}
-
-// newControllerCapabilities returns a list
-// of this controller's capabilities
-func newControllerCapabilities() []*csi.ControllerServiceCapability {
-	fromType := func(
-		cap csi.ControllerServiceCapability_RPC_Type,
-	) *csi.ControllerServiceCapability {
-		return &csi.ControllerServiceCapability{
-			Type: &csi.ControllerServiceCapability_Rpc{
-				Rpc: &csi.ControllerServiceCapability_RPC{
-					Type: cap,
-				},
-			},
-		}
-	}
-
-	var capabilities []*csi.ControllerServiceCapability
-	for _, cap := range []csi.ControllerServiceCapability_RPC_Type{
-		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
-		csi.ControllerServiceCapability_RPC_EXPAND_VOLUME,
-		csi.ControllerServiceCapability_RPC_CREATE_DELETE_SNAPSHOT,
-	} {
-		capabilities = append(capabilities, fromType(cap))
-	}
-	return capabilities
-}
-
-// validateRequest validates if the requested service is
-// supported by the driver
-func (cs *controller) validateRequest(
-	c csi.ControllerServiceCapability_RPC_Type,
-) error {
-
-	for _, cap := range cs.capabilities {
-		if c == cap.GetRpc().GetType() {
-			return nil
-		}
-	}
-
-	return status.Error(
-		codes.InvalidArgument,
-		fmt.Sprintf("failed to validate request: {%s} is not supported", c),
-	)
-}
-
-func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) error {
-	err := cs.validateRequest(
-		csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME,
-	)
-	if err != nil {
-		return errors.Wrapf(
-			err,
-			"failed to handle create volume request for {%s}",
-			req.GetName(),
-		)
-	}
-
-	if req.GetName() == "" {
-		return status.Error(
-			codes.InvalidArgument,
-			"failed to handle create volume request: missing volume name",
-		)
-	}
-
-	if req.GetParameters()["cstorPoolCluster"] == "" {
-		return status.Error(
-			codes.InvalidArgument,
-			"failed to handle create volume request: missing storage class parameter cstorPoolCluster",
-		)
-	}
-
-	if req.GetParameters()["replicaCount"] == "" {
-		return status.Error(
-			codes.InvalidArgument,
-			"failed to handle create volume request: missing storage class parameter replicaCount",
-		)
-	}
-
-	if req.GetParameters()["cas-type"] == "" {
-		return status.Error(
-			codes.InvalidArgument,
-			"failed to handle create volume request: missing storage class parameter cas-type",
-		)
-	}
-
-	volCapabilities := req.GetVolumeCapabilities()
-	if volCapabilities == nil {
-		return status.Error(
-			codes.InvalidArgument,
-			"failed to handle create volume request: missing volume capabilities",
-		)
-	}
-	return nil
 }

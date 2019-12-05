@@ -73,10 +73,15 @@ type VolumeInfo struct {
 	// access mode of the volume
 	AccessModes []string `json:"accessModes"`
 
-	// MountPath of the volume will hold the
+	// StagingPath of the volume will hold the
 	// path on which the volume is mounted
 	// on that node
-	MountPath string `json:"mountPath"`
+	StagingTargetPath string `json:"stagingTargetPath"`
+
+	// TargetPath of the volume will hold the
+	// path on which the volume is bind mounted
+	// on that node
+	TargetPath string `json:"targetPath"`
 
 	// ReadOnly specifies if the volume needs
 	// to be mounted in ReadOnly mode

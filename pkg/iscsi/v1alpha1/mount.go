@@ -2,8 +2,6 @@ package iscsi
 
 import (
 	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"k8s.io/kubernetes/pkg/util/mount"
 )
 
@@ -25,22 +23,6 @@ func UnmountAndDetachDisk(vol *apis.CSIVolume, path string) error {
 	}
 	util := &ISCSIUtil{}
 	return util.DetachDisk(*diskUnmounter, path)
-}
-
-// AttachAndMountDisk logs in to the iSCSI Volume
-// and mounts the disk to the specified path
-func AttachAndMountDisk(vol *apis.CSIVolume) (string, error) {
-	if len(vol.Spec.Volume.MountPath) == 0 {
-		return "", status.Error(codes.InvalidArgument, "Target path missing in request")
-	}
-	iscsiInfo, err := getISCSIInfo(vol)
-	if err != nil {
-		return "", err
-	}
-	diskMounter := getISCSIDiskMounter(iscsiInfo, vol)
-
-	util := &ISCSIUtil{}
-	return util.AttachDisk(*diskMounter)
 }
 
 // Unmount unmounts the path provided
