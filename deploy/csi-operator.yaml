@@ -547,7 +547,7 @@ spec:
             - name: device-dir
               mountPath: /dev
             - name: pods-mount-dir
-              mountPath: /var/lib/kubelet/pods
+              mountPath: /var/lib/kubelet/
               # needed so that any mounts setup inside this container are
               # propagated back to the host machine.
               mountPropagation: "Bidirectional"
@@ -568,7 +568,7 @@ spec:
             type: DirectoryOrCreate
         - name: pods-mount-dir
           hostPath:
-            path: /var/lib/kubelet/pods
+            path: /var/lib/kubelet/
             type: Directory
         - name: iscsiadm-bin
           hostPath:

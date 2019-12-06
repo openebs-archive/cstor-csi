@@ -41,3 +41,7 @@ required = [
 [prune]
   unused-packages = true
   go-tests = true
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/kubernetes-csi/csi-lib-iscsi"

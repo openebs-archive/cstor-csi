@@ -17,16 +17,15 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"errors"
 	"fmt"
-	"time"
+	"os"
+	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
-	iscsi "github.com/openebs/cstor-csi/pkg/iscsi/v1alpha1"
+	iscsiutils "github.com/openebs/cstor-csi/pkg/iscsi/v1alpha1"
 	utils "github.com/openebs/cstor-csi/pkg/utils/v1alpha1"
-	csivol "github.com/openebs/cstor-csi/pkg/volume/v1alpha1"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,274 +34,19 @@ import (
 // node is the server implementation
 // for CSI NodeServer
 type node struct {
-	driver *CSIDriver
+	driver       *CSIDriver
+	capabilities []*csi.NodeServiceCapability
+	mounter      *utils.NodeMounter
 }
 
 // NewNode returns a new instance
 // of CSI NodeServer
 func NewNode(d *CSIDriver) csi.NodeServer {
 	return &node{
-		driver: d,
+		driver:       d,
+		capabilities: newNodeCapabilities(),
+		mounter:      utils.NewNodeMounter(),
 	}
-}
-
-func prepareVolSpecAndWaitForVolumeReady(
-	req *csi.NodePublishVolumeRequest,
-	nodeID string,
-) (*apis.CSIVolume, error) {
-	volumeID := req.GetVolumeId()
-	labels := map[string]string{
-		"nodeID": nodeID,
-	}
-
-	vol, err := csivol.NewBuilder().
-		WithName(req.GetVolumeId()).
-		WithLabels(labels).
-		WithVolName(req.GetVolumeId()).
-		WithMountPath(req.GetTargetPath()).
-		WithFSType(req.GetVolumeCapability().GetMount().GetFsType()).
-		WithReadOnly(req.GetReadonly()).Build()
-	if err != nil {
-		return nil, err
-	}
-
-	if err = utils.PatchCVCNodeID(volumeID, nodeID); err != nil {
-		return nil, err
-	}
-
-	if isCVCBound, err := utils.IsCVCBound(volumeID); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	} else if !isCVCBound {
-		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusWaitingForCVCBound
-		time.Sleep(10 * time.Second)
-		return nil, errors.New("Waiting for CVC to be bound")
-	}
-
-	if err = utils.FetchAndUpdateISCSIDetails(volumeID, vol); err != nil {
-		return nil, err
-	}
-
-	//Check if volume is ready to serve IOs,
-	//info is fetched from the cstorvolume CR
-	if err := utils.WaitForVolumeToBeReady(volumeID); err != nil {
-		return nil, err
-	}
-
-	// A temporary TCP connection is made to the volume to check if its
-	// reachable
-	if err := utils.WaitForVolumeToBeReachable(
-		vol.Spec.ISCSI.TargetPortal,
-	); err != nil {
-		return nil,
-			status.Error(codes.Internal, err.Error())
-	}
-	return vol, nil
-}
-
-func removeVolumeFromTransitionList(volumeID string) {
-	utils.TransitionVolListLock.Lock()
-	defer utils.TransitionVolListLock.Unlock()
-	delete(utils.TransitionVolList, volumeID)
-}
-
-func addVolumeToTransitionList(volumeID string, status apis.CSIVolumeStatus) error {
-	utils.TransitionVolListLock.Lock()
-	defer utils.TransitionVolListLock.Unlock()
-
-	if _, ok := utils.TransitionVolList[volumeID]; ok {
-		return fmt.Errorf("Volume Busy, status: %v",
-			utils.TransitionVolList[volumeID])
-	}
-	utils.TransitionVolList[volumeID] = status
-	return nil
-}
-
-// VerifyIfMountRequired returns true if volume is already mounted on targetPath
-// and unmounts if it is mounted on a different path
-func VerifyIfMountRequired(volumeID, targetPath string) (bool, error) {
-	var (
-		currentMounts []string
-		err           error
-	)
-	currentMounts, err = utils.GetMounts(volumeID)
-	if err != nil {
-		return false, err
-	}
-	if len(currentMounts) > 1 {
-		logrus.Fatalf(
-			"More than one mounts for volume:%s mounts: %v",
-			volumeID, currentMounts,
-		)
-	}
-	if len(currentMounts) == 1 {
-		if currentMounts[0] == targetPath {
-			return false, nil
-		}
-		if err = iscsi.Unmount(currentMounts[0]); err != nil {
-			return false, err
-		}
-	}
-	return true, nil
-}
-
-// NodePublishVolume publishes (mounts) the volume
-// at the corresponding node at a given path
-//
-// This implements csi.NodeServer
-func (ns *node) NodePublishVolume(
-	ctx context.Context,
-	req *csi.NodePublishVolumeRequest,
-) (*csi.NodePublishVolumeResponse, error) {
-
-	var (
-		err             error
-		devicePath      string
-		vol             *apis.CSIVolume
-		isMountRequired bool
-	)
-
-	if err = ns.validateNodePublishReq(req); err != nil {
-		return nil, err
-	}
-
-	volumeID := req.GetVolumeId()
-	targetPath := req.GetTargetPath()
-	nodeID := ns.driver.config.NodeID
-
-	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	defer removeVolumeFromTransitionList(volumeID)
-
-	if vol, err = prepareVolSpecAndWaitForVolumeReady(req, nodeID); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	isMountRequired, err = VerifyIfMountRequired(volumeID, targetPath)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	if isMountRequired {
-		// Permission is changed for the local directory before the volume is
-		// mounted on the node. This helps to resolve cases when the CSI driver
-		// Unmounts the volume to remount again in required mount mode(ro/rw),
-		// the app starts writing directly in the local directory.
-		// As soon as the volume is mounted the permissions of this directory are
-		// automatically changed to allow Reads and writes.
-		// And as soon as it is unmounted permissions change
-		// back to what we are setting over here.
-		if err = utils.ChmodMountPath(vol.Spec.Volume.MountPath); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusMountUnderProgress
-		// Login to the volume and attempt mount operation on the requested path
-		if devicePath, err = iscsi.AttachAndMountDisk(vol); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-		// TODO update status also in below function
-		vol.Spec.Volume.DevicePath = devicePath
-		vol.Status = apis.CSIVolumeStatusMounted
-		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusMounted
-	}
-
-	err = utils.CreateOrUpdateCSIVolumeCR(vol)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	return &csi.NodePublishVolumeResponse{}, nil
-}
-
-// IsUnmountRequired returns true if the volume needs to be unmounted
-func IsUnmountRequired(volumeID, targetPath string) (bool, error) {
-	var (
-		currentMounts []string
-		err           error
-	)
-	currentMounts, err = utils.GetMounts(volumeID)
-	if err != nil {
-		return false, err
-	}
-	if len(currentMounts) > 1 {
-		logrus.Fatalf(
-			"More than one mounts for volume:%s mounts: %v",
-			volumeID, currentMounts,
-		)
-	}
-	if len(currentMounts) == 0 {
-		return false, nil
-	}
-	if currentMounts[0] != targetPath {
-		return false, err
-	}
-	return true, nil
-}
-
-// NodeUnpublishVolume unpublishes (unmounts) the volume
-// from the corresponding node from the given path
-//
-// This implements csi.NodeServer
-func (ns *node) NodeUnpublishVolume(
-	ctx context.Context,
-	req *csi.NodeUnpublishVolumeRequest,
-) (*csi.NodeUnpublishVolumeResponse, error) {
-
-	var (
-		err             error
-		vol             *apis.CSIVolume
-		unmountRequired bool
-	)
-
-	if err = ns.validateNodeUnpublishReq(req); err != nil {
-		return nil, err
-	}
-
-	targetPath := req.GetTargetPath()
-	volumeID := req.GetVolumeId()
-
-	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	defer removeVolumeFromTransitionList(volumeID)
-
-	unmountRequired, err = IsUnmountRequired(volumeID, targetPath)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	if unmountRequired {
-		if vol, err = utils.GetCSIVolume(volumeID); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-
-		// if node driver restarts before this step Kubelet will trigger the
-		// NodeUnpublish command again so there is no need to worry that when this
-		// driver restarts it will pick up the CSIVolume CR and start monitoring
-		// mount point again.
-		// If the node is down for some time, other node driver will first delete
-		// this node's CSIVolume CR and then only will start its mount process.
-		// If there is a case that this node comes up and CSIVolume CR is picked and
-		// this node starts monitoring the mount point while the other node is also
-		// trying to mount which appears to be a race condition but is not since
-		// first of  all this CR will be marked for deletion when the other node
-		// starts mounting. But lets say this node started monitoring and
-		// immediately other node deleted this node's CR, in that case iSCSI
-		// target(istgt) will pick up the new one and allow only that node to login,
-		// so all the cases are handled
-		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusUnmountUnderProgress
-		if err = iscsi.UnmountAndDetachDisk(vol, req.GetTargetPath()); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusUnmounted
-	}
-	// It is safe to delete the CSIVolume CR now since the volume has already
-	// been unmounted and logged out
-	if err = utils.DeleteCSIVolumeCRForPath(volumeID, targetPath); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	logrus.Infof("hostpath: volume %s path: %s has been unmounted.",
-		volumeID, targetPath)
-
-	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 // NodeGetInfo returns node details
@@ -327,30 +71,86 @@ func (ns *node) NodeGetCapabilities(
 	req *csi.NodeGetCapabilitiesRequest,
 ) (*csi.NodeGetCapabilitiesResponse, error) {
 
-	return &csi.NodeGetCapabilitiesResponse{
-		Capabilities: []*csi.NodeServiceCapability{
-			{
-				Type: &csi.NodeServiceCapability_Rpc{
-					Rpc: &csi.NodeServiceCapability_RPC{
-						Type: csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
-					},
-				},
-			},
-		},
-	}, nil
+	resp := &csi.NodeGetCapabilitiesResponse{
+		Capabilities: ns.capabilities,
+	}
+
+	return resp, nil
 }
 
-// TODO
-// This needs to be implemented
-//
-// NodeStageVolume mounts the volume on the staging
-// path
-//
-// This implements csi.NodeServer
+// NodeStageVolume mounts the volume on the staging path
 func (ns *node) NodeStageVolume(
 	ctx context.Context,
 	req *csi.NodeStageVolumeRequest,
 ) (*csi.NodeStageVolumeResponse, error) {
+	var (
+		err             error
+		vol             *apis.CSIVolume
+		isMountRequired bool
+	)
+
+	if err = ns.validateNodeStageReq(req); err != nil {
+		return nil, err
+	}
+
+	volumeID := req.GetVolumeId()
+	stagingTargetPath := req.GetStagingTargetPath()
+
+	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	defer removeVolumeFromTransitionList(volumeID)
+
+	if vol, err = utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if err = utils.WaitForVolumeReadyAndReachable(vol); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	isMountRequired, err = VerifyIfMountRequired(volumeID, stagingTargetPath)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if isMountRequired {
+		vol.Spec.Volume.StagingTargetPath = stagingTargetPath
+		vol.Finalizers = []string{utils.NodeIDENV}
+		vol.Spec.Volume.DevicePath = strings.Join([]string{
+			"/dev/disk/by-path/ip", vol.Spec.ISCSI.TargetPortal,
+			"iscsi", vol.Spec.ISCSI.Iqn, "lun", fmt.Sprint(0)}, "-",
+		)
+		err = utils.UpdateCSIVolumeCR(vol)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		// Permission is changed for the local directory before the volume is
+		// mounted on the node. This helps to resolve cases when the CSI driver
+		// Unmounts the volume to remount again in required mount mode(ro/rw),
+		// the app starts writing directly in the local directory.
+		// As soon as the volume is mounted the permissions of this directory are
+		// automatically changed to allow Reads and writes.
+		// And as soon as it is unmounted permissions change
+		// back to what we are setting over here.
+		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusMountUnderProgress
+		// Login to the volume and attempt mount operation on the requested path
+		devicePath, err := ns.attachDisk(vol)
+		if err != nil {
+			logrus.Errorf("NodeStageVolume: failed to attachDisk for volume %v, err: %v", volumeID, err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		if err := os.MkdirAll(stagingTargetPath, 0750); err != nil {
+			logrus.Errorf("failed to mkdir %s, error: %v", stagingTargetPath, err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		logrus.Info("NodeStageVolume: start format and mount operation")
+		if err := ns.formatAndMount(req, devicePath); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusMounted
+	}
 
 	return &csi.NodeStageVolumeResponse{}, nil
 }
@@ -363,8 +163,150 @@ func (ns *node) NodeUnstageVolume(
 	ctx context.Context,
 	req *csi.NodeUnstageVolumeRequest,
 ) (*csi.NodeUnstageVolumeResponse, error) {
+	var (
+		err             error
+		vol             *apis.CSIVolume
+		unmountRequired bool
+	)
+
+	if err = ns.validateNodeUnStageReq(req); err != nil {
+		return nil, err
+	}
+
+	stagingTargetPath := req.GetStagingTargetPath()
+	volumeID := req.GetVolumeId()
+
+	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	defer removeVolumeFromTransitionList(volumeID)
+
+	if vol, err = utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if vol.Spec.Volume.StagingTargetPath == "" {
+		return &csi.NodeUnstageVolumeResponse{}, nil
+
+	}
+	unmountRequired, err = IsUnmountRequired(volumeID, stagingTargetPath)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	if unmountRequired {
+		// if node driver restarts before this step Kubelet will trigger the
+		// NodeUnpublish command again so there is no need to worry that when this
+		// driver restarts it will pick up the CSIVolume CR and start monitoring
+		// mount point again.
+		// If the node is down for some time, other node driver will first delete
+		// this node's CSIVolume CR and then only will start its mount process.
+		// If there is a case that this node comes up and CSIVolume CR is picked and
+		// this node starts monitoring the mount point while the other node is also
+		// trying to mount which appears to be a race condition but is not since
+		// first of  all this CR will be marked for deletion when the other node
+		// starts mounting. But lets say this node started monitoring and
+		// immediately other node deleted this node's CR, in that case iSCSI
+		// target(istgt) will pick up the new one and allow only that node to login,
+		// so all the cases are handled
+		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusUnmountUnderProgress
+		if err = iscsiutils.UnmountAndDetachDisk(vol, stagingTargetPath); err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusUnmounted
+	}
+	// It is safe to delete the CSIVolume CR now since the volume has already
+	// been unmounted and logged out
+
+	vol.Finalizers = nil
+	vol.Spec.Volume.StagingTargetPath = ""
+	if err = utils.UpdateCSIVolumeCR(vol); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	logrus.Infof("hostpath: volume %s path: %s has been unmounted.",
+		volumeID, stagingTargetPath)
 
 	return &csi.NodeUnstageVolumeResponse{}, nil
+}
+
+// NodePublishVolume publishes (mounts) the volume
+// at the corresponding node at a given path
+//
+// This implements csi.NodeServer
+func (ns *node) NodePublishVolume(
+	ctx context.Context,
+	req *csi.NodePublishVolumeRequest,
+) (*csi.NodePublishVolumeResponse, error) {
+
+	volumeID := req.GetVolumeId()
+	err := addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	defer removeVolumeFromTransitionList(volumeID)
+
+	mountOptions := []string{"bind"}
+	if req.GetReadonly() {
+		mountOptions = append(mountOptions, "ro")
+	}
+	vol, err := utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	vol.Spec.Volume.TargetPath = req.GetTargetPath()
+	if err = utils.UpdateCSIVolumeCR(vol); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	switch mode := req.GetVolumeCapability().GetAccessType().(type) {
+	case *csi.VolumeCapability_Block:
+		return &csi.NodePublishVolumeResponse{}, status.Error(codes.Unimplemented, "doesn't support block device provisioning")
+	case *csi.VolumeCapability_Mount:
+		if err := ns.nodePublishVolumeForFileSystem(req, mountOptions, mode); err != nil {
+			return nil, err
+		}
+	}
+	return &csi.NodePublishVolumeResponse{}, nil
+}
+
+func (ns *node) NodeUnpublishVolume(
+	ctx context.Context,
+	req *csi.NodeUnpublishVolumeRequest,
+) (*csi.NodeUnpublishVolumeResponse, error) {
+
+	volumeID := req.GetVolumeId()
+	target := req.GetTargetPath()
+
+	err := addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	defer removeVolumeFromTransitionList(volumeID)
+
+	notMnt, err := ns.mounter.IsLikelyNotMountPoint(target)
+	if err != nil && !os.IsNotExist(err) {
+		logrus.Warningf("NodeUnpublishVolume: %s is not mounted, err: %v", target, err)
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
+	if notMnt {
+		logrus.Infof("Volume %s has been unmounted already", req.GetVolumeId())
+		return &csi.NodeUnpublishVolumeResponse{}, nil
+	}
+
+	logrus.Infof("NodeUnpublishVolume: unmounting %s", target)
+	if err := ns.mounter.Unmount(target); err != nil {
+		return nil, status.Errorf(codes.Internal, "Could not unmount %q: %v", target, err)
+	}
+	vol, err := utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	vol.Spec.Volume.TargetPath = ""
+	if err = utils.UpdateCSIVolumeCR(vol); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
 // TODO
@@ -394,7 +336,7 @@ func (ns *node) NodeExpandVolume(
 	}
 	defer removeVolumeFromTransitionList(volumeID)
 
-	if err = iscsi.ResizeVolume(req.GetVolumePath()); err != nil {
+	if err = iscsiutils.ResizeVolume(req.GetVolumePath()); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
 			"failed to handle NodeExpandVolumeRequest for %s, {%s}",
@@ -418,34 +360,4 @@ func (ns *node) NodeGetVolumeStats(
 ) (*csi.NodeGetVolumeStatsResponse, error) {
 
 	return nil, status.Error(codes.Unimplemented, "")
-}
-
-func (ns *node) validateNodePublishReq(
-	req *csi.NodePublishVolumeRequest,
-) error {
-	if req.GetVolumeCapability() == nil {
-		return status.Error(codes.InvalidArgument,
-			"Volume capability missing in request")
-	}
-
-	if len(req.GetVolumeId()) == 0 {
-		return status.Error(codes.InvalidArgument,
-			"Volume ID missing in request")
-	}
-	return nil
-}
-
-func (ns *node) validateNodeUnpublishReq(
-	req *csi.NodeUnpublishVolumeRequest,
-) error {
-	if req.GetVolumeId() == "" {
-		return status.Error(codes.InvalidArgument,
-			"Volume ID missing in request")
-	}
-
-	if req.GetTargetPath() == "" {
-		return status.Error(codes.InvalidArgument,
-			"Target path missing in request")
-	}
-	return nil
 }

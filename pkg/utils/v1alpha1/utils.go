@@ -14,7 +14,6 @@ import (
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
 	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
 	snapshotclient "github.com/openebs/cstor-csi/pkg/client/snapshot/v1alpha1"
-	iscsi "github.com/openebs/cstor-csi/pkg/iscsi/v1alpha1"
 	"google.golang.org/grpc"
 	"k8s.io/kubernetes/pkg/util/mount"
 )
@@ -233,11 +232,17 @@ func MonitorMounts() {
 			for _, vol := range csivolList.Items {
 				// Search the volume in the list of mounted volumes at the node
 				// retrieved above
-				mountPoint, exists := listContains(
-					vol.Spec.Volume.MountPath, mountList,
+				stagingMountPoint, stagingPathExists := listContains(
+					vol.Spec.Volume.StagingTargetPath, mountList,
+				)
+				_, targetPathExists := listContains(
+					vol.Spec.Volume.TargetPath, mountList,
 				)
 				// If the volume is present in the list verify its state
-				if exists && verifyMountOpts(mountPoint.Opts, "rw") {
+				// If stagingPath is in rw then TargetPath will also be in rw
+				// mode
+				if stagingPathExists && targetPathExists &&
+					verifyMountOpts(stagingMountPoint.Opts, "rw") {
 					// Continue with remaining volumes since this volume looks
 					// to be in good shape
 					continue
@@ -247,14 +252,31 @@ func MonitorMounts() {
 					ReqMountList[vol.Spec.Volume.Name] = vol.Status
 					csivol := vol
 					go func() {
-						devicePath, err := RemountVolume(
-							exists, &csivol, mountPoint,
-							vol.Spec.Volume.MountPath,
-						)
-						logrus.Errorf(
-							"Remount failed: DevPath: %v %v",
-							devicePath, err,
-						)
+						logrus.Infof("Remounting vol: %s at %s and %s",
+							vol.Spec.Volume.Name, vol.Spec.Volume.StagingTargetPath,
+							vol.Spec.Volume.TargetPath)
+						defer func() {
+							TransitionVolListLock.Lock()
+							// Remove the volume from ReqMountList once the remount operation is
+							// complete
+							delete(TransitionVolList, vol.Spec.Volume.Name)
+							delete(ReqMountList, vol.Spec.Volume.Name)
+							TransitionVolListLock.Unlock()
+						}()
+						if err := RemountVolume(
+							stagingPathExists, targetPathExists,
+							&csivol,
+						); err != nil {
+							logrus.Errorf(
+								"Remount failed for vol: %s : err: %v",
+								vol.Spec.Volume.Name, err,
+							)
+						} else {
+							logrus.Infof(
+								"Remount successful for vol: %s",
+								vol.Spec.Volume.Name,
+							)
+						}
 					}()
 				}
 			}
@@ -267,22 +289,20 @@ func MonitorMounts() {
 // and is reachable, this function will not come out until both the conditions
 // are met. This function stops the driver from overloading the OS with iSCSI
 // login commands.
-func WaitForVolumeReadyAndReachable(vol *apis.CSIVolume) {
+func WaitForVolumeReadyAndReachable(vol *apis.CSIVolume) error {
 	var err error
-	for {
-		// This function return after 12s in case the volume is not ready
-		if err = WaitForVolumeToBeReady(vol.Spec.Volume.Name); err != nil {
-			logrus.Error(err)
-			// Keep retrying until the volume is ready
-			continue
-		}
-		// This function return after 12s in case the volume is not reachable
-		err = WaitForVolumeToBeReachable(vol.Spec.ISCSI.TargetPortal)
-		if err == nil {
-			return
-		}
+	// This function return after 12s in case the volume is not ready
+	if err = WaitForVolumeToBeReady(vol.Spec.Volume.Name); err != nil {
 		logrus.Error(err)
+		return err
 	}
+	// This function return after 12s in case the volume is not reachable
+	err = WaitForVolumeToBeReachable(vol.Spec.ISCSI.TargetPortal)
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	return nil
 }
 
 func verifyMountOpts(opts []string, desiredOpt string) bool {
@@ -298,33 +318,34 @@ func verifyMountOpts(opts []string, desiredOpt string) bool {
 // state and then tries to mount again. If it is not mounted the volume, first
 // the disk will be attached via iSCSI login and then it will be mounted
 func RemountVolume(
-	exists bool, vol *apis.CSIVolume,
-	mountPoint *mount.MountPoint,
-	desiredMountOpt string,
-) (devicePath string, err error) {
+	stagingPathExists bool, targetPathExists bool,
+	vol *apis.CSIVolume,
+) (err error) {
 	mounter := mount.New("")
 	options := []string{"rw"}
+
 	// Wait until it is possible to chhange the state of mountpoint or when
 	// login to volume is possible
-	WaitForVolumeReadyAndReachable(vol)
-	if exists {
-		logrus.Infof("MountPoint:%v IN RO MODE", mountPoint.Path)
-		// Unmout and mount operation is performed instead of just remount since
-		// the remount option didn't give the desired results
-		mounter.Unmount(mountPoint.Path)
-		err = mounter.Mount(mountPoint.Device,
-			mountPoint.Path, "", options)
-	} else {
-		// A complete attach and mount is performed if for some reason disk is
-		// not present in the mounted list with the OS.
-		devicePath, err = iscsi.AttachAndMountDisk(vol)
+	if err = WaitForVolumeReadyAndReachable(vol); err != nil {
+		return
 	}
-	TransitionVolListLock.Lock()
-	// Remove the volume from ReqMountList once the remount operation is
-	// complete
-	delete(TransitionVolList, vol.Spec.Volume.Name)
-	delete(ReqMountList, vol.Spec.Volume.Name)
-	TransitionVolListLock.Unlock()
+	if stagingPathExists {
+		mounter.Unmount(vol.Spec.Volume.StagingTargetPath)
+	}
+	if targetPathExists {
+		mounter.Unmount(vol.Spec.Volume.TargetPath)
+	}
+
+	// Unmount and mount operation is performed instead of just remount since
+	// the remount option didn't give the desired results
+	if err = mounter.Mount(vol.Spec.Volume.DevicePath,
+		vol.Spec.Volume.StagingTargetPath, "", options,
+	); err != nil {
+		return
+	}
+	options = []string{"bind"}
+	err = mounter.Mount(vol.Spec.Volume.StagingTargetPath,
+		vol.Spec.Volume.TargetPath, "", options)
 	return
 }
 

@@ -6,7 +6,6 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	apis "github.com/openebs/cstor-csi/pkg/apis/openebs.io/core/v1alpha1"
 	"k8s.io/kubernetes/pkg/util/mount"
-	"k8s.io/kubernetes/pkg/volume/util"
 )
 
 func getISCSIInfo(vol *apis.CSIVolume) (*iscsiDisk, error) {
@@ -67,20 +66,6 @@ func getISCSIInfoFromPV(req *csi.NodePublishVolumeRequest) (*iscsiDisk, error) {
 		chapSession:   chapSession,
 		secret:        secret,
 		InitiatorName: initiatorName}, nil
-}
-
-func getISCSIDiskMounter(iscsiInfo *iscsiDisk, vol *apis.CSIVolume) *iscsiDiskMounter {
-
-	return &iscsiDiskMounter{
-		iscsiDisk:    iscsiInfo,
-		fsType:       vol.Spec.Volume.FSType,
-		readOnly:     vol.Spec.Volume.ReadOnly,
-		mountOptions: vol.Spec.Volume.MountOptions,
-		mounter:      &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: mount.NewOsExec()},
-		exec:         mount.NewOsExec(),
-		targetPath:   vol.Spec.Volume.MountPath,
-		deviceUtil:   util.NewDeviceHandler(util.NewIOHandler()),
-	}
 }
 
 func getISCSIDiskUnmounter(req *csi.NodeUnpublishVolumeRequest) *iscsiDiskUnmounter {

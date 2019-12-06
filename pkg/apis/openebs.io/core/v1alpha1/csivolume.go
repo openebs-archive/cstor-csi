@@ -67,29 +67,34 @@ type VolumeInfo struct {
 
 	// FSType of a volume will specify the
 	// format type - ext4(default), xfs of PV
-	FSType string `json:"fsType"`
+	FSType string `json:"fsType,omitempty"`
 
 	// AccessMode of a volume will hold the
 	// access mode of the volume
-	AccessModes []string `json:"accessModes"`
+	AccessModes []string `json:"accessModes,omitempty"`
 
-	// MountPath of the volume will hold the
+	// StagingPath of the volume will hold the
 	// path on which the volume is mounted
 	// on that node
-	MountPath string `json:"mountPath"`
+	StagingTargetPath string `json:"stagingTargetPath,omitempty"`
+
+	// TargetPath of the volume will hold the
+	// path on which the volume is bind mounted
+	// on that node
+	TargetPath string `json:"targetPath,omitempty"`
 
 	// ReadOnly specifies if the volume needs
 	// to be mounted in ReadOnly mode
-	ReadOnly bool `json:"readOnly"`
+	ReadOnly bool `json:"readOnly,omitempty"`
 
 	// MountOptions specifies the options with
 	// which mount needs to be attempted
-	MountOptions []string `json:"mountOptions"`
+	MountOptions []string `json:"mountOptions,omitempty"`
 
 	// Device Path specifies the device path
 	// which is returned when the iSCSI
 	// login is successful
-	DevicePath string `json:"devicePath"`
+	DevicePath string `json:"devicePath,omitempty"`
 }
 
 // ISCSIInfo has ISCSI protocol specific info,

@@ -130,9 +130,9 @@ func (b *Builder) WithFSType(fstype string) *Builder {
 	return b
 }
 
-// WithMountPath sets the mountpath of csi volume
-func (b *Builder) WithMountPath(mountPath string) *Builder {
-	if mountPath == "" {
+// WithStagingTargetPath sets the stagingTargetpath of csi volume
+func (b *Builder) WithStagingTargetPath(stagingTargetPath string) *Builder {
+	if stagingTargetPath == "" {
 		b.errs = append(
 			b.errs,
 			errors.New(
@@ -141,7 +141,7 @@ func (b *Builder) WithMountPath(mountPath string) *Builder {
 		)
 		return b
 	}
-	b.volume.Object.Spec.Volume.MountPath = mountPath
+	b.volume.Object.Spec.Volume.StagingTargetPath = stagingTargetPath
 	return b
 }
 
