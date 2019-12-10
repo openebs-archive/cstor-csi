@@ -230,6 +230,13 @@ func MonitorMounts() {
 				break
 			}
 			for _, vol := range csivolList.Items {
+				// This check is added to avoid monitoring volume if it has not
+				// been mounted yet. Although CSIVolume CR gets created at
+				// ControllerPublish step.
+				if (vol.Spec.Volume.StagingTargetPath == "") ||
+					(vol.Spec.Volume.TargetPath == "") {
+					continue
+				}
 				// Search the volume in the list of mounted volumes at the node
 				// retrieved above
 				stagingMountPoint, stagingPathExists := listContains(
