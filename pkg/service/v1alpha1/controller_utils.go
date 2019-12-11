@@ -131,20 +131,24 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 		)
 	}
 
-	if !isValidFStype(req.GetParameters()["fsType"]) {
-		return status.Errorf(
-			codes.InvalidArgument,
-			"failed to handle create volume request, invalid fsType : %s",
-			req.GetParameters()["fsType"],
-		)
-	}
-
 	volCapabilities := req.GetVolumeCapabilities()
 	if volCapabilities == nil {
 		return status.Error(
 			codes.InvalidArgument,
 			"failed to handle create volume request: missing volume capabilities",
 		)
+	}
+	for _, volcap := range volCapabilities {
+		mount := volcap.GetMount()
+		if mount != nil {
+			if !isValidFStype(mount.GetFsType()) {
+				return status.Errorf(
+					codes.InvalidArgument,
+					"failed to handle create volume request, invalid fsType : %s",
+					req.GetParameters()["fsType"],
+				)
+			}
+		}
 	}
 	return nil
 }
