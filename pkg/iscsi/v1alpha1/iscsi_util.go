@@ -698,13 +698,27 @@ func (util *ISCSIUtil) ReScan() error {
 	return nil
 }
 
-// ReSizeFS can be used to run a resize command on the filesystem to expand the
-// filesystem to the actual size of the device
-func (util *ISCSIUtil) ReSizeFS(path string) error {
+// ResizeExt4 can be used to run a resize command on the ext4 filesystem
+// to expand the filesystem to the actual size of the device
+func (util *ISCSIUtil) ResizeExt4(path string) error {
 	b := &iscsiDiskMounter{
 		exec: mount.NewOsExec(),
 	}
 	out, err := b.exec.Run("resize2fs", path)
+	if err != nil {
+		glog.Errorf("iscsi: resize failed error: %s", string(out))
+		return err
+	}
+	return nil
+}
+
+// ResizeXFS can be used to run a resize command on the xfs filesystem
+// to expand the filesystem to the actual size of the device
+func (util *ISCSIUtil) ResizeXFS(path string) error {
+	b := &iscsiDiskMounter{
+		exec: mount.NewOsExec(),
+	}
+	out, err := b.exec.Run("xfs_growfs", path)
 	if err != nil {
 		glog.Errorf("iscsi: resize failed error: %s", string(out))
 		return err

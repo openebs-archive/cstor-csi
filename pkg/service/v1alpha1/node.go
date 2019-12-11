@@ -336,7 +336,12 @@ func (ns *node) NodeExpandVolume(
 	}
 	defer removeVolumeFromTransitionList(volumeID)
 
-	if err = iscsiutils.ResizeVolume(req.GetVolumePath()); err != nil {
+	vol, err := utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	if err = iscsiutils.ResizeVolume(req.GetVolumePath(), vol.Spec.Volume.FSType); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
 			"failed to handle NodeExpandVolumeRequest for %s, {%s}",
