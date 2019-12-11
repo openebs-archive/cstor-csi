@@ -37,7 +37,8 @@ func Unmount(path string) error {
 
 // ResizeVolume rescans the iSCSI session and runs the resize to filesystem
 // command on that particular device
-func ResizeVolume(volumePath string) error {
+func ResizeVolume(volumePath string, fsType string) error {
+	var err error
 	mounter := mount.New("")
 	list, _ := mounter.List()
 	for _, mpt := range list {
@@ -46,7 +47,13 @@ func ResizeVolume(volumePath string) error {
 			if err := util.ReScan(); err != nil {
 				return err
 			}
-			if err := util.ReSizeFS(mpt.Device); err != nil {
+			switch fsType {
+			case "ext4":
+				err = util.ResizeExt4(mpt.Device)
+			case "xfs":
+				err = util.ResizeXFS(volumePath)
+			}
+			if err != nil {
 				return err
 			}
 			break
