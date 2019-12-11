@@ -130,6 +130,12 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 			"failed to handle create volume request: missing storage class parameter cas-type",
 		)
 	}
+	if !isValidFStype(req.GetParameters()["fsType"]) {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle create volume request, invalid fsType",
+		)
+	}
 
 	volCapabilities := req.GetVolumeCapabilities()
 	if volCapabilities == nil {

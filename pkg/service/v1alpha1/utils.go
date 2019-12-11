@@ -26,8 +26,17 @@ const (
 )
 
 var (
-	ValidFSTypes = []string{FSTypeExt2, FSTypeExt3, FSTypeExt4, FSTypeXfs}
+	ValidFSTypes = []string{FSTypeExt4, FSTypeXfs}
 )
+
+func isValidFStype(fstype string) bool {
+	for _, fs := range ValidFSTypes {
+		if fs == fstype {
+			return true
+		}
+	}
+	return false
+}
 
 func removeVolumeFromTransitionList(volumeID string) {
 	utils.TransitionVolListLock.Lock()
