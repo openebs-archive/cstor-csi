@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -113,6 +114,62 @@ func (ns *node) nodePublishVolumeForFileSystem(req *csi.NodePublishVolumeRequest
 	return nil
 }
 
+func (ns *node) nodePublishVolumeForBlock(req *csi.NodePublishVolumeRequest, mountOptions []string) error {
+	target := req.GetTargetPath()
+	volumeID := req.GetVolumeId()
+
+	source, err := ns.GetDevicePath(target, volumeID)
+	if err != nil {
+		return status.Errorf(codes.Internal, "Failed to find device path %s. %v", target, err)
+	}
+
+	logrus.Debugf("NodePublishVolume [block]: find device path %s -> %s", source, source)
+
+	globalMountPath := filepath.Dir(target)
+
+	// create the global mount path if it is missing
+	// Path in the form of /var/lib/kubelet/plugins/kubernetes.io/csi/volumeDevices/publish/{volumeName}
+	exists, err := ns.mounter.ExistsPath(globalMountPath)
+	if err != nil {
+		return status.Errorf(codes.Internal, "Could not check if path exists %q: %v", globalMountPath, err)
+	}
+
+	if !exists {
+		if err := ns.mounter.MakeDir(globalMountPath); err != nil {
+			return status.Errorf(codes.Internal, "Could not create dir %q: %v", globalMountPath, err)
+		}
+	}
+
+	// Create the mount point as a file since bind mount device node requires it to be a file
+	logrus.Debugf("NodePublishVolume [block]: making target file %s", target)
+	err = ns.mounter.MakeFile(target)
+	if err != nil {
+		if removeErr := os.Remove(target); removeErr != nil {
+			return status.Errorf(codes.Internal, "Could not remove mount target %q: %v", target, removeErr)
+		}
+		return status.Errorf(codes.Internal, "Could not create file %q: %v", target, err)
+	}
+
+	logrus.Debugf("NodePublishVolume [block]: mounting %s at %s", source, target)
+	if err := ns.mounter.Mount(source, target, "", mountOptions); err != nil {
+		if removeErr := os.Remove(target); removeErr != nil {
+			return status.Errorf(codes.Internal, "Could not remove mount target %q: %v", target, removeErr)
+		}
+		return status.Errorf(codes.Internal, "Could not mount %q at %q: %v", source, target, err)
+	}
+	return nil
+}
+
+// GetDevicePath get path of device and verifies its existence
+func (ns *node) GetDevicePath(devicePath, volumeID string) (string, error) {
+
+	vol, err := utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV)
+	if err != nil {
+		return "", status.Error(codes.Internal, err.Error())
+	}
+	return vol.Spec.Volume.DevicePath, nil
+}
+
 // newNodeCapabilities returns a list
 // of this Node's capabilities
 func newNodeCapabilities() []*csi.NodeServiceCapability {
@@ -175,7 +232,7 @@ func VerifyIfMountRequired(volumeID, targetPath string) (bool, error) {
 		return false, err
 	}
 	if len(currentMounts) > 1 {
-		logrus.Fatalf(
+		logrus.Warningf(
 			"More than one mounts for volume:%s mounts: %v",
 			volumeID, currentMounts,
 		)

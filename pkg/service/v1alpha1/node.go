@@ -139,6 +139,12 @@ func (ns *node) NodeStageVolume(
 			logrus.Errorf("NodeStageVolume: failed to attachDisk for volume %v, err: %v", volumeID, err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
+		// If the access type is block, do nothing for stage
+		switch req.GetVolumeCapability().GetAccessType().(type) {
+		case *csi.VolumeCapability_Block:
+			return &csi.NodeStageVolumeResponse{}, nil
+		}
+
 		if err := os.MkdirAll(stagingTargetPath, 0750); err != nil {
 			logrus.Errorf("failed to mkdir %s, error: %v", stagingTargetPath, err)
 			return nil, status.Error(codes.Internal, err.Error())
@@ -259,7 +265,9 @@ func (ns *node) NodePublishVolume(
 
 	switch mode := req.GetVolumeCapability().GetAccessType().(type) {
 	case *csi.VolumeCapability_Block:
-		return &csi.NodePublishVolumeResponse{}, status.Error(codes.Unimplemented, "doesn't support block device provisioning")
+		if err := ns.nodePublishVolumeForBlock(req, mountOptions); err != nil {
+			return nil, err
+		}
 	case *csi.VolumeCapability_Mount:
 		if err := ns.nodePublishVolumeForFileSystem(req, mountOptions, mode); err != nil {
 			return nil, err
