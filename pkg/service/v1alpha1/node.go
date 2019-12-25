@@ -27,6 +27,7 @@ import (
 	iscsiutils "github.com/openebs/cstor-csi/pkg/iscsi/v1alpha1"
 	utils "github.com/openebs/cstor-csi/pkg/utils/v1alpha1"
 	"golang.org/x/net/context"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -37,6 +38,12 @@ type node struct {
 	driver       *CSIDriver
 	capabilities []*csi.NodeServiceCapability
 	mounter      *utils.NodeMounter
+}
+
+// VolumeStatistics represents statistics information of a volume
+type VolumeStatistics struct {
+	availableBytes, totalBytes, usedBytes    int64
+	availableInodes, totalInodes, usedInodes int64
 }
 
 // NewNode returns a new instance
@@ -355,14 +362,72 @@ func (ns *node) NodeExpandVolume(
 	}, nil
 }
 
-// NodeGetVolumeStats returns statistics for the
-// given volume
-//
-// This implements csi.NodeServer
+// NodeGetVolumeStats returns statistics for the given volume
 func (ns *node) NodeGetVolumeStats(
 	ctx context.Context,
-	in *csi.NodeGetVolumeStatsRequest,
+	req *csi.NodeGetVolumeStatsRequest,
 ) (*csi.NodeGetVolumeStatsResponse, error) {
 
-	return nil, status.Error(codes.Unimplemented, "")
+	volumeID := req.GetVolumeId()
+	if volumeID == "" {
+		return nil, status.Error(codes.InvalidArgument, "NodeGetVolumeStats Volume ID must be provided")
+	}
+
+	volumePath := req.GetVolumePath()
+	if volumePath == "" {
+		return nil, status.Error(codes.InvalidArgument, "NodeGetVolumeStats Volume Path must be provided")
+	}
+
+	mounted, err := ns.mounter.ExistsPath(volumePath)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to check if volume path %q is mounted: %s", volumePath, err)
+	}
+
+	if !mounted {
+		return nil, status.Errorf(codes.NotFound, "volume path %q is not mounted", volumePath)
+	}
+
+	stats, err := ns.GetStatistics(volumePath)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to retrieve capacity statistics for volume path %q: %s", volumePath, err)
+	}
+
+	return &csi.NodeGetVolumeStatsResponse{
+		Usage: []*csi.VolumeUsage{
+			&csi.VolumeUsage{
+				Available: stats.availableBytes,
+				Total:     stats.totalBytes,
+				Used:      stats.usedBytes,
+				Unit:      csi.VolumeUsage_BYTES,
+			},
+			&csi.VolumeUsage{
+				Available: stats.availableInodes,
+				Total:     stats.totalInodes,
+				Used:      stats.usedInodes,
+				Unit:      csi.VolumeUsage_INODES,
+			},
+		},
+	}, nil
+}
+
+// GetStatistics get the statistics for a given volume path
+func (ns *node) GetStatistics(volumePath string) (VolumeStatistics, error) {
+	var statfs unix.Statfs_t
+	// See http://man7.org/linux/man-pages/man2/statfs.2.html for details.
+	err := unix.Statfs(volumePath, &statfs)
+	if err != nil {
+		return VolumeStatistics{}, err
+	}
+
+	volStats := VolumeStatistics{
+		availableBytes: int64(statfs.Bavail) * int64(statfs.Bsize),
+		totalBytes:     int64(statfs.Blocks) * int64(statfs.Bsize),
+		usedBytes:      (int64(statfs.Blocks) - int64(statfs.Bfree)) * int64(statfs.Bsize),
+
+		availableInodes: int64(statfs.Ffree),
+		totalInodes:     int64(statfs.Files),
+		usedInodes:      int64(statfs.Files) - int64(statfs.Ffree),
+	}
+
+	return volStats, nil
 }
