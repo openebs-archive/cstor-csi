@@ -290,13 +290,8 @@ func (ns *node) NodeUnpublishVolume(
 	defer removeVolumeFromTransitionList(volumeID)
 
 	notMnt, err := ns.mounter.IsLikelyNotMountPoint(target)
-	if err != nil && !os.IsNotExist(err) {
+	if (err == nil && notMnt) || os.IsNotExist(err) {
 		logrus.Warningf("NodeUnpublishVolume: %s is not mounted, err: %v", target, err)
-		return &csi.NodeUnpublishVolumeResponse{}, nil
-	}
-
-	if notMnt {
-		logrus.Infof("Volume %s has been unmounted already", req.GetVolumeId())
 		return &csi.NodeUnpublishVolumeResponse{}, nil
 	}
 

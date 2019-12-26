@@ -467,9 +467,8 @@ func (util *ISCSIUtil) DetachDisk(
 		return err
 	}
 
-	if pathExists, pathErr := mount.PathExists(targetPath); pathErr != nil {
-		return fmt.Errorf("Error checking if path exists: %v", pathErr)
-	} else if !pathExists {
+	pathExists, pathErr := mount.PathExists(targetPath)
+	if pathErr == nil && !pathExists {
 		glog.Warningf(
 			"Warning: Unmount skipped because path does not exist: %v",
 			targetPath,
