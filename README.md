@@ -81,7 +81,7 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
    The following command will create the specified cStor Pools in the cspc yaml:
 
    ```
-   kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/deploy/cspc.yaml
+   kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/examples/cspc.yaml
    ```
 
 2. Create a Storage Class to dynamically provision volumes
@@ -105,7 +105,7 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
    The following file helps you to create a Storage Class
    using the cStor sparse pool created in the previous step.
    ```
-   kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/deploy/sc.yaml
+   kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/examples/csi-storageclass.yaml
    ```
 
 3. Run your application by specifying the above Storage Class for
@@ -114,7 +114,7 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
    The following example launches a busybox pod using a cStor Volume
    provisioned via CSI Provisioner.
    ```
-   kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/deploy/busybox-csi-cstor-sparse.yaml
+   kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/examples/busybox-csi-cstor-sparse.yaml
    ```
 
    Verify that the pods is running and is able to write the data.
@@ -131,7 +131,7 @@ openebs-csi-node-56t5g     2/2     Running   0          6m13s
    $ kubectl exec -it busybox -- cat /mnt/openebs-csi/date.txt
    Wed Jul 31 04:56:26 UTC 2019
    ```
- 
+
 
 ### How does it work?
 
@@ -210,7 +210,7 @@ kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/depl
 ```
 2. Create a snapshot after updating the PVC and snapshot name in the following yaml:
 ```
-kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/deploy/snapshot.yaml
+kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/examples/csi-snapshot.yaml
 ```
 3. Verify that the snapshot has been created successfully:
 ```
@@ -220,7 +220,7 @@ demo-snapshot   3d1h
 ```
 4. Create the volume clone using the above Snapshot by updating and modifying the following yaml:
 ```
-kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/deploy/pvc-clone.yaml
+kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/examples/csi-pvc-clone.yaml
 ```
 5. Verify that the PVC has been successfully created:
 ```
