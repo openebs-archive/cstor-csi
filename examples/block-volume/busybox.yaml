@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+  namespace: default
+spec:
+  containers:
+  - command:
+       - sh
+       - -c
+    args: [ "tail -f /dev/null" ]
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    name: busybox
+    volumeDevices:
+    - devicePath: /dev/xvda
+      name: data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: block-claim
+---

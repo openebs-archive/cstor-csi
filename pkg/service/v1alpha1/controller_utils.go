@@ -190,10 +190,20 @@ func prepareVolumeForNode(
 		"Volname": volumeID,
 	}
 
+	// If the access type is block, do nothing for stage
+	var accessType string
+	switch req.GetVolumeCapability().GetAccessType().(type) {
+	case *csi.VolumeCapability_Block:
+		accessType = "block"
+	case *csi.VolumeCapability_Mount:
+		accessType = "mount"
+	}
+
 	vol, err := csivol.NewBuilder().
 		WithName(volumeID + "-" + nodeID).
 		WithLabels(labels).
 		WithVolName(req.GetVolumeId()).
+		WithAccessType(accessType).
 		WithFSType(req.GetVolumeCapability().GetMount().GetFsType()).
 		WithReadOnly(req.GetReadonly()).Build()
 	if err != nil {

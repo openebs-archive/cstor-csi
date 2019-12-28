@@ -50,12 +50,8 @@ type VolumeInfo struct {
 	// Name of the CSI volume
 	Name string `json:"name"`
 
-	// CASType refers to specific OpenEBS storage
-	// engine
-	CASType string `json:"casType"`
-
 	// Capacity of the volume
-	Capacity string `json:"capacity"`
+	Capacity string `json:"capacity,omitempty"`
 
 	// TODO
 	// Below fields might be moved to a separate
@@ -72,6 +68,10 @@ type VolumeInfo struct {
 	// AccessMode of a volume will hold the
 	// access mode of the volume
 	AccessModes []string `json:"accessModes,omitempty"`
+
+	// AccessType of a volume will indicate if the volume will be used as a
+	// block device or mounted on a path
+	AccessType string `json:"accessType,omitempty"`
 
 	// StagingPath of the volume will hold the
 	// path on which the volume is mounted
@@ -107,10 +107,6 @@ type ISCSIInfo struct {
 	// TargetPortal holds the target portal
 	// of this volume
 	TargetPortal string `json:"targetPortal"`
-
-	// Portals holds all target portals
-	// of this volume
-	Portals string `json:"portals"`
 
 	// IscsiInterface of this volume
 	IscsiInterface string `json:"iscsiInterface"`

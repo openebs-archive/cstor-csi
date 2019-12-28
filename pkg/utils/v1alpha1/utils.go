@@ -230,6 +230,10 @@ func MonitorMounts() {
 				break
 			}
 			for _, vol := range csivolList.Items {
+				// ignore monitoring the mount for a block device
+				if vol.Spec.Volume.AccessType == "block" {
+					continue
+				}
 				// This check is added to avoid monitoring volume if it has not
 				// been mounted yet. Although CSIVolume CR gets created at
 				// ControllerPublish step.

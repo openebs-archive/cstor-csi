@@ -99,6 +99,21 @@ func (b *Builder) WithVolName(volName string) *Builder {
 	return b
 }
 
+// WithAccessType sets the accessType of csi volume i.e. block or mount
+func (b *Builder) WithAccessType(accessType string) *Builder {
+	if accessType == "" {
+		b.errs = append(
+			b.errs,
+			errors.New(
+				"failed to build csi volume object: missing accessType",
+			),
+		)
+		return b
+	}
+	b.volume.Object.Spec.Volume.AccessType = accessType
+	return b
+}
+
 // WithCapacity sets the Capacity of csi volume by converting string
 // capacity into Quantity
 func (b *Builder) WithCapacity(capacity string) *Builder {
@@ -117,7 +132,7 @@ func (b *Builder) WithCapacity(capacity string) *Builder {
 
 // WithFSType sets the fstype of csi volume
 func (b *Builder) WithFSType(fstype string) *Builder {
-	if fstype == "" {
+	if fstype == "" && b.volume.Object.Spec.Volume.AccessType == "mount" {
 		b.errs = append(
 			b.errs,
 			errors.New(
@@ -228,21 +243,6 @@ func (b *Builder) WithTargetPortal(targetPortal string) *Builder {
 		return b
 	}
 	b.volume.Object.Spec.ISCSI.TargetPortal = targetPortal
-	return b
-}
-
-// WithPortal sets the portal of csi volume
-func (b *Builder) WithPortal(portal string) *Builder {
-	if portal == "" {
-		b.errs = append(
-			b.errs,
-			errors.New(
-				"failed to build csi volume object: missing portal",
-			),
-		)
-		return b
-	}
-	b.volume.Object.Spec.ISCSI.Portals = portal
 	return b
 }
 
