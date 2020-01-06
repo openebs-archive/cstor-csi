@@ -25,9 +25,9 @@ const (
 	gib100 int64 = gib * 100
 	tib    int64 = gib * 1024
 	tib100 int64 = tib * 100
-	// OpenebsConfigClass is the config class name passed to CSI from the
+	// OpenebsVolumePolicy is the config policy name passed to CSI from the
 	// storage class parameters
-	OpenebsConfigClass = "openebs.io/config-class"
+	OpenebsVolumePolicy = "openebs.io/volume-policy"
 	// OpenebsVolumeID is the PV name passed to CSI
 	OpenebsVolumeID = "openebs.io/volumeID"
 	// OpenebsCSPCName is the name of cstor storagepool cluster
@@ -49,11 +49,13 @@ func ProvisionVolume(
 	volName,
 	replicaCount,
 	cspcName,
-	snapshotID string,
+	snapshotID,
+	policyName string,
 ) error {
 
 	annotations := map[string]string{
-		OpenebsVolumeID: volName,
+		OpenebsVolumeID:     volName,
+		OpenebsVolumePolicy: policyName,
 	}
 
 	labels := map[string]string{

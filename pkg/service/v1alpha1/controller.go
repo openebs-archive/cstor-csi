@@ -95,6 +95,7 @@ func (cs *controller) CreateVolume(
 	size := req.GetCapacityRange().RequiredBytes
 	rCount := req.GetParameters()["replicaCount"]
 	cspcName := req.GetParameters()["cstorPoolCluster"]
+	policyName := req.GetParameters()["cstorVolumePolicy"]
 	VolumeContext := map[string]string{
 		"openebs.io/cas-type": req.GetParameters()["cas-type"],
 	}
@@ -117,7 +118,7 @@ func (cs *controller) CreateVolume(
 	if err == nil && cvc != nil && cvc.DeletionTimestamp == nil {
 		goto createVolumeResponse
 	}
-	err = utils.ProvisionVolume(size, volName, rCount, cspcName, snapshotID)
+	err = utils.ProvisionVolume(size, volName, rCount, cspcName, snapshotID, policyName)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
