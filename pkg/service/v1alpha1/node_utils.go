@@ -15,6 +15,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	// HostTopologyKey is the supported topology key
+	HostTopologyKey string = "kubernetes.io/hostname"
+)
+
 func (ns *node) attachDisk(vol *apis.CSIVolume) (string, error) {
 	connector := iscsi.Connector{
 		VolumeName:    vol.Spec.Volume.Name,
