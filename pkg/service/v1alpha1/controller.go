@@ -85,7 +85,10 @@ func (cs *controller) CreateVolume(
 	var snapshotID string
 
 	logrus.Infof("received request to create volume {%s}", req.GetName())
-	var err error
+	var (
+		err    error
+		nodeID string
+	)
 
 	if err = cs.validateVolumeCreateReq(req); err != nil {
 		return nil, err
@@ -98,6 +101,10 @@ func (cs *controller) CreateVolume(
 	policyName := req.GetParameters()["cstorVolumePolicy"]
 	VolumeContext := map[string]string{
 		"openebs.io/cas-type": req.GetParameters()["cas-type"],
+	}
+	if req.GetAccessibilityRequirements() != nil {
+		nodeID = req.GetAccessibilityRequirements().
+			GetPreferred()[0].GetSegments()[HostTopologyKey]
 	}
 
 	contentSource := req.GetVolumeContentSource()
@@ -118,7 +125,9 @@ func (cs *controller) CreateVolume(
 	if err == nil && cvc != nil && cvc.DeletionTimestamp == nil {
 		goto createVolumeResponse
 	}
-	err = utils.ProvisionVolume(size, volName, rCount, cspcName, snapshotID, policyName)
+	err = utils.ProvisionVolume(size, volName, rCount,
+		cspcName, snapshotID,
+		nodeID, policyName)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

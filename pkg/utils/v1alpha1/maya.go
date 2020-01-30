@@ -50,6 +50,7 @@ func ProvisionVolume(
 	replicaCount,
 	cspcName,
 	snapshotID,
+	nodeID,
 	policyName string,
 ) error {
 
@@ -82,6 +83,7 @@ func ProvisionVolume(
 		WithFinalizers(finalizers).
 		WithCapacityQty(sSize).
 		WithSource(snapshotID).
+		WithNodeID(nodeID).
 		WithReplicaCount(replicaCount).
 		WithNewVersion(version.Current()).
 		WithDependentsUpgraded().
