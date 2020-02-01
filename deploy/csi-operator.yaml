@@ -119,6 +119,8 @@ spec:
     kind: VolumeSnapshot
     plural: volumesnapshots
   scope: Namespaced
+  subresources:
+    status: {}
   version: v1alpha1
 
 ---
@@ -286,13 +288,13 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: quay.io/k8scsi/csi-snapshotter:v1.1.0
+          image: quay.io/k8scsi/csi-snapshotter:v1.2.2
           args:
             - "--csi-address=$(ADDRESS)"
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
