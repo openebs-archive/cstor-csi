@@ -658,11 +658,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-<<<<<<< HEAD
-          image: quay.io/k8scsi/csi-snapshotter:v1.2.2
-=======
           image: quay.io/k8scsi/csi-snapshotter:v2.0.1
->>>>>>> fix(csi): handle duplicate snapshot request for csi-snapshot
           args:
             - "--csi-address=$(ADDRESS)"
           env:
@@ -679,11 +675,7 @@ spec:
             - "--leader-election=false"
           imagePullPolicy: IfNotPresent
         - name: csi-provisioner
-<<<<<<< HEAD
-          image: quay.io/k8scsi/csi-provisioner:v1.4.0
-=======
           image: quay.io/k8scsi/csi-provisioner:v1.5.0
->>>>>>> fix(csi): handle duplicate snapshot request for csi-snapshot
           imagePullPolicy: IfNotPresent
           args:
             - "--provisioner=cstor.csi.openebs.io"
