@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"strconv"
 	"strings"
 	"time"
 
@@ -240,8 +239,7 @@ func (cs *controller) CreateSnapshot(
 ) (*csi.CreateSnapshotResponse, error) {
 
 	snapTimeStamp := time.Now().Unix()
-	snapTimeStampStr := strconv.FormatInt(time.Now().Unix(), 10)
-	if err := utils.CreateSnapshot(req.SourceVolumeId, req.Name+"-"+snapTimeStampStr); err != nil {
+	if err := utils.CreateSnapshot(req.SourceVolumeId, req.Name); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
 			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
@@ -251,7 +249,7 @@ func (cs *controller) CreateSnapshot(
 	}
 	return csipayload.NewCreateSnapshotResponseBuilder().
 		WithSourceVolumeID(req.SourceVolumeId).
-		WithSnapshotID(req.SourceVolumeId+"@"+req.Name+"-"+snapTimeStampStr).
+		WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
 		WithCreationTime(snapTimeStamp, 0).
 		WithReadyToUse(true).
 		Build(), nil
