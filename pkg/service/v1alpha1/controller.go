@@ -82,9 +82,9 @@ func (cs *controller) CreateVolume(
 	req *csi.CreateVolumeRequest,
 ) (*csi.CreateVolumeResponse, error) {
 	var (
-		err          error
-		nodeTopology string
-		snapshotID   string
+		err        error
+		nodeID     string
+		snapshotID string
 	)
 	logrus.Infof("received request to create volume {%s}", req.GetName())
 
@@ -101,7 +101,7 @@ func (cs *controller) CreateVolume(
 		"openebs.io/cas-type": req.GetParameters()["cas-type"],
 	}
 
-	nodeTopology = getAccessibilityRequirements(req.GetAccessibilityRequirements())
+	nodeID = getAccessibilityRequirements(req.GetAccessibilityRequirements())
 
 	contentSource := req.GetVolumeContentSource()
 	if contentSource != nil && contentSource.GetSnapshot() != nil {
@@ -124,7 +124,7 @@ func (cs *controller) CreateVolume(
 
 	err = utils.ProvisionVolume(size, volName, rCount,
 		cspcName, snapshotID,
-		nodeTopology, policyName)
+		nodeID, policyName)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -323,13 +323,13 @@ func getAccessibilityRequirements(requirement *csi.TopologyRequirement) string {
 		return ""
 	}
 
-	nodeTopology, exists := requirement.GetPreferred()[0].GetSegments()[HostTopologyKey]
+	preferredNode, exists := requirement.GetPreferred()[0].GetSegments()[HostTopologyKey]
 	if exists {
-		return nodeTopology
+		return preferredNode
 	}
-	nodeTopology, exists = requirement.GetRequisite()[0].GetSegments()[HostTopologyKey]
+	preferredNode, exists = requirement.GetRequisite()[0].GetSegments()[HostTopologyKey]
 	if exists {
-		return nodeTopology
+		return preferredNode
 	}
 	return ""
 }
