@@ -93,7 +93,9 @@ spec:
     plural: volumesnapshotclasses
     singular: volumesnapshotclass
   scope: Cluster
-  preserveUnknownFields: false
+# this field is supported in kubernetes 1.15+
+# https://v1-15.docs.kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/
+#preserveUnknownFields: false
   validation:
     openAPIV3Schema:
       description: VolumeSnapshotClass specifies parameters that a underlying storage
@@ -163,7 +165,9 @@ spec:
   scope: Cluster
   subresources:
     status: {}
-  preserveUnknownFields: false
+# this field is supported in kubernetes 1.15+
+# https://v1-15.docs.kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/
+#preserveUnknownFields: false
   validation:
     openAPIV3Schema:
       description: VolumeSnapshotContent represents the actual "on-disk" snapshot
@@ -360,7 +364,9 @@ spec:
   scope: Namespaced
   subresources:
     status: {}
-  preserveUnknownFields: false
+# this field is supported in kubernetes 1.15+
+# https://v1-15.docs.kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/
+#preserveUnknownFields: false
   validation:
     openAPIV3Schema:
       description: VolumeSnapshot is a user's request for either creating a point-in-time

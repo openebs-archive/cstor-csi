@@ -81,13 +81,12 @@ func (cs *controller) CreateVolume(
 	ctx context.Context,
 	req *csi.CreateVolumeRequest,
 ) (*csi.CreateVolumeResponse, error) {
-	var snapshotID string
-
-	logrus.Infof("received request to create volume {%s}", req.GetName())
 	var (
-		err    error
-		nodeID string
+		err          error
+		nodeTopology string
+		snapshotID   string
 	)
+	logrus.Infof("received request to create volume {%s}", req.GetName())
 
 	if err = cs.validateVolumeCreateReq(req); err != nil {
 		return nil, err
@@ -101,10 +100,8 @@ func (cs *controller) CreateVolume(
 	VolumeContext := map[string]string{
 		"openebs.io/cas-type": req.GetParameters()["cas-type"],
 	}
-	if req.GetAccessibilityRequirements() != nil {
-		nodeID = req.GetAccessibilityRequirements().
-			GetPreferred()[0].GetSegments()[HostTopologyKey]
-	}
+
+	nodeTopology = getAccessibilityRequirements(req.GetAccessibilityRequirements())
 
 	contentSource := req.GetVolumeContentSource()
 	if contentSource != nil && contentSource.GetSnapshot() != nil {
@@ -124,19 +121,23 @@ func (cs *controller) CreateVolume(
 	if err == nil && cvc != nil && cvc.DeletionTimestamp == nil {
 		goto createVolumeResponse
 	}
+
 	err = utils.ProvisionVolume(size, volName, rCount,
 		cspcName, snapshotID,
-		nodeID, policyName)
+		nodeTopology, policyName)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 createVolumeResponse:
-	return csipayload.NewCreateVolumeResponseBuilder().
-		WithName(volName).
-		WithCapacity(size).
-		WithContext(VolumeContext).
-		Build(), nil
+	return &csi.CreateVolumeResponse{
+		Volume: &csi.Volume{
+			VolumeId:      volName,
+			CapacityBytes: size,
+			VolumeContext: VolumeContext,
+			ContentSource: contentSource,
+		},
+	}, nil
 }
 
 // DeleteVolume deletes the specified volume
@@ -315,4 +316,20 @@ func (cs *controller) ListVolumes(
 ) (*csi.ListVolumesResponse, error) {
 
 	return nil, status.Error(codes.Unimplemented, "")
+}
+
+func getAccessibilityRequirements(requirement *csi.TopologyRequirement) string {
+	if requirement == nil {
+		return ""
+	}
+
+	nodeTopology, exists := requirement.GetPreferred()[0].GetSegments()[HostTopologyKey]
+	if exists {
+		return nodeTopology
+	}
+	nodeTopology, exists = requirement.GetRequisite()[0].GetSegments()[HostTopologyKey]
+	if exists {
+		return nodeTopology
+	}
+	return ""
 }
