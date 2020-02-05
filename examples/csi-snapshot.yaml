@@ -1,9 +1,10 @@
-apiVersion: snapshot.storage.k8s.io/v1alpha1
+---
+apiVersion: snapshot.storage.k8s.io/v1beta1
 kind: VolumeSnapshot
 metadata:
   name: demo-snapshot
 spec:
-  snapshotClassName: csi-cstor-snapshotclass
+  volumeSnapshotClassName: cstor-csi-snapclass
   source:
-    name: demo-csivol-claim
-    kind: PersistentVolumeClaim
+    persistentVolumeClaimName: demo-csivol-claim
+---

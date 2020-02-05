@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"strconv"
 	"strings"
 	"time"
 
@@ -82,13 +81,12 @@ func (cs *controller) CreateVolume(
 	ctx context.Context,
 	req *csi.CreateVolumeRequest,
 ) (*csi.CreateVolumeResponse, error) {
-	var snapshotID string
-
-	logrus.Infof("received request to create volume {%s}", req.GetName())
 	var (
-		err    error
-		nodeID string
+		err        error
+		nodeID     string
+		snapshotID string
 	)
+	logrus.Infof("received request to create volume {%s}", req.GetName())
 
 	if err = cs.validateVolumeCreateReq(req); err != nil {
 		return nil, err
@@ -102,10 +100,8 @@ func (cs *controller) CreateVolume(
 	VolumeContext := map[string]string{
 		"openebs.io/cas-type": req.GetParameters()["cas-type"],
 	}
-	if req.GetAccessibilityRequirements() != nil {
-		nodeID = req.GetAccessibilityRequirements().
-			GetPreferred()[0].GetSegments()[HostTopologyKey]
-	}
+
+	nodeID = getAccessibilityRequirements(req.GetAccessibilityRequirements())
 
 	contentSource := req.GetVolumeContentSource()
 	if contentSource != nil && contentSource.GetSnapshot() != nil {
@@ -125,6 +121,7 @@ func (cs *controller) CreateVolume(
 	if err == nil && cvc != nil && cvc.DeletionTimestamp == nil {
 		goto createVolumeResponse
 	}
+
 	err = utils.ProvisionVolume(size, volName, rCount,
 		cspcName, snapshotID,
 		nodeID, policyName)
@@ -133,11 +130,14 @@ func (cs *controller) CreateVolume(
 	}
 
 createVolumeResponse:
-	return csipayload.NewCreateVolumeResponseBuilder().
-		WithName(volName).
-		WithCapacity(size).
-		WithContext(VolumeContext).
-		Build(), nil
+	return &csi.CreateVolumeResponse{
+		Volume: &csi.Volume{
+			VolumeId:      volName,
+			CapacityBytes: size,
+			VolumeContext: VolumeContext,
+			ContentSource: contentSource,
+		},
+	}, nil
 }
 
 // DeleteVolume deletes the specified volume
@@ -240,8 +240,7 @@ func (cs *controller) CreateSnapshot(
 ) (*csi.CreateSnapshotResponse, error) {
 
 	snapTimeStamp := time.Now().Unix()
-	snapTimeStampStr := strconv.FormatInt(time.Now().Unix(), 10)
-	if err := utils.CreateSnapshot(req.SourceVolumeId, req.Name+"-"+snapTimeStampStr); err != nil {
+	if err := utils.CreateSnapshot(req.SourceVolumeId, req.Name); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
 			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
@@ -251,7 +250,7 @@ func (cs *controller) CreateSnapshot(
 	}
 	return csipayload.NewCreateSnapshotResponseBuilder().
 		WithSourceVolumeID(req.SourceVolumeId).
-		WithSnapshotID(req.SourceVolumeId+"@"+req.Name+"-"+snapTimeStampStr).
+		WithSnapshotID(req.SourceVolumeId+"@"+req.Name).
 		WithCreationTime(snapTimeStamp, 0).
 		WithReadyToUse(true).
 		Build(), nil
@@ -317,4 +316,20 @@ func (cs *controller) ListVolumes(
 ) (*csi.ListVolumesResponse, error) {
 
 	return nil, status.Error(codes.Unimplemented, "")
+}
+
+func getAccessibilityRequirements(requirement *csi.TopologyRequirement) string {
+	if requirement == nil {
+		return ""
+	}
+
+	preferredNode, exists := requirement.GetPreferred()[0].GetSegments()[HostTopologyKey]
+	if exists {
+		return preferredNode
+	}
+	preferredNode, exists = requirement.GetRequisite()[0].GetSegments()[HostTopologyKey]
+	if exists {
+		return preferredNode
+	}
+	return ""
 }
