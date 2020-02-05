@@ -175,6 +175,41 @@ func (cs *controller) validateDeleteVolumeReq(req *csi.DeleteVolumeRequest) erro
 	return nil
 }
 
+func (cs *controller) validateVolumePublishReq(req *csi.NodePublishVolumeRequest) error {
+	err := cs.validateRequest(
+		csi.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME,
+	)
+	if err != nil {
+		return errors.Wrapf(
+			err,
+			"failed to handle publish volume request for {%s}",
+			req.GetVolumeId(),
+		)
+	}
+
+	if req.GetVolumeId() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing volume ID",
+		)
+	}
+
+	if req.GetTargetPath() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing targetPath",
+		)
+	}
+
+	if req.GetStagingTargetPath() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing stagingTargetPath",
+		)
+	}
+	return nil
+}
+
 func prepareVolumeForNode(
 	req *csi.ControllerPublishVolumeRequest,
 ) error {
@@ -188,6 +223,10 @@ func prepareVolumeForNode(
 	labels := map[string]string{
 		"nodeID":  nodeID,
 		"Volname": volumeID,
+	}
+	fsType := req.GetVolumeCapability().GetMount().GetFsType()
+	if fsType == "" {
+		fsType = "ext4"
 	}
 
 	// If the access type is block, do nothing for stage
@@ -204,20 +243,29 @@ func prepareVolumeForNode(
 		WithLabels(labels).
 		WithVolName(req.GetVolumeId()).
 		WithAccessType(accessType).
-		WithFSType(req.GetVolumeCapability().GetMount().GetFsType()).
+		WithFSType(fsType).
 		WithReadOnly(req.GetReadonly()).Build()
 	if err != nil {
 		return err
 	}
+	retryCount := 0
+retry:
 	if isCVCBound, err := utils.IsCVCBound(volumeID); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	} else if !isCVCBound {
 		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusWaitingForCVCBound
-		time.Sleep(10 * time.Second)
-		return errors.New("Waiting for CVC to be bound")
+		time.Sleep(5 * time.Second)
+		retryCount++
+		if retryCount == 5 {
+			return errors.New("Waiting for CVC to be bound")
+		}
+		goto retry
 	}
 
 	if err = utils.FetchAndUpdateISCSIDetails(volumeID, vol); err != nil {
+		return err
+	}
+	if err = utils.WaitForVolumeToBeReady(vol.Spec.Volume.Name); err != nil {
 		return err
 	}
 
@@ -237,5 +285,120 @@ func prepareVolumeForNode(
 	if err = utils.CreateCSIVolumeCR(vol, nodeID); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
+	return nil
+}
+
+func (cs *controller) validateExpandVolumeReq(req *csi.ControllerExpandVolumeRequest) error {
+	if req.GetCapacityRange() == nil {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle expand volume request: missing capacity",
+		)
+	}
+
+	if req.GetVolumeId() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle expand volume request: missing volume ID",
+		)
+	}
+	return nil
+}
+
+func (cs *controller) validateCreateSnapshotReq(req *csi.CreateSnapshotRequest) error {
+	if req.GetName() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle create snapshot request: missing snapshotName",
+		)
+	}
+
+	if req.GetSourceVolumeId() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle  create snapshot request: missing SourceVolumeID",
+		)
+	}
+
+	return nil
+}
+
+func (cs *controller) validateDeleteSnapshotReq(req *csi.DeleteSnapshotRequest) error {
+	if req.GetSnapshotId() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle delete snapshot request: missing snapshotID",
+		)
+	}
+
+	return nil
+}
+
+func (cs *controller) validateControllerPublishVolumeReq(req *csi.ControllerPublishVolumeRequest) error {
+
+	if req.GetVolumeId() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing volume ID",
+		)
+	}
+
+	if req.GetVolumeCapability() == nil {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing volume ID",
+		)
+	}
+
+	_, err := utils.GetVolume(req.GetVolumeId())
+	if err != nil {
+		if k8serror.IsNotFound(err) {
+			return status.Error(
+				codes.NotFound,
+				"failed to handle publish volume request: volumeNotPresent",
+			)
+		}
+		return status.Error(
+			codes.Internal, err.Error(),
+		)
+	}
+	if req.GetNodeId() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing targetPath",
+		)
+	}
+	_, err = utils.GetNode(req.GetNodeId())
+	if err != nil {
+		if k8serror.IsNotFound(err) {
+			return status.Error(
+				codes.NotFound,
+				"failed to handle publish volume request: volumeNotPresent",
+			)
+		}
+		return status.Error(
+			codes.Internal, err.Error(),
+		)
+	}
+
+	return nil
+}
+
+func (ns *controller) validateControllerUnpublishVolumeReq(req *csi.ControllerUnpublishVolumeRequest) error {
+
+	if req.GetVolumeId() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing volume ID",
+		)
+	}
+
+	if req.GetNodeId() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing targetPath",
+		)
+	}
+
 	return nil
 }

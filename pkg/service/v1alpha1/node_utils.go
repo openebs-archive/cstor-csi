@@ -266,6 +266,10 @@ func (ns *node) validateNodeStageReq(
 		return status.Error(codes.InvalidArgument,
 			"Volume ID missing in request")
 	}
+	if len(req.GetStagingTargetPath()) == 0 {
+		return status.Error(codes.InvalidArgument,
+			"stagingTargetPath missing in request")
+	}
 	return nil
 }
 
@@ -281,5 +285,48 @@ func (ns *node) validateNodeUnStageReq(
 		return status.Error(codes.InvalidArgument,
 			"Target path missing in request")
 	}
+	return nil
+}
+func (ns *node) validateNodePublishReq(req *csi.NodePublishVolumeRequest) error {
+
+	if req.GetVolumeId() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing volume ID",
+		)
+	}
+
+	if req.GetTargetPath() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing targetPath",
+		)
+	}
+
+	if req.GetStagingTargetPath() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing stagingTargetPath",
+		)
+	}
+	return nil
+}
+
+func (ns *node) validateNodeUnpublishReq(req *csi.NodeUnpublishVolumeRequest) error {
+
+	if req.GetVolumeId() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing volume ID",
+		)
+	}
+
+	if req.GetTargetPath() == "" {
+		return status.Error(
+			codes.InvalidArgument,
+			"failed to handle publish volume request: missing targetPath",
+		)
+	}
+
 	return nil
 }

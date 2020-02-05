@@ -23,7 +23,7 @@ const (
 
 	// VolumeWaitTimeout indicates the timegap between two consecutive volume
 	// status check attempts
-	VolumeWaitTimeout = 2
+	VolumeWaitTimeout = 5
 
 	// TODO make VolumeWaitRetryCount as env
 

@@ -30,6 +30,9 @@ var (
 )
 
 func isValidFStype(fstype string) bool {
+	if fstype == "" {
+		return true
+	}
 	for _, fs := range ValidFSTypes {
 		if fs == fstype {
 			return true

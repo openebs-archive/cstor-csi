@@ -30,6 +30,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	corev1 "k8s.io/api/core/v1"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 )
 
@@ -49,8 +50,6 @@ func NewController(d *CSIDriver) csi.ControllerServer {
 	}
 }
 
-// TODO Implementation will be taken up later
-
 // ValidateVolumeCapabilities validates the capabilities
 // required to create a new volume
 // This implements csi.ControllerServer
@@ -59,7 +58,30 @@ func (cs *controller) ValidateVolumeCapabilities(
 	req *csi.ValidateVolumeCapabilitiesRequest,
 ) (*csi.ValidateVolumeCapabilitiesResponse, error) {
 
-	return nil, status.Error(codes.Unimplemented, "")
+	if req.GetVolumeId() == "" {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"failed to handle ValidateVolumeCapabilities request: missing volume id",
+		)
+	}
+
+	if len(req.GetVolumeCapabilities()) == 0 {
+		return nil, status.Error(
+			codes.InvalidArgument,
+			"failed to handle ValidateVolumeCapabilities request: missing VolumeCapabilities",
+		)
+	}
+	cvc, err := utils.GetVolume(req.GetVolumeId())
+	if err == nil && cvc != nil && cvc.DeletionTimestamp != nil {
+		return nil, status.Error(codes.NotFound, "Volume does not exist")
+	}
+	if err != nil {
+		if k8serror.IsNotFound(err) {
+			return nil, status.Error(codes.NotFound, "Volume does not exist")
+		}
+		return nil, err
+	}
+	return &csi.ValidateVolumeCapabilitiesResponse{}, nil
 }
 
 // ControllerGetCapabilities fetches controller capabilities
@@ -82,27 +104,33 @@ func (cs *controller) CreateVolume(
 	ctx context.Context,
 	req *csi.CreateVolumeRequest,
 ) (*csi.CreateVolumeResponse, error) {
-	var snapshotID string
 
 	logrus.Infof("received request to create volume {%s}", req.GetName())
 	var (
-		err    error
-		nodeID string
+		snapshotID string
+		err        error
+		nodeID     string
+		size       int64
 	)
 
 	if err = cs.validateVolumeCreateReq(req); err != nil {
 		return nil, err
 	}
 
-	volName := req.GetName()
-	size := req.GetCapacityRange().RequiredBytes
+	volName := strings.ToLower(req.GetName())
+	if req.GetCapacityRange() != nil {
+		size = req.GetCapacityRange().RequiredBytes
+	} else {
+		size = 1024 * 1024 * 1024
+	}
 	rCount := req.GetParameters()["replicaCount"]
 	cspcName := req.GetParameters()["cstorPoolCluster"]
 	policyName := req.GetParameters()["cstorVolumePolicy"]
 	VolumeContext := map[string]string{
 		"openebs.io/cas-type": req.GetParameters()["cas-type"],
 	}
-	if req.GetAccessibilityRequirements() != nil {
+	if req.GetAccessibilityRequirements() != nil && len(req.GetAccessibilityRequirements().
+		GetPreferred()) != 0 {
 		nodeID = req.GetAccessibilityRequirements().
 			GetPreferred()[0].GetSegments()[HostTopologyKey]
 	}
@@ -115,7 +143,7 @@ func (cs *controller) CreateVolume(
 		}
 		if isValidSrc, _ := utils.IsSourceAvailable(snapshotID); !isValidSrc {
 			return nil, status.Error(
-				codes.InvalidArgument,
+				codes.NotFound,
 				"VolumeSrc Not Available")
 		}
 	}
@@ -123,7 +151,12 @@ func (cs *controller) CreateVolume(
 	// verify if the volume has already been created
 	cvc, err := utils.GetVolume(volName)
 	if err == nil && cvc != nil && cvc.DeletionTimestamp == nil {
-		goto createVolumeResponse
+		qcap := cvc.Spec.Capacity[corev1.ResourceStorage]
+		cap, _ := qcap.AsInt64()
+		if size == cap {
+			goto createVolumeResponse
+		}
+		return nil, status.Error(codes.AlreadyExists, "Volume already exist with different size")
 	}
 	err = utils.ProvisionVolume(size, volName, rCount,
 		cspcName, snapshotID,
@@ -156,10 +189,13 @@ func (cs *controller) DeleteVolume(
 		return nil, err
 	}
 
-	volumeID := req.GetVolumeId()
+	volumeID := strings.ToLower(req.GetVolumeId())
 
 	// verify if the volume has already been deleted
 	cvc, err = utils.GetVolume(volumeID)
+	if k8serror.IsNotFound(err) {
+		goto deleteResponse
+	}
 	if cvc != nil && cvc.DeletionTimestamp != nil {
 		goto deleteResponse
 	}
@@ -188,6 +224,9 @@ func (cs *controller) ControllerPublishVolume(
 	req *csi.ControllerPublishVolumeRequest,
 ) (*csi.ControllerPublishVolumeResponse, error) {
 
+	if err := cs.validateControllerPublishVolumeReq(req); err != nil {
+		return nil, err
+	}
 	if err := prepareVolumeForNode(req); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -203,6 +242,9 @@ func (cs *controller) ControllerUnpublishVolume(
 	ctx context.Context,
 	req *csi.ControllerUnpublishVolumeRequest,
 ) (*csi.ControllerUnpublishVolumeResponse, error) {
+	if err := cs.validateControllerUnpublishVolumeReq(req); err != nil {
+		return nil, err
+	}
 	if err := utils.DeleteCSIVolumeCR(req.GetVolumeId() + "-" + req.GetNodeId()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -216,6 +258,11 @@ func (cs *controller) ControllerExpandVolume(
 	ctx context.Context,
 	req *csi.ControllerExpandVolumeRequest,
 ) (*csi.ControllerExpandVolumeResponse, error) {
+	var err error
+	if err = cs.validateExpandVolumeReq(req); err != nil {
+		return nil, err
+	}
+
 	updatedSize := req.GetCapacityRange().GetRequiredBytes()
 	if err := utils.ResizeVolume(req.VolumeId, updatedSize); err != nil {
 		return nil, status.Errorf(
@@ -239,9 +286,14 @@ func (cs *controller) CreateSnapshot(
 	req *csi.CreateSnapshotRequest,
 ) (*csi.CreateSnapshotResponse, error) {
 
+	var err error
+	if err = cs.validateCreateSnapshotReq(req); err != nil {
+		return nil, err
+	}
 	snapTimeStamp := time.Now().Unix()
 	snapTimeStampStr := strconv.FormatInt(time.Now().Unix(), 10)
-	if err := utils.CreateSnapshot(req.SourceVolumeId, req.Name+"-"+snapTimeStampStr); err != nil {
+	srcVolID := strings.ToLower(req.SourceVolumeId)
+	if err := utils.CreateSnapshot(srcVolID, req.Name+"-"+snapTimeStampStr); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
 			"failed to handle CreateSnapshotRequest for %s: %s, {%s}",
@@ -251,7 +303,7 @@ func (cs *controller) CreateSnapshot(
 	}
 	return csipayload.NewCreateSnapshotResponseBuilder().
 		WithSourceVolumeID(req.SourceVolumeId).
-		WithSnapshotID(req.SourceVolumeId+"@"+req.Name+"-"+snapTimeStampStr).
+		WithSnapshotID(srcVolID+"@"+req.Name+"-"+snapTimeStampStr).
 		WithCreationTime(snapTimeStamp, 0).
 		WithReadyToUse(true).
 		Build(), nil
@@ -264,14 +316,14 @@ func (cs *controller) DeleteSnapshot(
 	ctx context.Context,
 	req *csi.DeleteSnapshotRequest,
 ) (*csi.DeleteSnapshotResponse, error) {
+
+	var err error
+	if err = cs.validateDeleteSnapshotReq(req); err != nil {
+		return nil, err
+	}
 	snapshotID := strings.Split(req.SnapshotId, "@")
 	if len(snapshotID) != 2 {
-		return nil, status.Errorf(
-			codes.Internal,
-			"failed to handle CreateSnapshotRequest for %s, {%s}",
-			req.SnapshotId,
-			"Manual intervention required",
-		)
+		return &csi.DeleteSnapshotResponse{}, nil
 	}
 	if err := utils.DeleteSnapshot(snapshotID[0], snapshotID[1]); err != nil {
 		return nil, status.Errorf(

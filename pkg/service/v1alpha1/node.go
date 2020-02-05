@@ -254,6 +254,9 @@ func (ns *node) NodePublishVolume(
 	req *csi.NodePublishVolumeRequest,
 ) (*csi.NodePublishVolumeResponse, error) {
 
+	if err := ns.validateNodePublishReq(req); err != nil {
+		return nil, err
+	}
 	volumeID := req.GetVolumeId()
 	err := addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
 	if err != nil {
@@ -292,6 +295,9 @@ func (ns *node) NodeUnpublishVolume(
 	req *csi.NodeUnpublishVolumeRequest,
 ) (*csi.NodeUnpublishVolumeResponse, error) {
 
+	if err := ns.validateNodeUnpublishReq(req); err != nil {
+		return nil, err
+	}
 	volumeID := req.GetVolumeId()
 	target := req.GetTargetPath()
 

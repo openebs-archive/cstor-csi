@@ -36,8 +36,8 @@ const (
 	VOLNAME = "Volname"
 )
 
-// getNodeDetails fetches the nodeInfo for the current node
-func getNodeDetails(name string) (*corev1.Node, error) {
+// GetNode fetches the nodeInfo for the current node
+func GetNode(name string) (*corev1.Node, error) {
 	return node.NewKubeClient().Get(name, metav1.GetOptions{})
 }
 
@@ -113,7 +113,7 @@ func GetVolumeIP(volumeID string) (string, error) {
 // CreateCSIVolumeCR creates a CSI VOlume CR
 func CreateCSIVolumeCR(csivol *apis.CSIVolume, nodeID string) error {
 	csivol.Spec.Volume.OwnerNodeID = nodeID
-	nodeInfo, err := getNodeDetails(nodeID)
+	nodeInfo, err := GetNode(nodeID)
 	if err != nil {
 		return err
 	}

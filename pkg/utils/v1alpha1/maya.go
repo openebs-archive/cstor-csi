@@ -93,6 +93,7 @@ func ProvisionVolume(
 	}
 
 	_, err = cvc.NewKubeclient().WithNamespace(OpenEBSNamespace).Create(cvcObj)
+	time.Sleep(5 * time.Second)
 	return err
 }
 
@@ -157,7 +158,7 @@ func PatchCVCNodeID(volumeID, nodeID string) error {
 // GetVolumeSourceDetails splits the volumeName and snapshot
 func GetVolumeSourceDetails(snapshotID string) (string, string, error) {
 	volSrc := strings.Split(snapshotID, "@")
-	if len(volSrc) == 0 {
+	if len(volSrc) != 0 {
 		return "", "", errors.New(
 			"failed to get volumeSource",
 		)
