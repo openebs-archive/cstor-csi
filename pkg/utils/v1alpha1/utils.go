@@ -224,9 +224,11 @@ func MonitorMounts() {
 			// Get list of mounted paths present with the node
 			TransitionVolListLock.Lock()
 			if mountList, err = mounter.List(); err != nil {
+				TransitionVolListLock.Unlock()
 				break
 			}
 			if csivolList, err = GetVolListForNode(); err != nil {
+				TransitionVolListLock.Unlock()
 				break
 			}
 			for _, vol := range csivolList.Items {
