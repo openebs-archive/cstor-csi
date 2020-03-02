@@ -22,6 +22,7 @@ import (
 	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
+	"golang.org/x/sys/unix"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -37,6 +38,7 @@ const (
 
 	defaultFsType = FSTypeExt4
 
+	// MaxRetryCount represents the max retries count for a operation
 	MaxRetryCount = 10
 
 	defaultISCSILUN       = int32(0)
@@ -59,6 +61,7 @@ const (
 )
 
 var (
+	// ValidFSTypes supported filesystems for provisioning and resize operations
 	ValidFSTypes = []string{FSTypeExt4, FSTypeXfs}
 )
 
@@ -69,6 +72,16 @@ func isValidFStype(fstype string) bool {
 		}
 	}
 	return false
+}
+
+// IsBlockDevice checks if the given path is a block device
+func IsBlockDevice(fullPath string) (bool, error) {
+	var st unix.Stat_t
+	err := unix.Stat(fullPath, &st)
+	if err != nil {
+		return false, err
+	}
+	return (st.Mode & unix.S_IFMT) == unix.S_IFBLK, nil
 }
 
 func removeVolumeFromTransitionList(volumeID string) {
