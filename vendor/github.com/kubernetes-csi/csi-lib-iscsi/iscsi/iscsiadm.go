@@ -88,11 +88,8 @@ func ShowInterface(iface string) (string, error) {
 }
 
 // CreateDBEntry sets up a node entry for the specified tgt in the nodes iscsi nodes db
-func CreateDBEntry(tgtIQN, portal, iFace string, discoverySecrets, sessionSecrets Secrets, chapDiscovery bool) error {
+func CreateDBEntry(tgtIQN, portal, iFace string, discoverySecrets, sessionSecrets Secrets) error {
 	debug.Println("Begin CreateDBEntry...")
-	if !chapDiscovery {
-		return nil
-	}
 	baseArgs := []string{"-m", "node", "-T", tgtIQN, "-p", portal}
 	_, err := iscsiCmd(append(baseArgs, []string{"-I", iFace, "-o", "new"}...)...)
 	if err != nil {
@@ -113,19 +110,9 @@ func CreateDBEntry(tgtIQN, portal, iFace string, discoverySecrets, sessionSecret
 
 }
 
-func updateISCSIDiscoverydb(tp, iface string, discoverySecrets Secrets) error {
-	baseArgs := []string{"-m", "discoverydb", "-t", "sendtargets", "-p", tp, "-I", iface}
-	_, err := iscsiCmd(append(baseArgs, []string{"-o", "update", "-n", "discovery.sendtargets.auth.authmethod", "-v", "CHAP"}...)...)
-	if err != nil {
-		return fmt.Errorf("failed to update discoverydb with CHAP, err: %v", err)
-	}
-
-	return createCHAPEntries(baseArgs, discoverySecrets, true)
-}
-
-// Discovery discover the iscsi target
-func Discovery(tp, iface string, discoverySecrets Secrets, chapDiscovery bool) error {
-	debug.Println("Begin Discovery...")
+// Discoverydb discovers the iscsi target
+func Discoverydb(tp, iface string, discoverySecrets Secrets, chapDiscovery bool) error {
+	debug.Println("Begin Discoverydb...")
 	baseArgs := []string{"-m", "discoverydb", "-t", "sendtargets", "-p", tp, "-I", iface}
 	out, err := iscsiCmd(append(baseArgs, []string{"-o", "new"}...)...)
 	if err != nil {
@@ -133,7 +120,7 @@ func Discovery(tp, iface string, discoverySecrets Secrets, chapDiscovery bool) e
 	}
 
 	if chapDiscovery {
-		if err := updateISCSIDiscoverydb(tp, iface, discoverySecrets); err != nil {
+		if err := createCHAPEntries(baseArgs, discoverySecrets, true); err != nil {
 			return err
 		}
 	}
