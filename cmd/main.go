@@ -6,10 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/Sirupsen/logrus"
-	config "github.com/openebs/cstor-csi/pkg/config/v1alpha1"
-	service "github.com/openebs/cstor-csi/pkg/service/v1alpha1"
+	"github.com/openebs/cstor-csi/pkg/config"
+	"github.com/openebs/cstor-csi/pkg/driver"
 	"github.com/openebs/cstor-csi/pkg/version"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -73,7 +73,7 @@ func run(config *config.Config) {
 		config.NodeID,
 	)
 
-	err := service.New(config).Run()
+	err := driver.New(config).Run()
 	if err != nil {
 		log.Fatalln(err)
 	}
