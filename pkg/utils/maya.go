@@ -87,7 +87,7 @@ func ProvisionVolume(
 		WithReplicaCount(replicaCount).
 		WithNewVersion(version.Current()).
 		WithDependentsUpgraded().
-		WithStatusPhase(apisv1.CStorVolumeClaimPhasePending).Build()
+		WithStatusPhase(apisv1.CStorVolumeConfigPhasePending).Build()
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func ProvisionVolume(
 }
 
 // GetVolume the corresponding CstorVolumeClaim(cvc) CR
-func GetVolume(volumeID string) (*apisv1.CStorVolumeClaim, error) {
+func GetVolume(volumeID string) (*apisv1.CStorVolumeConfig, error) {
 	return cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Get(volumeID, metav1.GetOptions{})
@@ -130,7 +130,7 @@ func IsCVCBound(volumeID string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if cvcObj.Status.Phase == apisv1.CStorVolumeClaimPhasePending {
+	if cvcObj.Status.Phase == apisv1.CStorVolumeConfigPhasePending {
 		return false, nil
 	}
 	return true, nil
@@ -206,7 +206,7 @@ func ResizeVolume(
 			cvc.Status.Capacity, cvc.Spec.Capacity)
 	}
 
-	if cvc.Status.Phase == apisv1.CStorVolumeClaimPhasePending {
+	if cvc.Status.Phase == apisv1.CStorVolumeConfigPhasePending {
 		return handleResize(cvc, desiredSize)
 	}
 	cvcActualSize := cvc.Status.Capacity[corev1.ResourceStorage]
@@ -224,7 +224,7 @@ func ResizeVolume(
 }
 
 func handleResize(
-	cvc *apisv1.CStorVolumeClaim, sSize resource.Quantity,
+	cvc *apisv1.CStorVolumeConfig, sSize resource.Quantity,
 ) error {
 	if err := updateCVCSize(cvc, sSize); err != nil {
 		return err
@@ -251,7 +251,7 @@ func waitAndReverifyResizeStatus(cvcName string, sSize resource.Quantity) error 
 	return nil
 }
 
-func updateCVCSize(oldCVCObj *apisv1.CStorVolumeClaim, sSize resource.Quantity) error {
+func updateCVCSize(oldCVCObj *apisv1.CStorVolumeConfig, sSize resource.Quantity) error {
 	newCVCObj, err := cvc.BuildFrom(oldCVCObj.DeepCopy()).
 		WithCapacityQty(sSize).Build()
 	if err != nil {
@@ -263,7 +263,7 @@ func updateCVCSize(oldCVCObj *apisv1.CStorVolumeClaim, sSize resource.Quantity) 
 	return err
 }
 
-func getCVC(cvcName string) (*apisv1.CStorVolumeClaim, error) {
+func getCVC(cvcName string) (*apisv1.CStorVolumeConfig, error) {
 	return cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Get(cvcName, metav1.GetOptions{})

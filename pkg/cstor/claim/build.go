@@ -25,24 +25,24 @@ import (
 	resource "k8s.io/apimachinery/pkg/api/resource"
 )
 
-// Builder is the builder object for CStorVolumeClaim
+// Builder is the builder object for CStorVolumeConfig
 type Builder struct {
-	cvc  *CStorVolumeClaim
+	cvc  *CStorVolumeConfig
 	errs []error
 }
 
 // NewBuilder returns new instance of Builder
 func NewBuilder() *Builder {
 	return &Builder{
-		cvc: &CStorVolumeClaim{
-			object: &apisv1.CStorVolumeClaim{},
+		cvc: &CStorVolumeConfig{
+			object: &apisv1.CStorVolumeConfig{},
 		},
 	}
 }
 
 // BuildFrom returns new instance of Builder
 // from the provided api instance
-func BuildFrom(cvc *apisv1.CStorVolumeClaim) *Builder {
+func BuildFrom(cvc *apisv1.CStorVolumeConfig) *Builder {
 	if cvc == nil {
 		b := NewBuilder()
 		b.errs = append(
@@ -52,13 +52,13 @@ func BuildFrom(cvc *apisv1.CStorVolumeClaim) *Builder {
 		return b
 	}
 	return &Builder{
-		cvc: &CStorVolumeClaim{
+		cvc: &CStorVolumeConfig{
 			object: cvc,
 		},
 	}
 }
 
-// WithName sets the Name of CStorVolumeClaim
+// WithName sets the Name of CStorVolumeConfig
 func (b *Builder) WithName(name string) *Builder {
 	if name == "" {
 		b.errs = append(
@@ -71,7 +71,7 @@ func (b *Builder) WithName(name string) *Builder {
 	return b
 }
 
-// WithGenerateName sets the GenerateName of CStorVolumeClaim
+// WithGenerateName sets the GenerateName of CStorVolumeConfig
 func (b *Builder) WithGenerateName(name string) *Builder {
 	if name == "" {
 		b.errs = append(
@@ -87,7 +87,7 @@ func (b *Builder) WithGenerateName(name string) *Builder {
 	return b
 }
 
-// WithNamespace resets the Namespace of CStorVolumeClaim with provided arguments
+// WithNamespace resets the Namespace of CStorVolumeConfig with provided arguments
 func (b *Builder) WithNamespace(namespace string) *Builder {
 	if namespace == "" {
 		b.errs = append(
@@ -102,9 +102,9 @@ func (b *Builder) WithNamespace(namespace string) *Builder {
 	return b
 }
 
-// WithStatusPhase updates the phase of CStorVolumeClaim
+// WithStatusPhase updates the phase of CStorVolumeConfig
 func (b *Builder) WithStatusPhase(
-	phase apisv1.CStorVolumeClaimPhase) *Builder {
+	phase apisv1.CStorVolumeConfigPhase) *Builder {
 	if phase == "" {
 		b.errs = append(
 			b.errs,
@@ -118,9 +118,9 @@ func (b *Builder) WithStatusPhase(
 	return b
 }
 
-// WithStatusConditions updates the status of CStorVolumeClaim
+// WithStatusConditions updates the status of CStorVolumeConfig
 func (b *Builder) WithStatusConditions(
-	conditions []apisv1.CStorVolumeClaimCondition) *Builder {
+	conditions []apisv1.CStorVolumeConfigCondition) *Builder {
 	if len(conditions) == 0 {
 		b.errs = append(
 			b.errs,
@@ -135,9 +135,9 @@ func (b *Builder) WithStatusConditions(
 	return b
 }
 
-// WithStatusConditionsNew resets the status of CStorVolumeClaim
+// WithStatusConditionsNew resets the status of CStorVolumeConfig
 func (b *Builder) WithStatusConditionsNew(
-	conditions []apisv1.CStorVolumeClaimCondition) *Builder {
+	conditions []apisv1.CStorVolumeConfigCondition) *Builder {
 	if len(conditions) == 0 {
 		b.errs = append(
 			b.errs,
@@ -151,7 +151,7 @@ func (b *Builder) WithStatusConditionsNew(
 	return b
 }
 
-// WithAnnotations merges existing annotations of CStorVolumeClaim if any
+// WithAnnotations merges existing annotations of CStorVolumeConfig if any
 // with the ones that are provided here
 func (b *Builder) WithAnnotations(annotations map[string]string) *Builder {
 	if len(annotations) == 0 {
@@ -198,7 +198,7 @@ func (b *Builder) WithAnnotationsNew(annotations map[string]string) *Builder {
 	return b
 }
 
-// WithLabels merges existing labels of CStorVolumeClaim if any
+// WithLabels merges existing labels of CStorVolumeConfig if any
 // with the ones that are provided here
 func (b *Builder) WithLabels(labels map[string]string) *Builder {
 	if len(labels) == 0 {
@@ -221,7 +221,7 @@ func (b *Builder) WithLabels(labels map[string]string) *Builder {
 	return b
 }
 
-// WithLabelsNew resets existing labels of CStorVolumeClaim if any with
+// WithLabelsNew resets existing labels of CStorVolumeConfig if any with
 // ones that are provided here
 func (b *Builder) WithLabelsNew(labels map[string]string) *Builder {
 	if len(labels) == 0 {
@@ -245,7 +245,7 @@ func (b *Builder) WithLabelsNew(labels map[string]string) *Builder {
 	return b
 }
 
-// WithFinalizers merges existing finalizers of CStorVolumeClaim if any
+// WithFinalizers merges existing finalizers of CStorVolumeConfig if any
 // with the ones that are provided here
 func (b *Builder) WithFinalizers(finalizers []string) *Builder {
 	if len(finalizers) == 0 {
@@ -266,7 +266,7 @@ func (b *Builder) WithFinalizers(finalizers []string) *Builder {
 	return b
 }
 
-// WithFinalizersNew resets existing finalizers of CStorVolumeClaim if any with
+// WithFinalizersNew resets existing finalizers of CStorVolumeConfig if any with
 // ones that are provided here
 func (b *Builder) WithFinalizersNew(finalizers []string) *Builder {
 	if len(finalizers) == 0 {
@@ -294,7 +294,7 @@ func (b *Builder) WithCapacity(capacity string) *Builder {
 			b.errs,
 			errors.Wrapf(
 				err,
-				"failed to build CStorVolumeClaim object: failed to parse capacity {%s}",
+				"failed to build CStorVolumeConfig object: failed to parse capacity {%s}",
 				capacity,
 			),
 		)
@@ -318,7 +318,7 @@ func (b *Builder) WithCapacityQty(resCapacity resource.Quantity) *Builder {
 	return b
 }
 
-// WithReplicaCount sets replica count of CStorVolumeClaim
+// WithReplicaCount sets replica count of CStorVolumeConfig
 func (b *Builder) WithReplicaCount(count string) *Builder {
 
 	replicaCount, err := strconv.Atoi(count)
@@ -333,11 +333,11 @@ func (b *Builder) WithReplicaCount(count string) *Builder {
 		)
 		return b
 	}
-	b.cvc.object.Spec.ReplicaCount = replicaCount
+	b.cvc.object.Spec.Provision.ReplicaCount = replicaCount
 	return b
 }
 
-// WithNodeID sets NodeID details of CStorVolumeClaim
+// WithNodeID sets NodeID details of CStorVolumeConfig
 func (b *Builder) WithNodeID(nodeID string) *Builder {
 	if nodeID == "" {
 		b.errs = append(
@@ -375,8 +375,8 @@ func (b *Builder) WithDependentsUpgraded() *Builder {
 	return b
 }
 
-// Build returns the CStorVolumeClaim API instance
-func (b *Builder) Build() (*apisv1.CStorVolumeClaim, error) {
+// Build returns the CStorVolumeConfig API instance
+func (b *Builder) Build() (*apisv1.CStorVolumeConfig, error) {
 	if len(b.errs) > 0 {
 		return nil, errors.Errorf("%+v", b.errs)
 	}

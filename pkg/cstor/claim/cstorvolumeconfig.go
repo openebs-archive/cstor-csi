@@ -20,54 +20,54 @@ import (
 	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
 )
 
-// CStorVolumeClaim a wrapper for ume object
-type CStorVolumeClaim struct {
+// CStorVolumeConfig a wrapper for ume object
+type CStorVolumeConfig struct {
 	// actual cstorvolumeclaim object
-	object *apisv1.CStorVolumeClaim
+	object *apisv1.CStorVolumeConfig
 }
 
 // List is a list of cstorvolumeclaim objects
-type CStorVolumeClaimList struct {
+type CStorVolumeConfigList struct {
 	// list of cstor volume claims
-	items []*CStorVolumeClaim
+	items []*CStorVolumeConfig
 }
 
 // ListBuilder enables building
-// an instance of umeCStorVolumeClaimList
+// an instance of umeCStorVolumeConfigList
 type ListBuilder struct {
-	list    *CStorVolumeClaimList
+	list    *CStorVolumeConfigList
 	filters PredicateList
 }
 
 // NewListBuilder returns a new instance
 // of listBuilder
 func NewListBuilder() *ListBuilder {
-	return &ListBuilder{list: &CStorVolumeClaimList{}}
+	return &ListBuilder{list: &CStorVolumeConfigList{}}
 }
 
 // WithAPIList builds the list of cstorvolume claim
 // instances based on the provided
-// CStorVolumeClaim api instances
+// CStorVolumeConfig api instances
 func (b *ListBuilder) WithAPIList(
-	list *apisv1.CStorVolumeClaimList) *ListBuilder {
+	list *apisv1.CStorVolumeConfigList) *ListBuilder {
 	if list == nil {
 		return b
 	}
 	for _, c := range list.Items {
 		c := c
-		b.list.items = append(b.list.items, &CStorVolumeClaim{object: &c})
+		b.list.items = append(b.list.items, &CStorVolumeConfig{object: &c})
 	}
 	return b
 }
 
-// List returns the list of CStorVolumeClaims (cvcs)
+// List returns the list of CStorVolumeConfigs (cvcs)
 // instances that was built by this
 // builder
-func (b *ListBuilder) List() *CStorVolumeClaimList {
+func (b *ListBuilder) List() *CStorVolumeConfigList {
 	if b.filters == nil || len(b.filters) == 0 {
 		return b.list
 	}
-	filtered := &CStorVolumeClaimList{}
+	filtered := &CStorVolumeConfigList{}
 	for _, cv := range b.list.items {
 		if b.filters.all(cv) {
 			filtered.items = append(filtered.items, cv)
@@ -77,15 +77,15 @@ func (b *ListBuilder) List() *CStorVolumeClaimList {
 }
 
 // Len returns the number of items present
-// in the CStorVolumeClaimList
-func (l *CStorVolumeClaimList) Len() int {
+// in the CStorVolumeConfigList
+func (l *CStorVolumeConfigList) Len() int {
 	return len(l.items)
 }
 
 // Predicate defines an abstraction
 // to determine conditional checks
 // against the provided cstorvolume claim instance
-type Predicate func(*CStorVolumeClaim) bool
+type Predicate func(*CStorVolumeConfig) bool
 
 // PredicateList holds a list of cstor volume claims
 // based predicates
@@ -94,7 +94,7 @@ type PredicateList []Predicate
 // all returns true if all the predicates
 // succeed against the provided cstorvolumeclaim
 // instance
-func (l PredicateList) all(c *CStorVolumeClaim) bool {
+func (l PredicateList) all(c *CStorVolumeConfig) bool {
 	for _, check := range l {
 		if !check(c) {
 			return false
@@ -110,8 +110,8 @@ func (b *ListBuilder) WithFilter(pred ...Predicate) *ListBuilder {
 }
 
 // NewForAPIObject returns a new instance of cstorvolume
-func NewForAPIObject(obj *apisv1.CStorVolumeClaim) *CStorVolumeClaim {
-	return &CStorVolumeClaim{
+func NewForAPIObject(obj *apisv1.CStorVolumeConfig) *CStorVolumeConfig {
+	return &CStorVolumeConfig{
 		object: obj,
 	}
 }

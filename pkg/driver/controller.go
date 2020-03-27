@@ -149,7 +149,7 @@ func (cs *controller) DeleteVolume(
 
 	var (
 		err error
-		cvc *apisv1.CStorVolumeClaim
+		cvc *apisv1.CStorVolumeConfig
 	)
 
 	if err = cs.validateDeleteVolumeReq(req); err != nil {

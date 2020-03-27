@@ -97,8 +97,8 @@ func logGRPC(
 	ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
 ) (interface{}, error) {
-	logrus.Infof("GRPC call: %s", info.FullMethod)
-	logrus.Infof("GRPC request: %s", protosanitizer.StripSecrets(req))
+	logrus.Debugf("GRPC call: %s", info.FullMethod)
+	logrus.Debugf("GRPC request: %s", protosanitizer.StripSecrets(req))
 	resp, err := handler(ctx, req)
 	if err != nil {
 		logrus.Errorf("GRPC error: %v", err)

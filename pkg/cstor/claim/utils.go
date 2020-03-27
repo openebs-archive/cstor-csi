@@ -9,7 +9,7 @@ import (
 )
 
 // CVCKey returns an unique key of a CVC object,
-func CVCKey(cvc *apisv1.CStorVolumeClaim) string {
+func CVCKey(cvc *apisv1.CStorVolumeConfig) string {
 	return fmt.Sprintf("%s/%s", cvc.Namespace, cvc.Name)
 }
 
