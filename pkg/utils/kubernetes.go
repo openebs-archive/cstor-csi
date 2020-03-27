@@ -16,8 +16,8 @@ package utils
 
 import (
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
-	csivolume "github.com/openebs/cstor-csi/pkg/cstor/csivolume"
 	csv "github.com/openebs/cstor-csi/pkg/cstor/volume"
+	csivolume "github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	node "github.com/openebs/cstor-csi/pkg/kubernetes/node"
 	pv "github.com/openebs/cstor-csi/pkg/kubernetes/persistentvolume"
 	errors "github.com/pkg/errors"
@@ -71,7 +71,7 @@ func getVolStatus(volumeID string) (string, error) {
 }
 
 // GetVolListForNode fetches the current Published Volume list
-func GetVolListForNode() (*apis.CSIVolumeList, error) {
+func GetVolListForNode() (*apis.CStorVolumeAttachmentList, error) {
 	listOptions := metav1.ListOptions{
 		LabelSelector: NODEID + "=" + NodeIDENV,
 	}
@@ -82,7 +82,7 @@ func GetVolListForNode() (*apis.CSIVolumeList, error) {
 }
 
 // GetVolList fetches the current Published Volume list
-func GetVolList(volume string) (*apis.CSIVolumeList, error) {
+func GetVolList(volume string) (*apis.CStorVolumeAttachmentList, error) {
 	listOptions := metav1.ListOptions{
 		LabelSelector: VOLNAME + "=" + volume,
 	}
@@ -91,8 +91,8 @@ func GetVolList(volume string) (*apis.CSIVolumeList, error) {
 
 }
 
-// GetCSIVolume fetches the current Published csi Volume
-func GetCSIVolume(csivol string) (*apis.CSIVolume, error) {
+// GetCStorVolumeAttachment fetches the current Published csi Volume
+func GetCStorVolumeAttachment(csivol string) (*apis.CStorVolumeAttachment, error) {
 	return csivolume.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).Get(csivol, metav1.GetOptions{})
 }
@@ -110,8 +110,8 @@ func GetVolumeIP(volumeID string) (string, error) {
 	return cstorvolume.Spec.TargetIP, nil
 }
 
-// CreateCSIVolumeCR creates a CSI VOlume CR
-func CreateCSIVolumeCR(csivol *apis.CSIVolume, nodeID string) error {
+// CreateCStorVolumeAttachmentCR creates a CSI VOlume CR
+func CreateCStorVolumeAttachmentCR(csivol *apis.CStorVolumeAttachment, nodeID string) error {
 	csivol.Spec.Volume.OwnerNodeID = nodeID
 	nodeInfo, err := getNodeDetails(nodeID)
 	if err != nil {
@@ -133,8 +133,8 @@ func CreateCSIVolumeCR(csivol *apis.CSIVolume, nodeID string) error {
 
 }
 
-// UpdateCSIVolumeCR updates CSIVolume CR related to current nodeID
-func UpdateCSIVolumeCR(csivol *apis.CSIVolume) error {
+// UpdateCStorVolumeAttachmentCR updates CStorVolumeAttachment CR related to current nodeID
+func UpdateCStorVolumeAttachmentCR(csivol *apis.CStorVolumeAttachment) error {
 
 	_, err := csivolume.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).Update(csivol)
@@ -144,8 +144,8 @@ func UpdateCSIVolumeCR(csivol *apis.CSIVolume) error {
 // TODO Explain when a create of csi volume happens & when it
 // gets deleted or replaced or updated
 
-// DeleteOldCSIVolumeCRs removes the CSIVolumeCR for the specified path
-func DeleteOldCSIVolumeCRs(volumeID string) error {
+// DeleteOldCStorVolumeAttachmentCRs removes the CStorVolumeAttachmentCR for the specified path
+func DeleteOldCStorVolumeAttachmentCRs(volumeID string) error {
 	csivols, err := GetVolList(volumeID)
 	if err != nil {
 		return err
@@ -164,8 +164,8 @@ func DeleteOldCSIVolumeCRs(volumeID string) error {
 // TODO Explain when a create of csi volume happens & when it
 // gets deleted or replaced or updated
 
-// DeleteCSIVolumeCR removes the CSIVolumeCR for the specified path
-func DeleteCSIVolumeCR(csivolName string) error {
+// DeleteCStorVolumeAttachmentCR removes the CStorVolumeAttachmentCR for the specified path
+func DeleteCStorVolumeAttachmentCR(csivolName string) error {
 	return csivolume.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).Delete(csivolName)
 }

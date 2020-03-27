@@ -27,7 +27,7 @@ func getTargetIP(url string) string {
 	return s[0]
 }
 
-func (ns *node) attachDisk(vol *apis.CSIVolume) (string, error) {
+func (ns *node) attachDisk(vol *apis.CStorVolumeAttachment) (string, error) {
 	connector := iscsi.Connector{
 		VolumeName: vol.Spec.Volume.Name,
 		Targets: []iscsi.TargetInfo{
@@ -179,7 +179,7 @@ func (ns *node) nodePublishVolumeForBlock(req *csi.NodePublishVolumeRequest, mou
 // GetDevicePath get path of device and verifies its existence
 func (ns *node) GetDevicePath(devicePath, volumeID string) (string, error) {
 
-	vol, err := utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV)
+	vol, err := utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV)
 	if err != nil {
 		return "", status.Error(codes.Internal, err.Error())
 	}

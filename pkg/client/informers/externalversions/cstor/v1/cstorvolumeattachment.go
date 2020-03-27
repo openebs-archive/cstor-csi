@@ -31,59 +31,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// CSIVolumeInformer provides access to a shared informer and lister for
-// CSIVolumes.
-type CSIVolumeInformer interface {
+// CStorVolumeAttachmentInformer provides access to a shared informer and lister for
+// CStorVolumeAttachments.
+type CStorVolumeAttachmentInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1.CSIVolumeLister
+	Lister() v1.CStorVolumeAttachmentLister
 }
 
-type cSIVolumeInformer struct {
+type cStorVolumeAttachmentInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewCSIVolumeInformer constructs a new informer for CSIVolume type.
+// NewCStorVolumeAttachmentInformer constructs a new informer for CStorVolumeAttachment type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewCSIVolumeInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredCSIVolumeInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewCStorVolumeAttachmentInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredCStorVolumeAttachmentInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredCSIVolumeInformer constructs a new informer for CSIVolume type.
+// NewFilteredCStorVolumeAttachmentInformer constructs a new informer for CStorVolumeAttachment type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredCSIVolumeInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredCStorVolumeAttachmentInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.CstorV1().CSIVolumes(namespace).List(options)
+				return client.CstorV1().CStorVolumeAttachments(namespace).List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.CstorV1().CSIVolumes(namespace).Watch(options)
+				return client.CstorV1().CStorVolumeAttachments(namespace).Watch(options)
 			},
 		},
-		&cstorv1.CSIVolume{},
+		&cstorv1.CStorVolumeAttachment{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *cSIVolumeInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredCSIVolumeInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *cStorVolumeAttachmentInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredCStorVolumeAttachmentInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *cSIVolumeInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&cstorv1.CSIVolume{}, f.defaultInformer)
+func (f *cStorVolumeAttachmentInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&cstorv1.CStorVolumeAttachment{}, f.defaultInformer)
 }
 
-func (f *cSIVolumeInformer) Lister() v1.CSIVolumeLister {
-	return v1.NewCSIVolumeLister(f.Informer().GetIndexer())
+func (f *cStorVolumeAttachmentInformer) Lister() v1.CStorVolumeAttachmentLister {
+	return v1.NewCStorVolumeAttachmentLister(f.Informer().GetIndexer())
 }

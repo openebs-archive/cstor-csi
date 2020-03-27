@@ -14,8 +14,14 @@
 
 #!/usr/bin/env bash
 
-OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
-CSPC_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/cstor-operator.yaml
+#OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
+NDM_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/ndm-operator.yaml
+CSTOR_RBAC=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/rbac.yaml
+CSTOR_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/cstor-operator.yaml
+VOL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/volumes-crd.yaml
+CSPC_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/cspc-crd.yaml
+CSPI_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/cspi-crd.yaml
+
 CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
 
 SRC_REPO="https://github.com/openebs/maya.git"
@@ -23,8 +29,12 @@ DST_PATH="$GOPATH/src/github.com/openebs"
 
 # Prepare env for runnging BDD tests
 # Minikube is already running
-kubectl apply -f $OPENEBS_OPERATOR
-kubectl apply -f $CSPC_OPERATOR
+kubectl apply -f $NDM_OPERATOR
+kubectl apply -f $CSTOR_RBAC
+kubectl apply -f $VOL_CRD
+kubectl apply -f $CSPI_CRD
+kubectl apply -f $CSPI_CRD
+kubectl apply -f $CSTOR_OPERATOR
 kubectl apply -f $CSI_OPERATOR
 
 # Start running BDD tests in maya for CSI
@@ -50,12 +60,12 @@ function dumpCSIControllerLogs() {
   printf "\n\n"
 }
 
-function dumpMayaAPIServerLogs() {
-  LC=$1
-  MAPIPOD=$(kubectl get pods -o jsonpath='{.items[?(@.spec.containers[0].name=="maya-apiserver")].metadata.name}' -n openebs)
-  kubectl logs --tail=${LC} $MAPIPOD -n openebs
-  printf "\n\n"
-}
+#function dumpMayaAPIServerLogs() {
+#  LC=$1
+#  MAPIPOD=$(kubectl get pods -o jsonpath='{.items[?(@.spec.containers[0].name=="maya-apiserver")].metadata.name}' -n openebs)
+#  kubectl logs --tail=${LC} $MAPIPOD -n openebs
+#  printf "\n\n"
+#}
 
 # Run BDD tests for volume provisioning via CSI
 cd $DST_PATH/maya/tests/csi/cstor/volume
@@ -68,8 +78,8 @@ dumpCSIControllerLogs 1000
 echo "********************* CSI Node logs *********************************"
 dumpCSINodeLogs 1000
 
-echo "******************CSI Maya-apiserver logs ********************"
-dumpMayaAPIServerLogs 1000
+#echo "******************CSI Maya-apiserver logs ********************"
+#dumpMayaAPIServerLogs 1000
 
 echo "get all the pods"
 kubectl get pods --all-namespaces

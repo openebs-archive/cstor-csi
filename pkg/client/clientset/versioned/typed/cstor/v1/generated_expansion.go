@@ -18,7 +18,7 @@ limitations under the License.
 
 package v1
 
-type CSIVolumeExpansion interface{}
+type CStorVolumeAttachmentExpansion interface{}
 
 type VolumeSnapshotExpansion interface{}
 

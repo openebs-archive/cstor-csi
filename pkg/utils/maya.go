@@ -8,9 +8,9 @@ import (
 
 	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
-	cvc "github.com/openebs/cstor-csi/pkg/cstor/claim"
-	csivol "github.com/openebs/cstor-csi/pkg/cstor/csivolume"
 	cv "github.com/openebs/cstor-csi/pkg/cstor/volume"
+	csivol "github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
+	cvc "github.com/openebs/cstor-csi/pkg/cstor/volumeconfig"
 	"github.com/openebs/cstor-csi/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -167,7 +167,7 @@ func GetVolumeSourceDetails(snapshotID string) (string, string, error) {
 
 //FetchAndUpdateISCSIDetails fetches the iSCSI details from cstor volume
 //resource and updates the corresponding csivolume resource
-func FetchAndUpdateISCSIDetails(volumeID string, vol *apis.CSIVolume) error {
+func FetchAndUpdateISCSIDetails(volumeID string, vol *apis.CStorVolumeAttachment) error {
 	getOptions := metav1.GetOptions{}
 	cstorVolume, err := cv.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).

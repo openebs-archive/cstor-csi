@@ -1,4 +1,4 @@
-// Copyright © 2018-2019 The OpenEBS Authors
+// Copyright © 2020 The OpenEBS Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csivolume
+package volumeattachment
 
 import (
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 )
 
-// CSIVolume is a wrapper over
-// CSIVolume API instance
-type CSIVolume struct {
-	Object *apis.CSIVolume
+// CStorVolumeAttachment is a wrapper over
+// CStorVolumeAttachment API instance
+type CStorVolumeAttachment struct {
+	Object *apis.CStorVolumeAttachment
 }
 
 // From returns a new instance of
 // csi volume
-func From(vol *apis.CSIVolume) *CSIVolume {
-	return &CSIVolume{
+func From(vol *apis.CStorVolumeAttachment) *CStorVolumeAttachment {
+	return &CStorVolumeAttachment{
 		Object: vol,
 	}
 }
@@ -35,10 +35,10 @@ func From(vol *apis.CSIVolume) *CSIVolume {
 // FromCASVolume returns a new instance
 // of csi volume from given cas volume
 // instance
-//func FromCASVolume(vol *apis.CASVolume) *CSIVolume {
-//	return &CSIVolume{
-//		Object: &apis.CSIVolume{
-//			Spec: apis.CSIVolumeSpec{
+//func FromCASVolume(vol *apis.CASVolume) *CStorVolumeAttachment {
+//	return &CStorVolumeAttachment{
+//		Object: &apis.CStorVolumeAttachment{
+//			Spec: apis.CStorVolumeAttachmentSpec{
 //				Volume: apis.VolumeInfo{
 //					Name:     vol.Name,
 //					Capacity: vol.Spec.Capacity,
@@ -56,27 +56,27 @@ func From(vol *apis.CSIVolume) *CSIVolume {
 // Predicate defines an abstraction
 // to determine conditional checks
 // against the provided pod instance
-type Predicate func(*CSIVolume) bool
+type Predicate func(*CStorVolumeAttachment) bool
 
 // PredicateList holds a list of predicate
 type predicateList []Predicate
 
-// CSIVolumeList holds the list
+// CStorVolumeAttachmentList holds the list
 // of csi volume instances
-type CSIVolumeList struct {
-	List apis.CSIVolumeList
+type CStorVolumeAttachmentList struct {
+	List apis.CStorVolumeAttachmentList
 }
 
 // Len returns the number of items present
-// in the CSIVolumeList
-func (p *CSIVolumeList) Len() int {
+// in the CStorVolumeAttachmentList
+func (p *CStorVolumeAttachmentList) Len() int {
 	return len(p.List.Items)
 }
 
 // all returns true if all the predicates
-// succeed against the provided CSIVolume
+// succeed against the provided CStorVolumeAttachment
 // instance
-func (l predicateList) all(p *CSIVolume) bool {
+func (l predicateList) all(p *CStorVolumeAttachment) bool {
 	for _, pred := range l {
 		if !pred(p) {
 			return false
@@ -86,9 +86,9 @@ func (l predicateList) all(p *CSIVolume) bool {
 }
 
 // HasLabels returns true if provided labels
-// are present in the provided CSIVolume instance
+// are present in the provided CStorVolumeAttachment instance
 func HasLabels(keyValuePair map[string]string) Predicate {
-	return func(p *CSIVolume) bool {
+	return func(p *CStorVolumeAttachment) bool {
 		for key, value := range keyValuePair {
 			if !p.HasLabel(key, value) {
 				return false
@@ -99,8 +99,8 @@ func HasLabels(keyValuePair map[string]string) Predicate {
 }
 
 // HasLabel returns true if provided label
-// is present in the provided CSIVolume instance
-func (p *CSIVolume) HasLabel(key, value string) bool {
+// is present in the provided CStorVolumeAttachment instance
+func (p *CStorVolumeAttachment) HasLabel(key, value string) bool {
 	val, ok := p.Object.GetLabels()[key]
 	if ok {
 		return val == value
@@ -109,28 +109,28 @@ func (p *CSIVolume) HasLabel(key, value string) bool {
 }
 
 // HasLabel returns true if provided label
-// is present in the provided CSIVolume instance
+// is present in the provided CStorVolumeAttachment instance
 func HasLabel(key, value string) Predicate {
-	return func(p *CSIVolume) bool {
+	return func(p *CStorVolumeAttachment) bool {
 		return p.HasLabel(key, value)
 	}
 }
 
 // IsNil returns true if the csi volume instance
 // is nil
-func (p *CSIVolume) IsNil() bool {
+func (p *CStorVolumeAttachment) IsNil() bool {
 	return p.Object == nil
 }
 
 // IsNil is predicate to filter out nil csi volume
 // instances
 func IsNil() Predicate {
-	return func(p *CSIVolume) bool {
+	return func(p *CStorVolumeAttachment) bool {
 		return p.IsNil()
 	}
 }
 
 // GetAPIObject returns csi volume's API instance
-func (p *CSIVolume) GetAPIObject() *apis.CSIVolume {
+func (p *CStorVolumeAttachment) GetAPIObject() *apis.CStorVolumeAttachment {
 	return p.Object
 }

@@ -24,8 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// CSIVolumes returns a CSIVolumeInformer.
-	CSIVolumes() CSIVolumeInformer
+	// CStorVolumeAttachments returns a CStorVolumeAttachmentInformer.
+	CStorVolumeAttachments() CStorVolumeAttachmentInformer
 	// VolumeSnapshots returns a VolumeSnapshotInformer.
 	VolumeSnapshots() VolumeSnapshotInformer
 	// VolumeSnapshotDatas returns a VolumeSnapshotDataInformer.
@@ -43,9 +43,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// CSIVolumes returns a CSIVolumeInformer.
-func (v *version) CSIVolumes() CSIVolumeInformer {
-	return &cSIVolumeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// CStorVolumeAttachments returns a CStorVolumeAttachmentInformer.
+func (v *version) CStorVolumeAttachments() CStorVolumeAttachmentInformer {
+	return &cStorVolumeAttachmentInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // VolumeSnapshots returns a VolumeSnapshotInformer.

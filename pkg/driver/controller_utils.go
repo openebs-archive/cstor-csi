@@ -6,7 +6,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
-	csivol "github.com/openebs/cstor-csi/pkg/cstor/csivolume"
+	"github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -200,7 +200,7 @@ func prepareVolumeForNode(
 		accessType = "mount"
 	}
 
-	vol, err := csivol.NewBuilder().
+	vol, err := volumeattachment.NewBuilder().
 		WithName(volumeID + "-" + nodeID).
 		WithLabels(labels).
 		WithVolName(req.GetVolumeId()).
@@ -213,7 +213,7 @@ func prepareVolumeForNode(
 	if isCVCBound, err := utils.IsCVCBound(volumeID); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	} else if !isCVCBound {
-		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusWaitingForCVCBound
+		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusWaitingForCVCBound
 		time.Sleep(10 * time.Second)
 		return errors.New("Waiting for CVC to be bound")
 	}
@@ -222,7 +222,7 @@ func prepareVolumeForNode(
 		return err
 	}
 
-	oldvol, err := utils.GetCSIVolume(vol.Name)
+	oldvol, err := utils.GetCStorVolumeAttachment(vol.Name)
 	if err != nil && !k8serror.IsNotFound(err) {
 		return err
 	} else if err == nil && oldvol != nil {
@@ -232,10 +232,10 @@ func prepareVolumeForNode(
 		return nil
 	}
 
-	if err = utils.DeleteOldCSIVolumeCRs(volumeID); err != nil {
+	if err = utils.DeleteOldCStorVolumeAttachmentCRs(volumeID); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
-	if err = utils.CreateCSIVolumeCR(vol, nodeID); err != nil {
+	if err = utils.CreateCStorVolumeAttachmentCR(vol, nodeID); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
 	return nil

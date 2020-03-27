@@ -26,7 +26,7 @@ import (
 
 type CstorV1Interface interface {
 	RESTClient() rest.Interface
-	CSIVolumesGetter
+	CStorVolumeAttachmentsGetter
 	VolumeSnapshotsGetter
 	VolumeSnapshotDatasGetter
 }
@@ -36,8 +36,8 @@ type CstorV1Client struct {
 	restClient rest.Interface
 }
 
-func (c *CstorV1Client) CSIVolumes(namespace string) CSIVolumeInterface {
-	return newCSIVolumes(c, namespace)
+func (c *CstorV1Client) CStorVolumeAttachments(namespace string) CStorVolumeAttachmentInterface {
+	return newCStorVolumeAttachments(c, namespace)
 }
 
 func (c *CstorV1Client) VolumeSnapshots(namespace string) VolumeSnapshotInterface {

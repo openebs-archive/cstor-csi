@@ -18,13 +18,13 @@ limitations under the License.
 
 package v1
 
-// CSIVolumeListerExpansion allows custom methods to be added to
-// CSIVolumeLister.
-type CSIVolumeListerExpansion interface{}
+// CStorVolumeAttachmentListerExpansion allows custom methods to be added to
+// CStorVolumeAttachmentLister.
+type CStorVolumeAttachmentListerExpansion interface{}
 
-// CSIVolumeNamespaceListerExpansion allows custom methods to be added to
-// CSIVolumeNamespaceLister.
-type CSIVolumeNamespaceListerExpansion interface{}
+// CStorVolumeAttachmentNamespaceListerExpansion allows custom methods to be added to
+// CStorVolumeAttachmentNamespaceLister.
+type CStorVolumeAttachmentNamespaceListerExpansion interface{}
 
 // VolumeSnapshotListerExpansion allows custom methods to be added to
 // VolumeSnapshotLister.

@@ -47,14 +47,14 @@ var (
 
 	// TransitionVolList contains the list of volumes under transition
 	// This list is protected by TransitionVolListLock
-	TransitionVolList map[string]apis.CSIVolumeStatus
+	TransitionVolList map[string]apis.CStorVolumeAttachmentStatus
 
 	// TransitionVolListLock is required to protect the above Volumes list
 	TransitionVolListLock sync.RWMutex
 
 	// ReqMountList contains the list of volumes which are required
 	// to be remounted. This list is secured by ReqMountListLock
-	ReqMountList map[string]apis.CSIVolumeStatus
+	ReqMountList map[string]apis.CStorVolumeAttachmentStatus
 )
 
 const (
@@ -73,8 +73,8 @@ func init() {
 		logrus.Fatalf("OPENEBS_NODE_ID not set")
 	}
 
-	TransitionVolList = make(map[string]apis.CSIVolumeStatus)
-	ReqMountList = make(map[string]apis.CSIVolumeStatus)
+	TransitionVolList = make(map[string]apis.CStorVolumeAttachmentStatus)
+	ReqMountList = make(map[string]apis.CStorVolumeAttachmentStatus)
 
 }
 
@@ -168,7 +168,7 @@ checkVolumeStatus:
 			"Volume is not ready: Replicas yet to connect to controller",
 		)
 	} else {
-		TransitionVolList[volumeID] = apis.CSIVolumeStatusWaitingForVolumeToBeReady
+		TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusWaitingForVolumeToBeReady
 		time.Sleep(VolumeWaitTimeout * time.Second)
 		retries++
 		goto checkVolumeStatus
@@ -178,7 +178,7 @@ checkVolumeStatus:
 
 /*
 // GetVolumeByName fetches the volume from Volumes list based on th input name
-func GetVolumeByName(volName string) (*apis.CSIVolume, error) {
+func GetVolumeByName(volName string) (*apis.CStorVolumeAttachment, error) {
 	for _, Vol := range Volumes {
 		if Vol.Spec.Volume.Name == volName {
 			return Vol, nil
@@ -213,7 +213,7 @@ func listContains(
 func MonitorMounts() {
 	var (
 		err        error
-		csivolList *apis.CSIVolumeList
+		csivolList *apis.CStorVolumeAttachmentList
 		mountList  []mount.MountPoint
 	)
 	mounter := mount.New("")
@@ -237,7 +237,7 @@ func MonitorMounts() {
 					continue
 				}
 				// This check is added to avoid monitoring volume if it has not
-				// been mounted yet. Although CSIVolume CR gets created at
+				// been mounted yet. Although CStorVolumeAttachment CR gets created at
 				// ControllerPublish step.
 				if (vol.Spec.Volume.StagingTargetPath == "") ||
 					(vol.Spec.Volume.TargetPath == "") {
@@ -302,7 +302,7 @@ func MonitorMounts() {
 // and is reachable, this function will not come out until both the conditions
 // are met. This function stops the driver from overloading the OS with iSCSI
 // login commands.
-func WaitForVolumeReadyAndReachable(vol *apis.CSIVolume) error {
+func WaitForVolumeReadyAndReachable(vol *apis.CStorVolumeAttachment) error {
 	var err error
 	// This function return after 12s in case the volume is not ready
 	if err = WaitForVolumeToBeReady(vol.Spec.Volume.Name); err != nil {
@@ -332,7 +332,7 @@ func verifyMountOpts(opts []string, desiredOpt string) bool {
 // the disk will be attached via iSCSI login and then it will be mounted
 func RemountVolume(
 	stagingPathExists bool, targetPathExists bool,
-	vol *apis.CSIVolume,
+	vol *apis.CStorVolumeAttachment,
 ) (err error) {
 	mounter := mount.New("")
 	options := []string{"rw"}

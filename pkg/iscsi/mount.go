@@ -8,7 +8,7 @@ import (
 
 // UnmountAndDetachDisk unmounts the disk from the specified path
 // and logs out of the iSCSI Volume
-func UnmountAndDetachDisk(vol *apis.CSIVolume, path string) error {
+func UnmountAndDetachDisk(vol *apis.CStorVolumeAttachment, path string) error {
 	iscsiInfo := &iscsiDisk{
 		VolName: vol.Spec.Volume.Name,
 		Portals: []string{vol.Spec.ISCSI.TargetPortal},

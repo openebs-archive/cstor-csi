@@ -96,7 +96,7 @@ func (ns *node) NodeStageVolume(
 ) (*csi.NodeStageVolumeResponse, error) {
 	var (
 		err             error
-		vol             *apis.CSIVolume
+		vol             *apis.CStorVolumeAttachment
 		isMountRequired bool
 	)
 
@@ -107,13 +107,13 @@ func (ns *node) NodeStageVolume(
 	volumeID := req.GetVolumeId()
 	stagingTargetPath := req.GetStagingTargetPath()
 
-	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
+	err = addVolumeToTransitionList(volumeID, apis.CStorVolumeAttachmentStatusUninitialized)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	defer removeVolumeFromTransitionList(volumeID)
 
-	if vol, err = utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV); err != nil {
+	if vol, err = utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if err = utils.WaitForVolumeReadyAndReachable(vol); err != nil {
@@ -131,7 +131,7 @@ func (ns *node) NodeStageVolume(
 			"/dev/disk/by-path/ip", vol.Spec.ISCSI.TargetPortal,
 			"iscsi", vol.Spec.ISCSI.Iqn, "lun", fmt.Sprint(0)}, "-",
 		)
-		err = utils.UpdateCSIVolumeCR(vol)
+		err = utils.UpdateCStorVolumeAttachmentCR(vol)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -143,7 +143,7 @@ func (ns *node) NodeStageVolume(
 		// automatically changed to allow Reads and writes.
 		// And as soon as it is unmounted permissions change
 		// back to what we are setting over here.
-		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusMountUnderProgress
+		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusMountUnderProgress
 		// Login to the volume and attempt mount operation on the requested path
 		devicePath, err := ns.attachDisk(vol)
 		if err != nil {
@@ -166,7 +166,7 @@ func (ns *node) NodeStageVolume(
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusMounted
+		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusMounted
 	}
 
 	return &csi.NodeStageVolumeResponse{}, nil
@@ -182,7 +182,7 @@ func (ns *node) NodeUnstageVolume(
 ) (*csi.NodeUnstageVolumeResponse, error) {
 	var (
 		err             error
-		vol             *apis.CSIVolume
+		vol             *apis.CStorVolumeAttachment
 		unmountRequired bool
 	)
 
@@ -193,13 +193,13 @@ func (ns *node) NodeUnstageVolume(
 	stagingTargetPath := req.GetStagingTargetPath()
 	volumeID := req.GetVolumeId()
 
-	err = addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
+	err = addVolumeToTransitionList(volumeID, apis.CStorVolumeAttachmentStatusUninitialized)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	defer removeVolumeFromTransitionList(volumeID)
 
-	if vol, err = utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV); err != nil {
+	if vol, err = utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if vol.Spec.Volume.StagingTargetPath == "" {
@@ -213,11 +213,11 @@ func (ns *node) NodeUnstageVolume(
 	if unmountRequired {
 		// if node driver restarts before this step Kubelet will trigger the
 		// NodeUnpublish command again so there is no need to worry that when this
-		// driver restarts it will pick up the CSIVolume CR and start monitoring
+		// driver restarts it will pick up the CStorVolumeAttachment CR and start monitoring
 		// mount point again.
 		// If the node is down for some time, other node driver will first delete
-		// this node's CSIVolume CR and then only will start its mount process.
-		// If there is a case that this node comes up and CSIVolume CR is picked and
+		// this node's CStorVolumeAttachment CR and then only will start its mount process.
+		// If there is a case that this node comes up and CStorVolumeAttachment CR is picked and
 		// this node starts monitoring the mount point while the other node is also
 		// trying to mount which appears to be a race condition but is not since
 		// first of  all this CR will be marked for deletion when the other node
@@ -225,18 +225,18 @@ func (ns *node) NodeUnstageVolume(
 		// immediately other node deleted this node's CR, in that case iSCSI
 		// target(istgt) will pick up the new one and allow only that node to login,
 		// so all the cases are handled
-		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusUnmountUnderProgress
+		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
 		if err = iscsiutils.UnmountAndDetachDisk(vol, stagingTargetPath); err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-		utils.TransitionVolList[volumeID] = apis.CSIVolumeStatusUnmounted
+		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmounted
 	}
-	// It is safe to delete the CSIVolume CR now since the volume has already
+	// It is safe to delete the CStorVolumeAttachment CR now since the volume has already
 	// been unmounted and logged out
 
 	vol.Finalizers = nil
 	vol.Spec.Volume.StagingTargetPath = ""
-	if err = utils.UpdateCSIVolumeCR(vol); err != nil {
+	if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	logrus.Infof("hostpath: volume %s path: %s has been unmounted.",
@@ -255,7 +255,7 @@ func (ns *node) NodePublishVolume(
 ) (*csi.NodePublishVolumeResponse, error) {
 
 	volumeID := req.GetVolumeId()
-	err := addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
+	err := addVolumeToTransitionList(volumeID, apis.CStorVolumeAttachmentStatusUninitialized)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -265,12 +265,12 @@ func (ns *node) NodePublishVolume(
 	if req.GetReadonly() {
 		mountOptions = append(mountOptions, "ro")
 	}
-	vol, err := utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV)
+	vol, err := utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	vol.Spec.Volume.TargetPath = req.GetTargetPath()
-	if err = utils.UpdateCSIVolumeCR(vol); err != nil {
+	if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -295,7 +295,7 @@ func (ns *node) NodeUnpublishVolume(
 	volumeID := req.GetVolumeId()
 	target := req.GetTargetPath()
 
-	err := addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusUninitialized)
+	err := addVolumeToTransitionList(volumeID, apis.CStorVolumeAttachmentStatusUninitialized)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -311,12 +311,12 @@ func (ns *node) NodeUnpublishVolume(
 	if err := ns.mounter.Unmount(target); err != nil {
 		return nil, status.Errorf(codes.Internal, "Could not unmount %q: %v", target, err)
 	}
-	vol, err := utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV)
+	vol, err := utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	vol.Spec.Volume.TargetPath = ""
-	if err = utils.UpdateCSIVolumeCR(vol); err != nil {
+	if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -339,7 +339,7 @@ func (ns *node) NodeExpandVolume(
 	req *csi.NodeExpandVolumeRequest,
 ) (*csi.NodeExpandVolumeResponse, error) {
 	volumeID := req.GetVolumeId()
-	err := addVolumeToTransitionList(volumeID, apis.CSIVolumeStatusResizeInProgress)
+	err := addVolumeToTransitionList(volumeID, apis.CStorVolumeAttachmentStatusResizeInProgress)
 	if err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
@@ -350,7 +350,7 @@ func (ns *node) NodeExpandVolume(
 	}
 	defer removeVolumeFromTransitionList(volumeID)
 
-	vol, err := utils.GetCSIVolume(volumeID + "-" + utils.NodeIDENV)
+	vol, err := utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

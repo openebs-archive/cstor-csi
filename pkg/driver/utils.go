@@ -44,7 +44,7 @@ func removeVolumeFromTransitionList(volumeID string) {
 	delete(utils.TransitionVolList, volumeID)
 }
 
-func addVolumeToTransitionList(volumeID string, status apis.CSIVolumeStatus) error {
+func addVolumeToTransitionList(volumeID string, status apis.CStorVolumeAttachmentStatus) error {
 	utils.TransitionVolListLock.Lock()
 	defer utils.TransitionVolListLock.Unlock()
 

@@ -1,27 +1,33 @@
-// Copyright © 2018-2019 The OpenEBS Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+Copyright 2019 The OpenEBS Authors
 
-package csivolume
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package volumeconfig
 
 import (
 	"encoding/json"
+	"fmt"
 
-	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
-	clientset "github.com/openebs/cstor-csi/pkg/client/clientset/versioned"
+	apismaya "github.com/openebs/api/pkg/apis/cstor/v1"
+
+	clientset "github.com/openebs/api/pkg/client/clientset/versioned"
 	client "github.com/openebs/cstor-csi/pkg/kubernetes/client"
+
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
 )
 
 // getClientsetFn is a typed function that
@@ -30,35 +36,27 @@ type getClientsetFn func() (clientset *clientset.Clientset, err error)
 
 // getClientsetFromPathFn is a typed function that
 // abstracts fetching of clientset from kubeConfigPath
-type getClientsetForPathFn func(kubeConfigPath string) (
-	clientset *clientset.Clientset,
-	err error,
-)
+type getClientsetForPathFn func(
+	kubeConfigPath string) (clientset *clientset.Clientset, err error)
 
 // createFn is a typed function that abstracts
 // creating csi volume instance
 type createFn func(
-	cs *clientset.Clientset,
-	upgradeResultObj *apis.CSIVolume,
-	namespace string,
-) (*apis.CSIVolume, error)
+	cli *clientset.Clientset,
+	upgradeResultObj *apismaya.CStorVolumeConfig,
+	namespace string) (*apismaya.CStorVolumeConfig, error)
 
 // getFn is a typed function that abstracts
 // fetching a csi volume instance
-type getFn func(
-	cli *clientset.Clientset,
-	name,
-	namespace string,
-	opts metav1.GetOptions,
-) (*apis.CSIVolume, error)
+type getFn func(cli *clientset.Clientset, name, namespace string,
+	opts metav1.GetOptions) (*apismaya.CStorVolumeConfig, error)
 
 // listFn is a typed function that abstracts
 // listing of csi volume instances
 type listFn func(
 	cli *clientset.Clientset,
 	namespace string,
-	opts metav1.ListOptions,
-) (*apis.CSIVolumeList, error)
+	opts metav1.ListOptions) (*apismaya.CStorVolumeConfigList, error)
 
 // delFn is a typed function that abstracts
 // deleting a csi volume instance
@@ -66,16 +64,23 @@ type delFn func(
 	cli *clientset.Clientset,
 	name,
 	namespace string,
-	opts *metav1.DeleteOptions,
-) error
+	opts *metav1.DeleteOptions) error
 
 // updateFn is a typed function that abstracts
 // updating csi volume instance
 type updateFn func(
-	cs *clientset.Clientset,
-	vol *apis.CSIVolume,
-	namespace string,
-) (*apis.CSIVolume, error)
+	cli *clientset.Clientset,
+	cvc *apismaya.CStorVolumeConfig,
+	namespace string) (*apismaya.CStorVolumeConfig, error)
+
+// patchFn is a typed function that abstracts
+// patching csi volume instance
+type patchFn func(
+	cli *clientset.Clientset,
+	oldCVC *apismaya.CStorVolumeConfig,
+	newCVC *apismaya.CStorVolumeConfig,
+	subresources ...string,
+) (*apismaya.CStorVolumeConfig, error)
 
 // Kubeclient enables kubernetes API operations
 // on csi volume instance
@@ -99,6 +104,7 @@ type Kubeclient struct {
 	del                 delFn
 	create              createFn
 	update              updateFn
+	patch               patchFn
 }
 
 // KubeclientBuildOption defines the abstraction
@@ -134,31 +140,31 @@ func defaultGetClientsetForPath(
 }
 
 // defaultGet is the default implementation to get
-// a csi volume instance in kubernetes cluster
+// a cstorvolumeclaim instance in kubernetes cluster
 func defaultGet(
 	cli *clientset.Clientset,
 	name, namespace string,
 	opts metav1.GetOptions,
-) (*apis.CSIVolume, error) {
+) (*apismaya.CStorVolumeConfig, error) {
 	return cli.CstorV1().
-		CSIVolumes(namespace).
+		CStorVolumeConfigs(namespace).
 		Get(name, opts)
 }
 
 // defaultList is the default implementation to list
-// csi volume instances in kubernetes cluster
+// CstorVolumeClaim instances in kubernetes cluster
 func defaultList(
 	cli *clientset.Clientset,
 	namespace string,
 	opts metav1.ListOptions,
-) (*apis.CSIVolumeList, error) {
+) (*apismaya.CStorVolumeConfigList, error) {
 	return cli.CstorV1().
-		CSIVolumes(namespace).
+		CStorVolumeConfigs(namespace).
 		List(opts)
 }
 
-// defaultDel is the default implementation to delete
-// a csi volume instance in kubernetes cluster
+// defaultCreate is the default implementation to delete
+// a cstorvolumeclaim instance in kubernetes cluster
 func defaultDel(
 	cli *clientset.Clientset,
 	name, namespace string,
@@ -167,33 +173,65 @@ func defaultDel(
 	deletePropagation := metav1.DeletePropagationForeground
 	opts.PropagationPolicy = &deletePropagation
 	err := cli.CstorV1().
-		CSIVolumes(namespace).
+		CStorVolumeConfigs(namespace).
 		Delete(name, opts)
 	return err
 }
 
 // defaultCreate is the default implementation to create
-// a csi volume instance in kubernetes cluster
+// a cstorvolumeclaim instance in kubernetes cluster
 func defaultCreate(
 	cli *clientset.Clientset,
-	vol *apis.CSIVolume,
+	cvc *apismaya.CStorVolumeConfig,
 	namespace string,
-) (*apis.CSIVolume, error) {
+) (*apismaya.CStorVolumeConfig, error) {
 	return cli.CstorV1().
-		CSIVolumes(namespace).
-		Create(vol)
+		CStorVolumeConfigs(namespace).
+		Create(cvc)
+}
+
+// defaultPatch is the default implementation to patch
+// a cstorvolumeclaim instance in kubernetes cluster
+func defaultPatch(
+	cli *clientset.Clientset,
+	oldCVC *apismaya.CStorVolumeConfig,
+	newCVC *apismaya.CStorVolumeConfig,
+	subresources ...string,
+) (*apismaya.CStorVolumeConfig, error) {
+	patchBytes, err := getPatchData(oldCVC, newCVC)
+	if err != nil {
+		return nil,
+			fmt.Errorf(
+				"can't patch CVC %s as generate path data failed: %v",
+				CVCKey(oldCVC), err,
+			)
+	}
+
+	updatedCVC, updateErr := cli.CstorV1().
+		CStorVolumeConfigs(oldCVC.Namespace).
+		Patch(
+			oldCVC.Name, types.MergePatchType,
+			patchBytes, subresources...,
+		)
+	if updateErr != nil {
+		return nil,
+			fmt.Errorf("can't patch status of  CVC %s with %v",
+				CVCKey(oldCVC), updateErr,
+			)
+	}
+	return updatedCVC, nil
 }
 
 // defaultUpdate is the default implementation to update
-// a csi volume instance in kubernetes cluster
+// a cstorvolumeclaim instance in kubernetes cluster
 func defaultUpdate(
 	cli *clientset.Clientset,
-	vol *apis.CSIVolume,
+	cvc *apismaya.CStorVolumeConfig,
 	namespace string,
-) (*apis.CSIVolume, error) {
+) (*apismaya.CStorVolumeConfig, error) {
 	return cli.CstorV1().
-		CSIVolumes(namespace).
-		Update(vol)
+		CStorVolumeConfigs(namespace).
+		Update(cvc)
 }
 
 // withDefaults sets the default options
@@ -219,6 +257,9 @@ func (k *Kubeclient) withDefaults() {
 	}
 	if k.update == nil {
 		k.update = defaultUpdate
+	}
+	if k.patch == nil {
+		k.patch = defaultPatch
 	}
 }
 
@@ -266,9 +307,7 @@ func NewKubeclient(opts ...KubeclientBuildOption) *Kubeclient {
 }
 
 func (k *Kubeclient) getClientsetForPathOrDirect() (
-	*clientset.Clientset,
-	error,
-) {
+	*clientset.Clientset, error) {
 	if k.kubeConfigPath != "" {
 		return k.getClientsetForPath(k.kubeConfigPath)
 	}
@@ -296,37 +335,38 @@ func (k *Kubeclient) getClientOrCached() (*clientset.Clientset, error) {
 	return k.clientset, nil
 }
 
-// Create creates a csi volume instance
+// Create creates a cstorvolumeclaim instance
 // in kubernetes cluster
-func (k *Kubeclient) Create(vol *apis.CSIVolume) (*apis.CSIVolume, error) {
-	if vol == nil {
+func (k *Kubeclient) Create(
+	cvc *apismaya.CStorVolumeConfig) (*apismaya.CStorVolumeConfig, error) {
+	if cvc == nil {
 		return nil,
 			errors.New(
-				"failed to create csivolume: nil vol object",
+				"failed to create cstovolumeclaim: nil cvc object",
 			)
 	}
-	cs, err := k.getClientOrCached()
+	cli, err := k.getClientOrCached()
 	if err != nil {
 		return nil, errors.Wrapf(
 			err,
-			"failed to create csi volume {%s} in namespace {%s}",
-			vol.Name,
+			"failed to create cvc {%s} in namespace {%s}",
+			cvc.Name,
 			k.namespace,
 		)
 	}
 
-	return k.create(cs, vol, k.namespace)
+	return k.create(cli, cvc, k.namespace)
 }
 
-// Get returns csi volume object for given name
+// Get returns cstorvolumeclaim object for given name
 func (k *Kubeclient) Get(
 	name string,
 	opts metav1.GetOptions,
-) (*apis.CSIVolume, error) {
+) (*apismaya.CStorVolumeConfig, error) {
 	if name == "" {
 		return nil,
 			errors.New(
-				"failed to get csi volume: missing csi volume name",
+				"failed to get cstorvolumeclaim: missing cvc name",
 			)
 	}
 
@@ -334,16 +374,15 @@ func (k *Kubeclient) Get(
 	if err != nil {
 		return nil, errors.Wrapf(
 			err,
-			"failed to get csi volume {%s} in namespace {%s}",
+			"failed to get cstorvolumeclaim {%s} in namespace {%s}",
 			name,
 			k.namespace,
 		)
 	}
-
 	return k.get(cli, name, k.namespace, opts)
 }
 
-// GetRaw returns csi volume instance
+// GetRaw returns cstorvolumeclaim instance
 // in bytes
 func (k *Kubeclient) GetRaw(
 	name string,
@@ -351,30 +390,32 @@ func (k *Kubeclient) GetRaw(
 ) ([]byte, error) {
 	if name == "" {
 		return nil, errors.New(
-			"failed to get raw csi volume: missing vol name",
+			"failed to get raw cstorvolumeclaim: missing cvc name",
 		)
 	}
-	csiv, err := k.Get(name, opts)
+	cvc, err := k.Get(name, opts)
 	if err != nil {
 		return nil, errors.Wrapf(
 			err,
-			"failed to get csi volume {%s} in namespace {%s}",
+			"failed to get cstorvolumeclaim {%s} in namespace {%s}",
 			name,
 			k.namespace,
 		)
 	}
 
-	return json.Marshal(csiv)
+	return json.Marshal(cvc)
 }
 
-// List returns a list of csi volume
+// List returns a list of cstorvolumeclaim
 // instances present in kubernetes cluster
-func (k *Kubeclient) List(opts metav1.ListOptions) (*apis.CSIVolumeList, error) {
+func (k *Kubeclient) List(
+	opts metav1.ListOptions,
+) (*apismaya.CStorVolumeConfigList, error) {
 	cli, err := k.getClientOrCached()
 	if err != nil {
 		return nil, errors.Wrapf(
 			err,
-			"failed to list csi volumes in namespace {%s}",
+			"failed to list cstorvolumeclaims in namespace {%s}",
 			k.namespace,
 		)
 	}
@@ -382,19 +423,19 @@ func (k *Kubeclient) List(opts metav1.ListOptions) (*apis.CSIVolumeList, error) 
 	return k.list(cli, k.namespace, opts)
 }
 
-// Delete deletes the csi volume from
+// Delete deletes the cstorvolumeclaim from
 // kubernetes
 func (k *Kubeclient) Delete(name string) error {
 	if name == "" {
 		return errors.New(
-			"failed to delete csivolume: missing vol name",
+			"failed to delete cstorvolumeclaim: missing cvc name",
 		)
 	}
 	cli, err := k.getClientOrCached()
 	if err != nil {
 		return errors.Wrapf(
 			err,
-			"failed to delete csivolume {%s} in namespace {%s}",
+			"failed to delete cstorvolumeclaim {%s} in namespace {%s}",
 			name,
 			k.namespace,
 		)
@@ -403,25 +444,54 @@ func (k *Kubeclient) Delete(name string) error {
 	return k.del(cli, name, k.namespace, &metav1.DeleteOptions{})
 }
 
-// Update updates this csi volume instance
+// Update updates this cstorvolumeclaim instance
 // against kubernetes cluster
-func (k *Kubeclient) Update(vol *apis.CSIVolume) (*apis.CSIVolume, error) {
-	if vol == nil {
+func (k *Kubeclient) Update(
+	cvc *apismaya.CStorVolumeConfig,
+) (*apismaya.CStorVolumeConfig, error) {
+	if cvc == nil {
 		return nil,
 			errors.New(
-				"failed to update csivolume: nil vol object",
+				"failed to update cstorvolumeclaim: nil cvc object",
 			)
 	}
 
-	cs, err := k.getClientOrCached()
+	cli, err := k.getClientOrCached()
 	if err != nil {
 		return nil, errors.Wrapf(
 			err,
-			"failed to update csivolume {%s} in namespace {%s}",
-			vol.Name,
-			vol.Namespace,
+			"failed to update cstorvolumeclaim {%s} in namespace {%s}",
+			cvc.Name,
+			cvc.Namespace,
 		)
 	}
 
-	return k.update(cs, vol, k.namespace)
+	return k.update(cli, cvc, k.namespace)
+}
+
+// Patch patches this cstorvolumeclaim instance
+// against kubernetes cluster
+func (k *Kubeclient) Patch(
+	oldCVC *apismaya.CStorVolumeConfig,
+	newCVC *apismaya.CStorVolumeConfig,
+	subresources ...string,
+) (*apismaya.CStorVolumeConfig, error) {
+	if oldCVC == nil || newCVC == nil {
+		return nil,
+			errors.New(
+				"failed to update cstorvolumeclaim: nil cvc object",
+			)
+	}
+
+	cli, err := k.getClientOrCached()
+	if err != nil {
+		return nil, errors.Wrapf(
+			err,
+			"failed to update cstorvolumeclaim {%s} in namespace {%s}",
+			newCVC.Name,
+			newCVC.Namespace,
+		)
+	}
+
+	return k.patch(cli, oldCVC, newCVC, subresources...)
 }

@@ -53,8 +53,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=cstor.openebs.io, Version=v1
-	case v1.SchemeGroupVersion.WithResource("csivolumes"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Cstor().V1().CSIVolumes().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("cstorvolumeattachments"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Cstor().V1().CStorVolumeAttachments().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("volumesnapshots"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Cstor().V1().VolumeSnapshots().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("volumesnapshotdatas"):

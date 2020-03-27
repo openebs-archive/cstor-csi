@@ -28,8 +28,8 @@ type FakeCstorV1 struct {
 	*testing.Fake
 }
 
-func (c *FakeCstorV1) CSIVolumes(namespace string) v1.CSIVolumeInterface {
-	return &FakeCSIVolumes{c, namespace}
+func (c *FakeCstorV1) CStorVolumeAttachments(namespace string) v1.CStorVolumeAttachmentInterface {
+	return &FakeCStorVolumeAttachments{c, namespace}
 }
 
 func (c *FakeCstorV1) VolumeSnapshots(namespace string) v1.VolumeSnapshotInterface {

@@ -24,17 +24,17 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +resource:path=csivolume
 
-// CSIVolume represents a CSI based volume
-type CSIVolume struct {
+// CStorVolumeAttachment represents a CSI based volume
+type CStorVolumeAttachment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CSIVolumeSpec   `json:"spec"`
-	Status CSIVolumeStatus `json:"status"`
+	Spec   CStorVolumeAttachmentSpec   `json:"spec"`
+	Status CStorVolumeAttachmentStatus `json:"status"`
 }
 
-// CSIVolumeSpec is the spec for a CStorVolume resource
-type CSIVolumeSpec struct {
+// CStorVolumeAttachmentSpec is the spec for a CStorVolume resource
+type CStorVolumeAttachmentSpec struct {
 	// Volume specific info
 	Volume VolumeInfo `json:"volume"`
 
@@ -45,7 +45,7 @@ type CSIVolumeSpec struct {
 }
 
 // VolumeInfo contains the volume related info
-// for all types of volumes in CSIVolumeSpec
+// for all types of volumes in CStorVolumeAttachmentSpec
 type VolumeInfo struct {
 	// Name of the CSI volume
 	Name string `json:"name"`
@@ -55,7 +55,7 @@ type VolumeInfo struct {
 
 	// TODO
 	// Below fields might be moved to a separate
-	// sub resource e.g. CSIVolumeContext
+	// sub resource e.g. CStorVolumeAttachmentContext
 
 	// OwnerNodeID is the Node ID which
 	// is also the owner of this Volume
@@ -116,55 +116,55 @@ type ISCSIInfo struct {
 	Lun string `json:"lun"`
 }
 
-// CSIVolumeStatus status represents the current mount status of the volume
-type CSIVolumeStatus string
+// CStorVolumeAttachmentStatus status represents the current mount status of the volume
+type CStorVolumeAttachmentStatus string
 
-// CSIVolumeStatusMounting indicated that a mount operation has been triggered
+// CStorVolumeAttachmentStatusMounting indicated that a mount operation has been triggered
 // on the volume and is under progress
 const (
-	// CSIVolumeStatusUninitialized indicates that no operation has been
+	// CStorVolumeAttachmentStatusUninitialized indicates that no operation has been
 	// performed on the volume yet on this node
-	CSIVolumeStatusUninitialized CSIVolumeStatus = ""
-	// CSIVolumeStatusMountUnderProgress indicates that the volume is busy and
+	CStorVolumeAttachmentStatusUninitialized CStorVolumeAttachmentStatus = ""
+	// CStorVolumeAttachmentStatusMountUnderProgress indicates that the volume is busy and
 	// unavailable for use by other goroutines, an iSCSI login followed by mount
 	// is under progress on this volume
-	CSIVolumeStatusMountUnderProgress CSIVolumeStatus = "MountUnderProgress"
-	// CSIVolumeStatusMounteid indicated that the volume has been successfulled
+	CStorVolumeAttachmentStatusMountUnderProgress CStorVolumeAttachmentStatus = "MountUnderProgress"
+	// CStorVolumeAttachmentStatusMounteid indicated that the volume has been successfulled
 	// mounted on the node
-	CSIVolumeStatusMounted CSIVolumeStatus = "Mounted"
-	// CSIVolumeStatusUnMounted indicated that the volume has been successfuly
+	CStorVolumeAttachmentStatusMounted CStorVolumeAttachmentStatus = "Mounted"
+	// CStorVolumeAttachmentStatusUnMounted indicated that the volume has been successfuly
 	// unmounted and logged out of the node
-	CSIVolumeStatusUnmounted CSIVolumeStatus = "Unmounted"
-	// CSIVolumeStatusRaw indicates that the volume is being used in raw format
+	CStorVolumeAttachmentStatusUnmounted CStorVolumeAttachmentStatus = "Unmounted"
+	// CStorVolumeAttachmentStatusRaw indicates that the volume is being used in raw format
 	// by the application, therefore CSI has only performed iSCSI login
 	// operation on this volume and avoided filesystem creation and mount.
-	CSIVolumeStatusRaw CSIVolumeStatus = "Raw"
-	// CSIVolumeStatusResizeInProgress indicates that the volume is being
+	CStorVolumeAttachmentStatusRaw CStorVolumeAttachmentStatus = "Raw"
+	// CStorVolumeAttachmentStatusResizeInProgress indicates that the volume is being
 	// resized
-	CSIVolumeStatusResizeInProgress CSIVolumeStatus = "ResizeInProgress"
-	// CSIVolumeStatusMountFailed indicates that login and mount process from
+	CStorVolumeAttachmentStatusResizeInProgress CStorVolumeAttachmentStatus = "ResizeInProgress"
+	// CStorVolumeAttachmentStatusMountFailed indicates that login and mount process from
 	// the volume has bben started but failed kubernetes needs to retry sending
 	// nodepublish
-	CSIVolumeStatusMountFailed CSIVolumeStatus = "MountFailed"
-	// CSIVolumeStatusUnmountInProgress indicates that the volume is busy and
+	CStorVolumeAttachmentStatusMountFailed CStorVolumeAttachmentStatus = "MountFailed"
+	// CStorVolumeAttachmentStatusUnmountInProgress indicates that the volume is busy and
 	// unavailable for use by other goroutines, an unmount operation on volume
 	// is under progress
-	CSIVolumeStatusUnmountUnderProgress CSIVolumeStatus = "UnmountUnderProgress"
-	// CSIVolumeStatusWaitingForCVCBound indicates that the volume components
+	CStorVolumeAttachmentStatusUnmountUnderProgress CStorVolumeAttachmentStatus = "UnmountUnderProgress"
+	// CStorVolumeAttachmentStatusWaitingForCVCBound indicates that the volume components
 	// are still being created
-	CSIVolumeStatusWaitingForCVCBound CSIVolumeStatus = "WaitingForCVCBound"
-	// CSIVolumeStatusWaitingForVolumeToBeReady indicates that the replicas are
+	CStorVolumeAttachmentStatusWaitingForCVCBound CStorVolumeAttachmentStatus = "WaitingForCVCBound"
+	// CStorVolumeAttachmentStatusWaitingForVolumeToBeReady indicates that the replicas are
 	// yet to connect to target
-	CSIVolumeStatusWaitingForVolumeToBeReady CSIVolumeStatus = "WaitingForVolumeToBeReady"
+	CStorVolumeAttachmentStatusWaitingForVolumeToBeReady CStorVolumeAttachmentStatus = "WaitingForVolumeToBeReady"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +resource:path=csivolumes
 
-// CSIVolumeList is a list of CSIVolume resources
-type CSIVolumeList struct {
+// CStorVolumeAttachmentList is a list of CStorVolumeAttachment resources
+type CStorVolumeAttachmentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []CSIVolume `json:"items"`
+	Items []CStorVolumeAttachment `json:"items"`
 }

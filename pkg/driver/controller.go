@@ -203,7 +203,7 @@ func (cs *controller) ControllerUnpublishVolume(
 	ctx context.Context,
 	req *csi.ControllerUnpublishVolumeRequest,
 ) (*csi.ControllerUnpublishVolumeResponse, error) {
-	if err := utils.DeleteCSIVolumeCR(req.GetVolumeId() + "-" + req.GetNodeId()); err != nil {
+	if err := utils.DeleteCStorVolumeAttachmentCR(req.GetVolumeId() + "-" + req.GetNodeId()); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	return &csi.ControllerUnpublishVolumeResponse{}, nil

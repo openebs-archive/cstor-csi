@@ -9,7 +9,7 @@ import (
 	"k8s.io/utils/mount"
 )
 
-func getISCSIInfo(vol *apis.CSIVolume) (*iscsiDisk, error) {
+func getISCSIInfo(vol *apis.CStorVolumeAttachment) (*iscsiDisk, error) {
 	portal := portalMounter(vol.Spec.ISCSI.TargetPortal)
 	var portals []string
 	portals = append(portals, portal)

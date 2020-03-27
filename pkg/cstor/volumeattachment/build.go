@@ -14,31 +14,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package csivolume
+package volumeattachment
 
 import (
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 	"github.com/pkg/errors"
 )
 
-// Builder is the builder object for CSIVolume
+// Builder is the builder object for CStorVolumeAttachment
 type Builder struct {
-	volume *CSIVolume
+	volume *CStorVolumeAttachment
 	errs   []error
 }
 
 // NewBuilder returns new instance of Builder
 func NewBuilder() *Builder {
 	return &Builder{
-		volume: &CSIVolume{
-			Object: &apis.CSIVolume{},
+		volume: &CStorVolumeAttachment{
+			Object: &apis.CStorVolumeAttachment{},
 		},
 	}
 }
 
 // BuildFrom returns new instance of Builder
 // from the provided api instance
-func BuildFrom(volume *apis.CSIVolume) *Builder {
+func BuildFrom(volume *apis.CStorVolumeAttachment) *Builder {
 	if volume == nil {
 		b := NewBuilder()
 		b.errs = append(
@@ -48,7 +48,7 @@ func BuildFrom(volume *apis.CSIVolume) *Builder {
 		return b
 	}
 	return &Builder{
-		volume: &CSIVolume{
+		volume: &CStorVolumeAttachment{
 			Object: volume,
 		},
 	}
@@ -330,7 +330,7 @@ func (b *Builder) WithLabelsNew(labels map[string]string) *Builder {
 }
 
 // Build returns csi volume API object
-func (b *Builder) Build() (*apis.CSIVolume, error) {
+func (b *Builder) Build() (*apis.CStorVolumeAttachment, error) {
 	if len(b.errs) > 0 {
 		return nil, errors.Errorf("%+v", b.errs)
 	}

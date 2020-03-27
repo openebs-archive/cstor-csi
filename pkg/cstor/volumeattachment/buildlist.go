@@ -14,30 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package csivolume
+package volumeattachment
 
 import (
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 )
 
 // ListBuilder enables building an instance of
-// CSIVolumeList
+// CStorVolumeAttachmentList
 type ListBuilder struct {
-	list    *apis.CSIVolumeList
+	list    *apis.CStorVolumeAttachmentList
 	filters predicateList
 }
 
 // NewListBuilder returns a new instance of ListBuilder
 func NewListBuilder() *ListBuilder {
 	return &ListBuilder{
-		list: &apis.CSIVolumeList{},
+		list: &apis.CStorVolumeAttachmentList{},
 	}
 }
 
 // ListBuilderFrom returns a new instance of
 // ListBuilder from API list instance
-func ListBuilderFrom(vols apis.CSIVolumeList) *ListBuilder {
-	b := &ListBuilder{list: &apis.CSIVolumeList{}}
+func ListBuilderFrom(vols apis.CStorVolumeAttachmentList) *ListBuilder {
+	b := &ListBuilder{list: &apis.CStorVolumeAttachmentList{}}
 	if len(vols.Items) == 0 {
 		return b
 	}
@@ -49,12 +49,12 @@ func ListBuilderFrom(vols apis.CSIVolumeList) *ListBuilder {
 // List returns the list of pod
 // instances that was built by this
 // builder
-func (b *ListBuilder) List() *apis.CSIVolumeList {
+func (b *ListBuilder) List() *apis.CStorVolumeAttachmentList {
 	if b.filters == nil || len(b.filters) == 0 {
 		return b.list
 	}
 
-	filtered := &apis.CSIVolumeList{}
+	filtered := &apis.CStorVolumeAttachmentList{}
 	for _, vol := range b.list.Items {
 		vol := vol // pin it
 		if b.filters.all(From(&vol)) {
