@@ -40,7 +40,7 @@ func Unmount(path string) error {
 
 // ResizeVolume rescans the iSCSI session and runs the resize to filesystem
 // command on that particular device
-func ResizeVolume(volumePath string, vol *apis.CSIVolume) error {
+func ResizeVolume(volumePath string, vol *apis.CStorVolumeAttachment) error {
 	var err error
 	mounter := mount.New("")
 	list, _ := mounter.List()

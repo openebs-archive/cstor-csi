@@ -195,19 +195,6 @@ func (b *Builder) WithCapacity(capacity string) *Builder {
 	return b
 }
 
-// WithNodeBase sets the NodeBase field of CStorVolume with provided arguments
-func (b *Builder) WithNodeBase(nodebase string) *Builder {
-	if len(nodebase) == 0 {
-		b.errs = append(
-			b.errs,
-			errors.New("failed to build cstorvolume object: missing nodebase"),
-		)
-		return b
-	}
-	b.cstorvolume.object.Spec.NodeBase = nodebase
-	return b
-}
-
 // WithIQN sets the IQN field of CStorVolume with provided arguments
 func (b *Builder) WithIQN(iqn string) *Builder {
 	if len(iqn) == 0 {

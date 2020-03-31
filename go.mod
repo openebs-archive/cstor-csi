@@ -9,7 +9,7 @@ require (
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/kubernetes-csi/csi-lib-iscsi v0.0.0-20200118015005-959f12c91ca8
 	github.com/kubernetes-csi/csi-lib-utils v0.7.0
-	github.com/openebs/api v0.0.0-20200304155919-9ac1d4814a3f
+	github.com/openebs/api v0.0.0-20200331103231-b4be54796806
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
