@@ -355,7 +355,7 @@ func (ns *node) NodeExpandVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	if err = iscsiutils.ResizeVolume(req.GetVolumePath(), vol.Spec.Volume.FSType); err != nil {
+	if err = iscsiutils.ResizeVolume(req.GetVolumePath(), vol); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
 			"failed to handle NodeExpandVolumeRequest for %s, {%s}",
