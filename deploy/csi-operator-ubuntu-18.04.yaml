@@ -1,6 +1,6 @@
 # This manifest deploys the OpenEBS CSI control plane components,
 # with associated CRs & RBAC rules. This manifest has been verified
-# only with Ubuntu 16.04 and CentOS hosts, due to dependencies on
+# only with Ubuntu 18.04 and Debian 10 hosts, due to dependencies on
 # kernel components of iSCSI protocol.  For other ubuntu flavours and
 # linux distros, this needs to be modified.
 #
