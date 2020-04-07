@@ -685,11 +685,11 @@ func (util *ISCSIUtil) UnmountDisk(
 }
 
 // ReScan rescans all the iSCSI sessions on the host
-func (util *ISCSIUtil) ReScan() error {
+func (util *ISCSIUtil) ReScan(iqn, targetPortal string) error {
 	b := &iscsiDiskMounter{
 		exec: mount.NewOsExec(),
 	}
-	out, err := b.exec.Run("iscsiadm", "-m", "session", "--rescan")
+	out, err := b.exec.Run("iscsiadm", "-m", "node", "-T", iqn, "-P", targetPortal, "--rescan")
 	if err != nil {
 		glog.Errorf("iscsi: rescan failed error: %s", string(out))
 		return err
