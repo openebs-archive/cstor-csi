@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.0-RC1](https://github.com/openebs/cstor-csi/tree/1.9.0) (2020-04-07)
+
+**Merged pull requests:**
+
+- refact(csi): run rescan only for volume being resized ([#79](https://github.com/openebs/cstor-csi/pull/76), [@payes](https://github.com/payes))
+
+
+## [1.8.0](https://github.com/openebs/cstor-csi/tree/1.8.0) (2020-03-15)
+
+ No changes
+
 ## [1.7.0](https://github.com/openebs/cstor-csi/tree/1.7.0) (2020-02-15)
 
 **Merged pull requests:**
@@ -8,10 +19,6 @@
 - fix\(csi, snapshot\): enable status subresource in VolumeSnapshot CRD [\#71](https://github.com/openebs/cstor-csi/pull/71) ([@prateekpandey14](https://github.com/prateekpandey14))
 - fix\(csi\): handle duplicate snapshot request and support Snapshot V1beta1 APIs [\#70](https://github.com/openebs/cstor-csi/pull/70) ([@prateekpandey14](https://github.com/prateekpandey14))
 - feat\(topology\): Add topology support for cstor csi volumes [\#69](https://github.com/openebs/cstor-csi/pull/69) ([@payes](https://github.com/payes))
-
-- fix(BDD): wait for restarted pod to come to running state ([#1608](https://github.com/openebs/maya/pull/1608),
-  [@shubham14bajpai](https://github.com/shubham14bajpai))
-
 
 ## [1.6.0](https://github.com/openebs/cstor-csi/tree/1.6.0) (2020-01-15)
 
