@@ -11,7 +11,7 @@
 #
 # For supporting a differnet OS other than the above,
 # 1) Get the list of shared object files required for iscsiadm binary in that OS version.
-# 2) Check which files are already present in the openebs-csi-plugin container present in csi node pod.
+# 2) Check which files are already present in the cstor-csi-driver container present in csi node pod.
 # 3) Mount the required missing files inside the container.
 #
 ####################################################
@@ -62,18 +62,18 @@ status:
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: csivolumes.openebs.io
+  name: cstorvolumeattachments.cstor.openebs.io
 spec:
-  group: openebs.io
-  version: v1alpha1
+  group: cstor.openebs.io
+  version: v1
   scope: Namespaced
   names:
-    plural: csivolumes
-    singular: csivolume
-    kind: CSIVolume
+    plural: cstorvolumeattachments
+    singular: cstorvolumeattachment
+    kind: CStorVolumeAttachment
     shortNames:
-    - csivolume
-    - csiv
+    - cstorvolumeattachment
+    - cva
 ---
 ##############################################
 ###########                       ############
@@ -600,15 +600,13 @@ rules:
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshotcontents"]
     verbs: ["get", "list"]
-  - apiGroups: ["*"]
-    resources: ["cstorvolumeclaims"]
-    verbs: ["*"]
+
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["*"]
   - apiGroups: ["*"]
-    resources: ["csivolumes", "cstorvolumes","cstorvolumeclaims"]
-    verbs: ["get", "list", "watch", "create", "update", "delete", "patch"]
+    resources: ["cstorvolumeattachments", "cstorvolumes","cstorvolumeconfigs"]
+    verbs: ["*"]
 
 ---
 
@@ -648,7 +646,7 @@ spec:
       serviceAccount: openebs-cstor-csi-controller-sa
       containers:
         - name: csi-resizer
-          image: quay.io/k8scsi/csi-resizer:v0.1.0
+          image: quay.io/k8scsi/csi-resizer:v0.4.0
           args:
             - "--v=5"
             - "--csi-address=$(ADDRESS)"
@@ -720,7 +718,7 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-        - name: openebs-csi-plugin
+        - name: cstor-csi-driver
           image: quay.io/openebs/cstor-csi-driver:ci
           imagePullPolicy: IfNotPresent
           env:
@@ -835,7 +833,7 @@ rules:
     resources: ["persistentvolumes", "nodes", "services"]
     verbs: ["get", "list", "patch"]
   - apiGroups: ["*"]
-    resources: ["csivolumes", "cstorvolumes","cstorvolumeclaims"]
+    resources: ["cstorvolumeattachments", "cstorvolumes","cstorvolumeconfigs"]
     verbs: ["get", "list", "watch", "create", "update", "delete", "patch"]
 
 ---
@@ -901,7 +899,7 @@ spec:
               mountPath: /plugin
             - name: registration-dir
               mountPath: /registration
-        - name: openebs-csi-plugin
+        - name: cstor-csi-driver
           securityContext:
             privileged: true
             capabilities:

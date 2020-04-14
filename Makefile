@@ -50,6 +50,12 @@ format:
 	@echo "--> Running go fmt"
 	@go fmt $(PACKAGES)
 
+# deps ensures fresh go.mod and go.sum.
+.PHONY: deps
+deps:
+	@go mod tidy
+	@go mod verify
+
 .PHONY: test
 test: format
 	@echo "--> Running go test" ;
@@ -69,68 +75,15 @@ SRC_PKG := github.com/openebs/cstor-csi/pkg
 
 # code generation for custom resources
 .PHONY: kubegen
-kubegen: kubegendelete deepcopy-install clientset-install lister-install informer-install
-	@GEN_SRC=openebs.io/core/v1alpha1 GEN_DEST=core make deepcopy clientset lister informer
-	@GEN_SRC=openebs.io/maya/v1alpha1 GEN_DEST=maya make deepcopy clientset lister informer
+kubegen:
+	./buildscripts/update-codegen.sh
 
 # deletes generated code by codegen
 .PHONY: kubegendelete
 kubegendelete:
-	@rm -rf pkg/generated/clientset
-	@rm -rf pkg/generated/lister
-	@rm -rf pkg/generated/informer
-
-.PHONY: deepcopy-install
-deepcopy-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/deepcopy-gen
-
-.PHONY: deepcopy
-deepcopy:
-	@echo "+ Generating deepcopy funcs for $(GEN_SRC)"
-	@deepcopy-gen \
-		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
-		--output-file-base zz_generated.deepcopy \
-		--go-header-file ./buildscripts/custom-boilerplate.go.txt
-
-.PHONY: clientset-install
-clientset-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/client-gen
-
-.PHONY: clientset
-clientset:
-	@echo "+ Generating clientsets for $(GEN_SRC)"
-	@client-gen \
-		--fake-clientset=true \
-		--input $(GEN_SRC) \
-		--input-base $(SRC_PKG)/apis \
-		--clientset-path $(SRC_PKG)/generated/clientset/$(GEN_DEST) \
-		--go-header-file ./buildscripts/custom-boilerplate.go.txt
-
-.PHONY: lister-install
-lister-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/lister-gen
-
-.PHONY: lister
-lister:
-	@echo "+ Generating lister for $(GEN_SRC)"
-	@lister-gen \
-		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
-		--output-package $(SRC_PKG)/generated/lister \
-		--go-header-file ./buildscripts/custom-boilerplate.go.txt
-
-.PHONY: informer-install
-informer-install:
-	@go install ./vendor/k8s.io/code-generator/cmd/informer-gen
-
-.PHONY: informer
-informer:
-	@echo "+ Generating informer for $(GEN_SRC)"
-	@informer-gen \
-		--input-dirs $(SRC_PKG)/apis/$(GEN_SRC) \
-		--versioned-clientset-package $(SRC_PKG)/generated/clientset/$(GEN_DEST)/internalclientset \
-		--listers-package $(SRC_PKG)/generated/lister/$(GEN_DEST) \
-		--output-package $(SRC_PKG)/generated/informer/$(GEN_DEST) \
-		--go-header-file ./buildscripts/custom-boilerplate.go.txt
+	@rm -rf pkg/client/clientset
+	@rm -rf pkg/client/lister
+	@rm -rf pkg/client/informer
 
 .PHONY: csi-driver
 csi-driver:

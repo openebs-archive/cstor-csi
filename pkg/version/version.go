@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -44,8 +44,7 @@ var (
 )
 
 const (
-	versionFile   string = "/src/github.com/openebs/cstor-csi/VERSION"
-	buildMetaFile string = "/src/github.com/openebs/cstor-csi/BUILDMETA"
+	versionFile string = "/src/github.com/openebs/cstor-csi/VERSION"
 )
 
 // Current returns current version of csi driver
@@ -69,25 +68,6 @@ func Get() string {
 	}
 
 	return strings.TrimSpace(string(vBytes))
-}
-
-// GetBuildMeta returns build type from
-// global VersionMeta variable. If VersionMeta
-// is unset then this is fetched from BUILDMETA
-// file at the root of this repo.
-func GetBuildMeta() string {
-	if VersionMeta != "" {
-		return "-" + VersionMeta
-	}
-
-	path := filepath.Join(os.Getenv("GOPATH") + buildMetaFile)
-	vBytes, err := ioutil.ReadFile(path)
-	if err != nil {
-		logrus.Errorf("failed to get build version: %s", err.Error())
-		return ""
-	}
-
-	return "-" + strings.TrimSpace(string(vBytes))
 }
 
 // GetGitCommit returns Git commit SHA-1 from

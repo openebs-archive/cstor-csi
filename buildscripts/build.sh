@@ -26,7 +26,6 @@ fi
 
 # Get the version details
 VERSION="$(cat $GOPATH/src/github.com/openebs/cstor-csi/VERSION)"
-VERSION_META="$(cat $GOPATH/src/github.com/openebs/cstor-csi/BUILDMETA)"
 
 # Determine the arch/os combos we're building for
 UNAME=$(uname)
@@ -88,8 +87,7 @@ fi
 env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags \
     "-X github.com/openebs/cstor-csi/pkg/version.GitCommit=${GIT_COMMIT} \
     -X main.CtlName='${CTLNAME}' \
-    -X github.com/openebs/cstor-csi/pkg/version.Version=${VERSION} \
-    -X github.com/openebs/cstor-csi/pkg/version.VersionMeta=${VERSION_META}"\
+    -X github.com/openebs/cstor-csi/pkg/version.Version=${VERSION}" \
     -o $output_name\
     ./cmd
 
