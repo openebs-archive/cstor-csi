@@ -135,11 +135,6 @@ createVolumeResponse:
 			VolumeId:      volName,
 			CapacityBytes: size,
 			VolumeContext: VolumeContext,
-			AccessibleTopology: []*csi.Topology{
-				{
-					Segments: map[string]string{TopologyNodeKey: nodeID},
-				},
-			},
 			ContentSource: contentSource,
 		},
 	}, nil

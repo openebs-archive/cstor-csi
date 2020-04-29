@@ -25,7 +25,7 @@ const (
 	defaultISCSIInterface = "default"
 
 	// TopologyNodeKey is a key of topology that represents node name.
-	TopologyNodeKey = "topology.cstor.openebs.io/node"
+	TopologyNodeKey = "topology.cstor.openebs.io/nodeName"
 )
 
 var (
