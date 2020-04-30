@@ -323,11 +323,11 @@ func getAccessibilityRequirements(requirement *csi.TopologyRequirement) string {
 		return ""
 	}
 
-	preferredNode, exists := requirement.GetPreferred()[0].GetSegments()[HostTopologyKey]
+	preferredNode, exists := requirement.GetPreferred()[0].GetSegments()[TopologyNodeKey]
 	if exists {
 		return preferredNode
 	}
-	preferredNode, exists = requirement.GetRequisite()[0].GetSegments()[HostTopologyKey]
+	preferredNode, exists = requirement.GetRequisite()[0].GetSegments()[TopologyNodeKey]
 	if exists {
 		return preferredNode
 	}

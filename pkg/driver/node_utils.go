@@ -16,11 +16,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const (
-	// HostTopologyKey is the supported topology key
-	HostTopologyKey string = "kubernetes.io/hostname"
-)
-
 func getTargetIP(url string) string {
 	s := strings.Split(url, ":")
 	//ip, port := s[0], s[1]
