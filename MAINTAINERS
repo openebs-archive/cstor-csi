@@ -1,0 +1,19 @@
+# Official list of OpenEBS Maintainers.
+#
+# Names added to this file should be in the following format:
+#     Individual's name,@githubhandle, Company Name
+#
+# Please keep the below list sorted in ascending order.
+#
+#Maintainers
+"Kiran Mova",@kmova,MayaData
+"Payes Anand",@payes,MayaData
+"Prateek Pandey",@prateekpandey14,MayaData
+"Vishnu Itta",@vishnuitta,MayaData
+
+#Reviewers
+"Kiran Mova",@kmova,MayaData
+"Payes Anand",@payes,MayaData
+"Prateek Pandey",@prateekpandey14,MayaData
+"Utkarsh Mani Tripathi",@utkarshmani1997,MayaData
+"Vishnu Itta",@vishnuitta,MayaData
