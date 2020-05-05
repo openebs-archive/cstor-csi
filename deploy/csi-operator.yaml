@@ -716,7 +716,7 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-        - name: cstor-csi-driver
+        - name: cstor-csi-plugin
           image: quay.io/openebs/cstor-csi-driver:ci
           imagePullPolicy: IfNotPresent
           env:
@@ -897,7 +897,7 @@ spec:
               mountPath: /plugin
             - name: registration-dir
               mountPath: /registration
-        - name: cstor-csi-driver
+        - name: cstor-csi-plugin
           securityContext:
             privileged: true
             capabilities:

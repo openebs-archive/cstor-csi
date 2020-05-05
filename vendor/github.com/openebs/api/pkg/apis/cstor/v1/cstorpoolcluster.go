@@ -99,9 +99,9 @@ type PoolConfig struct {
 	// WriteCacheGroupType is the write cache raid type.
 	WriteCacheGroupType string `json:"writeCacheGroupType"`
 
-	// ThickProvisioning to enable thick provisioning
+	// ThickProvision to enable thick provisioning
 	// Optional -- defaults to false
-	ThickProvisioning bool `json:"thickProvisioning"`
+	ThickProvision bool `json:"thickProvision"`
 	// Compression to enable compression
 	// Optional -- defaults to off
 	// Possible values : lz, off
@@ -143,7 +143,7 @@ type CStorPoolInstanceBlockDevice struct {
 	BlockDeviceName string `json:"blockDeviceName"`
 	// Capacity is the capacity of the block device.
 	// It is system generated
-	Capacity string `json:"capacity"`
+	Capacity uint64 `json:"capacity"`
 	// DevLink is the dev link for block devices
 	DevLink string `json:"devLink"`
 }
@@ -164,6 +164,13 @@ type CStorPoolClusterStatus struct {
 }
 
 type CSPCConditionType string
+
+// These are valid conditions of a cspc.
+const (
+	// PoolManagerAvailable means the PoolManagerAvailable deployment is available, ie. at least the minimum available
+	// replicas required are up and running and in ready state.
+	PoolManagerAvailable CSPCConditionType = "PoolManagerAvailable"
+)
 
 // CStorPoolClusterCondition describes the state of a CSPC at a certain point.
 type CStorPoolClusterCondition struct {

@@ -318,6 +318,16 @@ func (b *Builder) WithCapacityQty(resCapacity resource.Quantity) *Builder {
 	return b
 }
 
+// WithProvisionCapacityQty sets initial provided Capacity of CStorVOlumeClaim
+// as a readonly capacity requires in case of volume day2 operations
+func (b *Builder) WithProvisionCapacityQty(resCapacity resource.Quantity) *Builder {
+	resourceList := metav1.ResourceList{
+		metav1.ResourceName(metav1.ResourceStorage): resCapacity,
+	}
+	b.cvc.object.Spec.Provision.Capacity = resourceList
+	return b
+}
+
 // WithReplicaCount sets replica count of CStorVolumeConfig
 func (b *Builder) WithReplicaCount(count string) *Builder {
 

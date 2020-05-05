@@ -85,6 +85,7 @@ func ProvisionVolume(
 		WithSource(snapshotID).
 		WithNodeID(nodeID).
 		WithReplicaCount(replicaCount).
+		WithProvisionCapacityQty(sSize).
 		WithNewVersion(version.Current()).
 		WithDependentsUpgraded().
 		WithStatusPhase(apisv1.CStorVolumeConfigPhasePending).Build()
