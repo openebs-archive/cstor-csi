@@ -8,13 +8,46 @@ VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
 # Tools required for different make
 # targets or for development purposes
 EXTERNAL_TOOLS=\
-	github.com/golang/dep/cmd/dep \
 	golang.org/x/tools/cmd/cover \
 	github.com/axw/gocov/gocov \
 	gopkg.in/matm/v1/gocov-html \
 	github.com/ugorji/go/codec/codecgen \
 	github.com/onsi/ginkgo/ginkgo \
 	github.com/onsi/gomega/...
+
+# The images can be pushed to any docker/image registeries
+# like docker hub, quay. The registries are specified in
+# the `build/push` script.
+#
+# The images of a project or company can then be grouped
+# or hosted under a unique organization key like `openebs`
+#
+# Each component (container) will be pushed to a unique
+# repository under an organization.
+# Putting all this together, an unique uri for a given
+# image comprises of:
+#   <registry url>/<image org>/<image repo>:<image-tag>
+#
+# IMAGE_ORG can be used to customize the organization
+# under which images should be pushed.
+# By default the organization name is `openebs`.
+
+ifeq (${IMAGE_ORG}, )
+  IMAGE_ORG="openebs"
+  export IMAGE_ORG
+endif
+
+# Specify the docker arg for repository url
+ifeq (${DBUILD_REPO_URL}, )
+  DBUILD_REPO_URL="https://github.com/openebs/cstor-csi"
+  export DBUILD_REPO_URL
+endif
+
+# Specify the docker arg for website url
+ifeq (${DBUILD_SITE_URL}, )
+  DBUILD_SITE_URL="https://openebs.io"
+  export DBUILD_SITE_URL
+endif
 
 ifeq (${IMAGE_TAG}, )
   IMAGE_TAG = ci
@@ -29,11 +62,26 @@ else
   export BASE_TAG
 endif
 
+# Determine the arch/os
+ifeq (${XC_OS}, )
+  XC_OS:=$(shell go env GOOS)
+endif
+export XC_OS
+ifeq (${XC_ARCH}, )
+  XC_ARCH:=$(shell go env GOARCH)
+endif
+export XC_ARCH
+ARCH:=${XC_OS}_${XC_ARCH}
+export ARCH
+
+export DBUILD_ARGS=--build-arg DBUILD_DATE=${DBUILD_DATE} --build-arg DBUILD_REPO_URL=${DBUILD_REPO_URL} --build-arg DBUILD_SITE_URL=${DBUILD_SITE_URL} --build-arg ARCH=${ARCH}
+
+
 # Specify the name for the binary
 CSI_DRIVER=cstor-csi-driver
 
-# Specify the date o build
-BUILD_DATE = $(shell date +'%Y%m%d%H%M%S')
+# Specify the date of build
+DBUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 .PHONY: all
 all: test csi-driver-image
@@ -98,10 +146,10 @@ csi-driver-image: csi-driver
 	@echo "+ Generating ${CSI_DRIVER} image"
 	@echo "--------------------------------"
 	@cp bin/${CSI_DRIVER}/${CSI_DRIVER} buildscripts/${CSI_DRIVER}/
-	cd buildscripts/${CSI_DRIVER} && sudo docker build -t openebs/${CSI_DRIVER}:${IMAGE_TAG} --build-arg BUILD_DATE=${BUILD_DATE} . && docker tag openebs/${CSI_DRIVER}:${IMAGE_TAG} quay.io/openebs/${CSI_DRIVER}:${IMAGE_TAG}
+	cd buildscripts/${CSI_DRIVER} && sudo docker build -t ${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG} ${DBUILD_ARGS} . && docker tag ${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG} quay.io/${IMAGE_ORG}/${CSI_DRIVER}:${IMAGE_TAG}
 	@rm buildscripts/${CSI_DRIVER}/${CSI_DRIVER}
 
 # Push images
 deploy-images:
-	@DIMAGE="openebs/cstor-csi-driver" ./buildscripts/push
+	@DIMAGE="${IMAGE_ORG}/cstor-csi-driver" ./buildscripts/push
 
