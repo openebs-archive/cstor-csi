@@ -12,7 +12,7 @@ services:
 - docker
 language: go
 go:
-- 1.12.9
+- 1.13.x
 addons:
   apt:
     update: true
@@ -49,3 +49,4 @@ notifications:
   email:
     recipients:
     - kiran.mova@openebs.io
+    - prateek.pandey@openebs.io
