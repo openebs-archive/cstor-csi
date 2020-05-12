@@ -126,6 +126,7 @@ func (ns *node) NodeStageVolume(
 	}
 	if isMountRequired {
 		vol.Spec.Volume.StagingTargetPath = stagingTargetPath
+		// This is placed to clean up stale iSCSI Sessions
 		vol.Finalizers = []string{utils.NodeIDENV}
 		vol.Spec.Volume.DevicePath = strings.Join([]string{
 			"/dev/disk/by-path/ip", vol.Spec.ISCSI.TargetPortal,
@@ -147,6 +148,12 @@ func (ns *node) NodeStageVolume(
 		// Login to the volume and attempt mount operation on the requested path
 		devicePath, err := ns.attachDisk(vol)
 		if err != nil {
+			vol.Finalizers = nil
+			// There might still be a case that the attach was successful,
+			// therefore not cleaning up the staging path from CR
+			if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
+			}
 			logrus.Errorf("NodeStageVolume: failed to attachDisk for volume %v, err: %v", volumeID, err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -163,6 +170,12 @@ func (ns *node) NodeStageVolume(
 
 		logrus.Info("NodeStageVolume: start format and mount operation")
 		if err := ns.formatAndMount(req, devicePath); err != nil {
+			vol.Finalizers = nil
+			// There might still be a case that the attach was successful,
+			// therefore not cleaning up the staging path from CR
+			if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
+			}
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 

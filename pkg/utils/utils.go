@@ -13,6 +13,7 @@ import (
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 	"github.com/openebs/cstor-csi/pkg/cstor/snapshot"
+	iscsiutils "github.com/openebs/cstor-csi/pkg/iscsi"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"k8s.io/utils/mount"
@@ -295,6 +296,44 @@ func MonitorMounts() {
 			}
 			TransitionVolListLock.Unlock()
 		}
+	}
+}
+
+// CleanupOnRestart unmounts and detaches the volumes having
+// DeletionTimestamp set and removes finalizers from the
+// corresponding CStorVolumeAttachment CRs
+func CleanupOnRestart() {
+	var (
+		err        error
+		csivolList *apis.CStorVolumeAttachmentList
+	)
+	// Get list of mounted paths present with the node
+	TransitionVolListLock.Lock()
+	defer TransitionVolListLock.Unlock()
+	if csivolList, err = GetVolListForNode(); err != nil {
+		return
+	}
+	for _, Vol := range csivolList.Items {
+		if Vol.DeletionTimestamp == nil {
+			continue
+		}
+		vol := Vol
+		TransitionVolList[vol.Spec.Volume.Name] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
+		go func(vol *apis.CStorVolumeAttachment) {
+			if err := iscsiutils.UnmountAndDetachDisk(vol, vol.Spec.Volume.StagingTargetPath); err == nil {
+				vol.Finalizers = nil
+				if err = UpdateCStorVolumeAttachmentCR(vol); err != nil {
+					logrus.Errorf(err.Error())
+				}
+			} else {
+				logrus.Errorf(err.Error())
+			}
+
+			TransitionVolListLock.Lock()
+			TransitionVolList[vol.Spec.Volume.Name] = apis.CStorVolumeAttachmentStatusUnmounted
+			delete(TransitionVolList, vol.Spec.Volume.Name)
+			TransitionVolListLock.Unlock()
+		}(&vol)
 	}
 }
 

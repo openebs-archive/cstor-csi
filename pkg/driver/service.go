@@ -87,6 +87,7 @@ func New(config *config.Config) *CSIDriver {
 		driver.cs = NewController(driver)
 
 	case "node":
+		utils.CleanupOnRestart()
 		// Start monitor goroutine to monitor the
 		// mounted paths. If a path goes down or
 		// becomes read only (in case of RW mount
