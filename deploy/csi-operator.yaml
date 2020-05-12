@@ -627,11 +627,17 @@ apiVersion: apps/v1
 metadata:
   name: openebs-cstor-csi-controller
   namespace: kube-system
+  labels:
+    name: openebs-cstor-csi-controller
+    openebs.io/component-name: openebs-cstor-csi-controller
+    openebs.io/version: dev
 spec:
   selector:
     matchLabels:
       app: openebs-cstor-csi-controller
       role: openebs-cstor-csi
+      name: openebs-cstor-csi-controller
+      openebs.io/component-name: openebs-cstor-csi-controller
   serviceName: "openebs-csi"
   replicas: 1
   template:
@@ -639,6 +645,9 @@ spec:
       labels:
         app: openebs-cstor-csi-controller
         role: openebs-cstor-csi
+        name: openebs-cstor-csi-controller
+        openebs.io/component-name: openebs-cstor-csi-controller
+        openebs.io/version: dev
     spec:
       priorityClassName: system-cluster-critical
       serviceAccount: openebs-cstor-csi-controller-sa
@@ -856,15 +865,26 @@ apiVersion: apps/v1
 metadata:
   name: openebs-cstor-csi-node
   namespace: kube-system
+  labels:
+    app: openebs-cstor-csi-node
+    name: openebs-cstor-csi-node
+    openebs.io/component-name: openebs-cstor-csi-node
+    openebs.io/version: dev
 spec:
   selector:
     matchLabels:
       app: openebs-cstor-csi-node
+      role: openebs-cstor-csi
+      name: openebs-cstor-csi-node
+      openebs.io/component-name: openebs-cstor-csi-node
   template:
     metadata:
       labels:
         app: openebs-cstor-csi-node
         role: openebs-cstor-csi
+        name: openebs-cstor-csi-node
+        openebs.io/component-name: openebs-cstor-csi-node
+        openebs.io/version: dev
     spec:
       priorityClassName: system-node-critical
       serviceAccount: openebs-cstor-csi-node-sa
