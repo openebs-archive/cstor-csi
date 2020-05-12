@@ -132,7 +132,7 @@ func (ns *node) NodeStageVolume(
 			"/dev/disk/by-path/ip", vol.Spec.ISCSI.TargetPortal,
 			"iscsi", vol.Spec.ISCSI.Iqn, "lun", fmt.Sprint(0)}, "-",
 		)
-		err = utils.UpdateCStorVolumeAttachmentCR(vol)
+		vol, err = utils.UpdateCStorVolumeAttachmentCR(vol)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -151,8 +151,8 @@ func (ns *node) NodeStageVolume(
 			vol.Finalizers = nil
 			// There might still be a case that the attach was successful,
 			// therefore not cleaning up the staging path from CR
-			if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
-				return nil, status.Error(codes.Internal, err.Error())
+			if _, err1 := utils.UpdateCStorVolumeAttachmentCR(vol); err1 != nil {
+				return nil, status.Error(codes.Internal, err1.Error())
 			}
 			logrus.Errorf("NodeStageVolume: failed to attachDisk for volume %v, err: %v", volumeID, err)
 			return nil, status.Error(codes.Internal, err.Error())
@@ -173,7 +173,7 @@ func (ns *node) NodeStageVolume(
 			vol.Finalizers = nil
 			// There might still be a case that the attach was successful,
 			// therefore not cleaning up the staging path from CR
-			if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
+			if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 				return nil, status.Error(codes.Internal, err.Error())
 			}
 			return nil, status.Error(codes.Internal, err.Error())
@@ -249,7 +249,7 @@ func (ns *node) NodeUnstageVolume(
 
 	vol.Finalizers = nil
 	vol.Spec.Volume.StagingTargetPath = ""
-	if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
+	if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	logrus.Infof("hostpath: volume %s path: %s has been unmounted.",
@@ -283,7 +283,7 @@ func (ns *node) NodePublishVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	vol.Spec.Volume.TargetPath = req.GetTargetPath()
-	if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
+	if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -329,7 +329,7 @@ func (ns *node) NodeUnpublishVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	vol.Spec.Volume.TargetPath = ""
-	if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
+	if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 

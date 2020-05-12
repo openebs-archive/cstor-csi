@@ -322,7 +322,7 @@ func CleanupOnRestart() {
 		go func(vol *apis.CStorVolumeAttachment) {
 			if err := iscsiutils.UnmountAndDetachDisk(vol, vol.Spec.Volume.StagingTargetPath); err == nil {
 				vol.Finalizers = nil
-				if err = UpdateCStorVolumeAttachmentCR(vol); err != nil {
+				if vol, err = UpdateCStorVolumeAttachmentCR(vol); err != nil {
 					logrus.Errorf(err.Error())
 				}
 			} else {
