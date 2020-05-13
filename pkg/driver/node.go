@@ -173,8 +173,8 @@ func (ns *node) NodeStageVolume(
 			vol.Finalizers = nil
 			// There might still be a case that the attach was successful,
 			// therefore not cleaning up the staging path from CR
-			if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
-				return nil, status.Error(codes.Internal, err.Error())
+			if _, uerr := utils.UpdateCStorVolumeAttachmentCR(vol); uerr != nil {
+				logrus.Errorf("Failed to update CStorVolumeAttachment:%v", uerr.Error())
 			}
 			return nil, status.Error(codes.Internal, err.Error())
 		}
