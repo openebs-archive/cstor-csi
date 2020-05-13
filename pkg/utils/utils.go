@@ -319,6 +319,8 @@ func CleanupOnRestart() {
 		}
 		vol := Vol
 		TransitionVolList[vol.Spec.Volume.Name] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
+		// This is being run in a go routine so that if unmount and detach
+		// commands take time, the startup is not delayed
 		go func(vol *apis.CStorVolumeAttachment) {
 			if err := iscsiutils.UnmountAndDetachDisk(vol, vol.Spec.Volume.StagingTargetPath); err == nil {
 				vol.Finalizers = nil
