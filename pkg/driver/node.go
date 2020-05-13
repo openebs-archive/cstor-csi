@@ -126,12 +126,13 @@ func (ns *node) NodeStageVolume(
 	}
 	if isMountRequired {
 		vol.Spec.Volume.StagingTargetPath = stagingTargetPath
+		// This is placed to clean up stale iSCSI Sessions
 		vol.Finalizers = []string{utils.NodeIDENV}
 		vol.Spec.Volume.DevicePath = strings.Join([]string{
 			"/dev/disk/by-path/ip", vol.Spec.ISCSI.TargetPortal,
 			"iscsi", vol.Spec.ISCSI.Iqn, "lun", fmt.Sprint(0)}, "-",
 		)
-		err = utils.UpdateCStorVolumeAttachmentCR(vol)
+		vol, err = utils.UpdateCStorVolumeAttachmentCR(vol)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -147,6 +148,12 @@ func (ns *node) NodeStageVolume(
 		// Login to the volume and attempt mount operation on the requested path
 		devicePath, err := ns.attachDisk(vol)
 		if err != nil {
+			vol.Finalizers = nil
+			// There might still be a case that the attach was successful,
+			// therefore not cleaning up the staging path from CR
+			if _, err1 := utils.UpdateCStorVolumeAttachmentCR(vol); err1 != nil {
+				return nil, status.Error(codes.Internal, err1.Error())
+			}
 			logrus.Errorf("NodeStageVolume: failed to attachDisk for volume %v, err: %v", volumeID, err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -163,6 +170,12 @@ func (ns *node) NodeStageVolume(
 
 		logrus.Info("NodeStageVolume: start format and mount operation")
 		if err := ns.formatAndMount(req, devicePath); err != nil {
+			vol.Finalizers = nil
+			// There might still be a case that the attach was successful,
+			// therefore not cleaning up the staging path from CR
+			if _, uerr := utils.UpdateCStorVolumeAttachmentCR(vol); uerr != nil {
+				logrus.Errorf("Failed to update CStorVolumeAttachment:%v", uerr.Error())
+			}
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
@@ -236,7 +249,7 @@ func (ns *node) NodeUnstageVolume(
 
 	vol.Finalizers = nil
 	vol.Spec.Volume.StagingTargetPath = ""
-	if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
+	if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	logrus.Infof("hostpath: volume %s path: %s has been unmounted.",
@@ -270,7 +283,7 @@ func (ns *node) NodePublishVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	vol.Spec.Volume.TargetPath = req.GetTargetPath()
-	if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
+	if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
@@ -316,7 +329,7 @@ func (ns *node) NodeUnpublishVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	vol.Spec.Volume.TargetPath = ""
-	if err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
+	if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
