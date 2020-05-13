@@ -134,11 +134,10 @@ func CreateCStorVolumeAttachmentCR(csivol *apis.CStorVolumeAttachment, nodeID st
 }
 
 // UpdateCStorVolumeAttachmentCR updates CStorVolumeAttachment CR related to current nodeID
-func UpdateCStorVolumeAttachmentCR(csivol *apis.CStorVolumeAttachment) error {
+func UpdateCStorVolumeAttachmentCR(csivol *apis.CStorVolumeAttachment) (*apis.CStorVolumeAttachment, error) {
 
-	_, err := csivolume.NewKubeclient().
+	return csivolume.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).Update(csivol)
-	return err
 }
 
 // TODO Explain when a create of csi volume happens & when it
