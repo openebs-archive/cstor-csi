@@ -9,6 +9,8 @@ require (
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/kubernetes-csi/csi-lib-iscsi v0.0.0-20200118015005-959f12c91ca8
 	github.com/kubernetes-csi/csi-lib-utils v0.7.0
+	github.com/onsi/ginkgo v1.10.2
+	github.com/onsi/gomega v1.7.0
 	github.com/openebs/api v0.0.0-20200429072019-650209fba28b
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.4.1 // indirect
