@@ -1,5 +1,5 @@
 # list only csi source code directories
-PACKAGES = $(shell go list ./... | grep -v 'vendor\|pkg/generated')
+PACKAGES = $(shell go list ./... | grep -v 'vendor\|pkg/client\|tests')
 
 # Lint our code. Reference: https://golang.org/cmd/vet/
 VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \

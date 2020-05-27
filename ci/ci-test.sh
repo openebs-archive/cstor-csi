@@ -23,8 +23,8 @@ CSPC_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy
 CSPI_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/cspi-crd.yaml
 
 CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
+SNAPSHOT_CLASS="$GOPATH/src/github.com/openebs/cstor-csi/deploy/snapshot-class.yaml"
 
-SRC_REPO="https://github.com/openebs/maya.git"
 DST_PATH="$GOPATH/src/github.com/openebs"
 
 # Prepare env for runnging BDD tests
@@ -32,15 +32,11 @@ DST_PATH="$GOPATH/src/github.com/openebs"
 kubectl apply -f $CSTOR_RBAC
 kubectl apply -f $NDM_OPERATOR
 kubectl apply -f $VOL_CRD
-kubectl apply -f $CSPI_CRD
+kubectl apply -f $CSPC_CRD
 kubectl apply -f $CSPI_CRD
 kubectl apply -f $CSTOR_OPERATOR
 kubectl apply -f $CSI_OPERATOR
-
-# Start running BDD tests in maya for CSI
-mkdir -p $DST_PATH
-git clone $SRC_REPO $DST_PATH/maya
-cd $DST_PATH/maya
+kubectl apply -f $SNAPSHOT_CLASS
 
 function dumpCSINodeLogs() {
   LC=$1
@@ -60,17 +56,9 @@ function dumpCSIControllerLogs() {
   printf "\n\n"
 }
 
-#function dumpMayaAPIServerLogs() {
-#  LC=$1
-#  MAPIPOD=$(kubectl get pods -o jsonpath='{.items[?(@.spec.containers[0].name=="maya-apiserver")].metadata.name}' -n openebs)
-#  kubectl logs --tail=${LC} $MAPIPOD -n openebs
-#  printf "\n\n"
-#}
-
-# Run BDD tests for volume provisioning via CSI
-cd $DST_PATH/maya/tests/csi/cstor/volume
-# stopping the test for a while till we fixed and update BDD in maya repo to use openebs/api 
-#ginkgo -v -- -kubeconfig="$HOME/.kube/config" --cstor-replicas=1 --cstor-maxpools=1
+# Run e2e tests for csi volumes
+cd $DST_PATH/cstor-csi/tests/e2e
+make e2e-test
 
 if [ $? -ne 0 ]; then
 echo "******************** CSI Controller logs***************************** "
