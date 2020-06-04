@@ -32,6 +32,20 @@ import (
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 )
 
+const (
+	// pvcNameKey holds the name of the PVC which is passed as a parameter
+	// in CreateVolume request
+	pvcNameKey = "csi.storage.k8s.io/pvc/name"
+
+	// pvcNamespaceKey holds the namespace of the PVC which is passed parameter
+	// in CreateVolume request
+	pvcNamespaceKey = "csi.storage.k8s.io/pvc/namespace"
+
+	// pvNameKey holds the name of the PV which is passed as a parameter
+	// in CreateVolume request
+	pvNameKey = "csi.storage.k8s.io/pv/name"
+)
+
 // controller is the server implementation
 // for CSI Controller
 type controller struct {
@@ -100,6 +114,8 @@ func (cs *controller) CreateVolume(
 	VolumeContext := map[string]string{
 		"openebs.io/cas-type": req.GetParameters()["cas-type"],
 	}
+	pvcName := req.GetParameters()[pvcNameKey]
+	pvcNamespace := req.GetParameters()[pvcNamespaceKey]
 
 	nodeID = getAccessibilityRequirements(req.GetAccessibilityRequirements())
 
@@ -124,7 +140,7 @@ func (cs *controller) CreateVolume(
 
 	err = utils.ProvisionVolume(size, volName, rCount,
 		cspcName, snapshotID,
-		nodeID, policyName)
+		nodeID, policyName, pvcName, pvcNamespace)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

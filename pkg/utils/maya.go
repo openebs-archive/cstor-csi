@@ -6,11 +6,12 @@ import (
 	"strings"
 	"time"
 
-	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
+	cstorapis "github.com/openebs/api/pkg/apis/cstor/v1"
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 	cv "github.com/openebs/cstor-csi/pkg/cstor/volume"
 	csivol "github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	cvc "github.com/openebs/cstor-csi/pkg/cstor/volumeconfig"
+	pvc "github.com/openebs/cstor-csi/pkg/kubernetes/persistentvolumeclaim"
 	"github.com/openebs/cstor-csi/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
@@ -40,10 +41,15 @@ const (
 	// DefaultIscsiInterface can be used when there is no specific
 	// IscsiInterface set
 	DefaultIscsiInterface = "default"
+
+	// volumeCreatedThrough used to identify through which PVC is created
+	// NOTE: This annoation will be available on PVC only if velero-plugin
+	// creates as PVC as a part of restore request
+	volumeCreatedThrough = "openebs.io/created-through"
 )
 
-// ProvisionVolume creates a CstorVolumeClaim(cvc) CR,
-// watcher for cvc is present in maya-apiserver
+// ProvisionVolume creates a CstorVolumeConfig(cvc) CR,
+// watcher for cvc is present in cvc-operator
 func ProvisionVolume(
 	size int64,
 	volName,
@@ -51,12 +57,28 @@ func ProvisionVolume(
 	cspcName,
 	snapshotID,
 	nodeID,
-	policyName string,
+	policyName,
+	pvcName,
+	pvcNamespace string,
 ) error {
+
+	var pvcObj *corev1.PersistentVolumeClaim
+	var err error
+
+	if pvcName != "" {
+		pvcObj, err = pvc.NewKubeClient().WithNamespace(pvcNamespace).Get(pvcName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+	}
 
 	annotations := map[string]string{
 		OpenebsVolumeID:     volName,
 		OpenebsVolumePolicy: policyName,
+	}
+
+	if value, ok := pvcObj.GetAnnotations()[volumeCreatedThrough]; ok {
+		annotations[volumeCreatedThrough] = value
 	}
 
 	labels := map[string]string{
@@ -88,7 +110,7 @@ func ProvisionVolume(
 		WithProvisionCapacityQty(sSize).
 		WithNewVersion(version.Current()).
 		WithDependentsUpgraded().
-		WithStatusPhase(apisv1.CStorVolumeConfigPhasePending).Build()
+		WithStatusPhase(cstorapis.CStorVolumeConfigPhasePending).Build()
 	if err != nil {
 		return err
 	}
@@ -98,7 +120,7 @@ func ProvisionVolume(
 }
 
 // GetVolume the corresponding CstorVolumeClaim(cvc) CR
-func GetVolume(volumeID string) (*apisv1.CStorVolumeConfig, error) {
+func GetVolume(volumeID string) (*cstorapis.CStorVolumeConfig, error) {
 	return cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Get(volumeID, metav1.GetOptions{})
@@ -131,7 +153,7 @@ func IsCVCBound(volumeID string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if cvcObj.Status.Phase == apisv1.CStorVolumeConfigPhasePending {
+	if cvcObj.Status.Phase == cstorapis.CStorVolumeConfigPhasePending {
 		return false, nil
 	}
 	return true, nil
@@ -207,7 +229,7 @@ func ResizeVolume(
 			cvc.Status.Capacity, cvc.Spec.Capacity)
 	}
 
-	if cvc.Status.Phase == apisv1.CStorVolumeConfigPhasePending {
+	if cvc.Status.Phase == cstorapis.CStorVolumeConfigPhasePending {
 		return handleResize(cvc, desiredSize)
 	}
 	cvcActualSize := cvc.Status.Capacity[corev1.ResourceStorage]
@@ -225,7 +247,7 @@ func ResizeVolume(
 }
 
 func handleResize(
-	cvc *apisv1.CStorVolumeConfig, sSize resource.Quantity,
+	cvc *cstorapis.CStorVolumeConfig, sSize resource.Quantity,
 ) error {
 	if err := updateCVCSize(cvc, sSize); err != nil {
 		return err
@@ -252,7 +274,7 @@ func waitAndReverifyResizeStatus(cvcName string, sSize resource.Quantity) error 
 	return nil
 }
 
-func updateCVCSize(oldCVCObj *apisv1.CStorVolumeConfig, sSize resource.Quantity) error {
+func updateCVCSize(oldCVCObj *cstorapis.CStorVolumeConfig, sSize resource.Quantity) error {
 	newCVCObj, err := cvc.BuildFrom(oldCVCObj.DeepCopy()).
 		WithCapacityQty(sSize).Build()
 	if err != nil {
@@ -264,7 +286,7 @@ func updateCVCSize(oldCVCObj *apisv1.CStorVolumeConfig, sSize resource.Quantity)
 	return err
 }
 
-func getCVC(cvcName string) (*apisv1.CStorVolumeConfig, error) {
+func getCVC(cvcName string) (*cstorapis.CStorVolumeConfig, error) {
 	return cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
 		Get(cvcName, metav1.GetOptions{})
