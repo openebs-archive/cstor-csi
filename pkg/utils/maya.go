@@ -65,19 +65,16 @@ func ProvisionVolume(
 	var pvcObj *corev1.PersistentVolumeClaim
 	var err error
 
-	if pvcName != "" {
-		pvcObj, err = pvc.NewKubeClient().WithNamespace(pvcNamespace).Get(pvcName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-	}
-
 	annotations := map[string]string{
 		OpenebsVolumeID:     volName,
 		OpenebsVolumePolicy: policyName,
 	}
 
-	if pvcObj != nil {
+	if pvcName != "" {
+		pvcObj, err = pvc.NewKubeClient().WithNamespace(pvcNamespace).Get(pvcName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
 		if value, ok := pvcObj.GetAnnotations()[volumeCreatedThrough]; ok {
 			annotations[volumeCreatedThrough] = value
 		}
