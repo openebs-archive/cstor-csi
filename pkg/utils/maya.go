@@ -77,8 +77,10 @@ func ProvisionVolume(
 		OpenebsVolumePolicy: policyName,
 	}
 
-	if value, ok := pvcObj.GetAnnotations()[volumeCreatedThrough]; ok {
-		annotations[volumeCreatedThrough] = value
+	if pvcObj != nil {
+		if value, ok := pvcObj.GetAnnotations()[volumeCreatedThrough]; ok {
+			annotations[volumeCreatedThrough] = value
+		}
 	}
 
 	labels := map[string]string{
