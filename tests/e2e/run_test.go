@@ -68,9 +68,20 @@ func getBDAndNodeName() (string, string, error) {
 }
 
 func verifyVolumeCreated(ns, pvc string) string {
-	stdout, stderr, err := kubectl("get", "pvc", "-n", ns, pvc, "-o=template", "--template={{.spec.volumeName}}")
-	Expect(err).ShouldNot(HaveOccurred(), "stdout=%s, stderr=%s", stdout, stderr)
-	volName := strings.TrimSpace(string(stdout))
+	var volName string
+	maxRetries := 10
+	for i := 0; i < maxRetries; i++ {
+		stdout, stderr, err := kubectl("get", "pvc", "-n", ns, pvc, "-o=template", "--template={{.spec.volumeName}}")
+		Expect(err).ShouldNot(HaveOccurred(), "stdout=%s, stderr=%s", stdout, stderr)
+		volName = strings.TrimSpace(string(stdout))
+		if volName == "" {
+			fmt.Println("Waiting for PVC to have spec.VolumeName")
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		break
+	}
+	Expect(volName).NotTo(BeEmpty(), "not able to get pv name from PVC.Spec.VolumeName")
 	Eventually(func() (bool, error) {
 		return checkCStorVolumeIsHealthy(volName, "openebs")
 	}, 120, 10).Should(BeTrue())

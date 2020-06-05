@@ -26,6 +26,18 @@ const (
 
 	// TopologyNodeKey is a key of topology that represents node name.
 	TopologyNodeKey = "topology.cstor.openebs.io/nodeName"
+
+	// pvcNameKey holds the name of the PVC which is passed as a parameter
+	// in CreateVolume request
+	pvcNameKey = "csi.storage.k8s.io/pvc/name"
+
+	// pvcNamespaceKey holds the namespace of the PVC which is passed parameter
+	// in CreateVolume request
+	pvcNamespaceKey = "csi.storage.k8s.io/pvc/namespace"
+
+	// pvNameKey holds the name of the PV which is passed as a parameter
+	// in CreateVolume request
+	pvNameKey = "csi.storage.k8s.io/pv/name"
 )
 
 var (

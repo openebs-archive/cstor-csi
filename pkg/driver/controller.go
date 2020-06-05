@@ -100,6 +100,8 @@ func (cs *controller) CreateVolume(
 	VolumeContext := map[string]string{
 		"openebs.io/cas-type": req.GetParameters()["cas-type"],
 	}
+	pvcName := req.GetParameters()[pvcNameKey]
+	pvcNamespace := req.GetParameters()[pvcNamespaceKey]
 
 	nodeID = getAccessibilityRequirements(req.GetAccessibilityRequirements())
 
@@ -124,7 +126,7 @@ func (cs *controller) CreateVolume(
 
 	err = utils.ProvisionVolume(size, volName, rCount,
 		cspcName, snapshotID,
-		nodeID, policyName)
+		nodeID, policyName, pvcName, pvcNamespace)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
