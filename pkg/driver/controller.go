@@ -265,11 +265,17 @@ func (cs *controller) DeleteSnapshot(
 	ctx context.Context,
 	req *csi.DeleteSnapshotRequest,
 ) (*csi.DeleteSnapshotResponse, error) {
+
 	snapshotID := strings.Split(req.SnapshotId, "@")
+	// In case of migrated volume snapshot the snapshotID will be of the form:
+	// pv-name+"_"+snapshot_name.
+	if len(snapshotID) == 1 {
+		snapshotID = strings.SplitN(req.SnapshotId, "_", 2)
+	}
 	if len(snapshotID) != 2 {
 		return nil, status.Errorf(
 			codes.Internal,
-			"failed to handle CreateSnapshotRequest for %s, {%s}",
+			"failed to handle DeleteSnapshotRequest for %s, {%s}",
 			req.SnapshotId,
 			"Manual intervention required",
 		)
@@ -277,7 +283,7 @@ func (cs *controller) DeleteSnapshot(
 	if err := utils.DeleteSnapshot(snapshotID[0], snapshotID[1]); err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
-			"failed to handle CreateSnapshotRequest for %s, {%s}",
+			"failed to handle DeleteSnapshotRequest for %s, {%s}",
 			req.SnapshotId,
 			err.Error(),
 		)
