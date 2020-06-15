@@ -1,5 +1,29 @@
 # Changelog
 
+## [v1.11.0](https://github.com/openebs/cstor-csi/tree/v1.11.0) (2020-06-15)
+
+**Merged pull requests:**
+
+- fix\(snapshot\): update snapshot delete logs [\#92](https://github.com/openebs/cstor-csi/pull/92) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(csi-driver\): update driver to read PVC, PV name in CreateVolume request [\#90](https://github.com/openebs/cstor-csi/pull/90) ([mittachaitu](https://github.com/mittachaitu))
+- feat\(tests\): enhance csi tests including resize and snapshot  [\#88](https://github.com/openebs/cstor-csi/pull/88) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(operator\): add version and components labels in deployments [\#83](https://github.com/openebs/cstor-csi/pull/83) ([prateekpandey14](https://github.com/prateekpandey14))
+- fix\(CStorVolumeAttachment\): Remove finalizer on unsuccesful mounts and on driver restarts [\#82](https://github.com/openebs/cstor-csi/pull/82) ([payes](https://github.com/payes))
+
+## [v1.11.0-RC2](https://github.com/openebs/cstor-csi/tree/v1.11.0-RC2) (2020-06-12)
+
+ No Changes
+
+## [v1.11.0-RC1](https://github.com/openebs/cstor-csi/tree/v1.11.0-RC1) (2020-06-09)
+
+**Merged pull requests:**
+
+- fix\(snapshot\): update snapshot delete logs [\#92](https://github.com/openebs/cstor-csi/pull/92) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(csi-driver\): update driver to read PVC, PV name in CreateVolume request [\#90](https://github.com/openebs/cstor-csi/pull/90) ([mittachaitu](https://github.com/mittachaitu))
+- feat\(tests\): enhance csi tests including resize and snapshot  [\#88](https://github.com/openebs/cstor-csi/pull/88) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(operator\): add version and components labels in deployments [\#83](https://github.com/openebs/cstor-csi/pull/83) ([prateekpandey14](https://github.com/prateekpandey14))
+- fix\(CStorVolumeAttachment\): Remove finalizer on unsuccesful mounts and on driver restarts [\#82](https://github.com/openebs/cstor-csi/pull/82) ([payes](https://github.com/payes))
+
 ## [v1.10.0](https://github.com/openebs/cstor-csi/tree/v1.10.0) (2020-05-15)
 
 **Merged pull requests:**
