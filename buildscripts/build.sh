@@ -17,16 +17,6 @@
 # This script builds the application from source for multiple platforms.
 set -e
 
-VERSION_FILE_PATH="$GOPATH/src/github.com/openebs/cstor-csi/VERSION"
-
-on_exit() {
-    ## Delete VERSION file
-    echo "Deleteing VERSION File($VERSION_FILE_PATH) that got generated during build time"
-    rm -f "$VERSION_FILE_PATH"
-}
-
-trap 'on_exit' EXIT
-
 # Get the parent directory of where this script is.
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
@@ -51,6 +41,15 @@ fi
 # Get the version details
 # VERSION="$(cat $GOPATH/src/github.com/openebs/cstor-csi/VERSION)"
 
+# Determine the current branch
+CURRENT_BRANCH=""
+if [ -z "${TRAVIS_BRANCH}" ];
+then
+  CURRENT_BRANCH=$(git branch | grep "\*" | cut -d ' ' -f2)
+else
+  CURRENT_BRANCH="${TRAVIS_BRANCH}"
+fi
+
 ## Populate the version based on release tag
 ## If travis tag is set then assign it as VERSION and
 ## if travis tag is empty then mark version as ci
@@ -59,15 +58,17 @@ if [ -n "$TRAVIS_TAG" ]; then
     # Example: v1.10.0 maps to 1.10.0
     # Example: 1.10.0 maps to 1.10.0
     # Example: v1.10.0-custom maps to 1.10.0-custom
+    # So Version will be same as TRAVIS_TAG by triming v
     VERSION="${TRAVIS_TAG#v}"
 else
-    VERSION="dev"
+    ## Marking VERSION as current_branch-dev
+    ## Example: master maps to master-dev
+    ## Example: v1.11.x-ee to 1.11.x-ee-dev
+    ## Example: v1.10.x to 1.10.x-dev
+    VERSION="${CURRENT_BRANCH#v}-dev"
 fi
 
 echo "Building for VERSION ${VERSION}"
-## Below line will help to get current version for various binaries
-echo "${VERSION}" > "$VERSION_FILE_PATH"
-
 
 # Determine the arch/os combos we're building for
 UNAME=$(uname)

@@ -12,7 +12,6 @@ import (
 	csivol "github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	cvc "github.com/openebs/cstor-csi/pkg/cstor/volumeconfig"
 	pvc "github.com/openebs/cstor-csi/pkg/kubernetes/persistentvolumeclaim"
-	"github.com/openebs/cstor-csi/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -107,7 +106,6 @@ func ProvisionVolume(
 		WithNodeID(nodeID).
 		WithReplicaCount(replicaCount).
 		WithProvisionCapacityQty(sSize).
-		WithNewVersion(version.Current()).
 		WithDependentsUpgraded().
 		WithStatusPhase(cstorapis.CStorVolumeConfigPhasePending).Build()
 	if err != nil {
