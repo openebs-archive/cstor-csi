@@ -353,7 +353,7 @@ func (b *Builder) WithNodeID(nodeID string) *Builder {
 		b.errs = append(
 			b.errs,
 			errors.New(
-				"failed to build cstorvolumeclaim object: missing nodeID",
+				"failed to build cstorvolumeconfig object: missing nodeID",
 			),
 		)
 		return b
