@@ -28,6 +28,9 @@ const (
 	// OpenebsVolumePolicy is the config policy name passed to CSI from the
 	// storage class parameters
 	OpenebsVolumePolicy = "openebs.io/volume-policy"
+	// OpenebsPVC is the name of persistentvolumeclaim passed to CSI form the
+	// Storage class parameters
+	OpenebsPVC = "openebs.io/persistent-volume-claim"
 	// OpenebsVolumeID is the PV name passed to CSI
 	OpenebsVolumeID = "openebs.io/volumeID"
 	// OpenebsCSPCName is the name of cstor storagepool cluster
@@ -67,6 +70,7 @@ func ProvisionVolume(
 	annotations := map[string]string{
 		OpenebsVolumeID:     volName,
 		OpenebsVolumePolicy: policyName,
+		OpenebsPVC:          pvcName,
 	}
 
 	if pvcName != "" {
