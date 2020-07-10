@@ -727,7 +727,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: cstor-csi-plugin
-          image: quay.io/openebs/cstor-csi-driver:ci
+          image: openebs/cstor-csi-driver:ci
           imagePullPolicy: IfNotPresent
           env:
             - name: OPENEBS_CONTROLLER_DRIVER
@@ -735,9 +735,9 @@ spec:
             - name: OPENEBS_CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
             - name: OPENEBS_CSI_API_URL
-              value: https://api.openebs.com/
-            - name: OPENEBS_MAPI_SVC
-              value: maya-apiserver-service
+              value: https://openebs.io
+              # OpenEBS namespace where the openebs cstor operator components
+              # has been installed
             - name: OPENEBS_NAMESPACE
               value: openebs
           args :
@@ -861,6 +861,28 @@ roleRef:
 
 ---
 
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: openebs-cstor-csi-iscsiadm
+  namespace: kube-system
+data:
+  iscsiadm: |
+    #!/bin/sh
+    if [ -x /host/sbin/iscsiadm ]; then
+      chroot /host /sbin/iscsiadm "$@"
+    elif [ -x /host/usr/local/sbin/iscsiadm ]; then
+      chroot /host /usr/local/sbin/iscsiadm "$@"
+    elif [ -x /host/bin/iscsiadm ]; then
+      chroot /host /bin/iscsiadm "$@"
+    elif [ -x /host/usr/local/bin/iscsiadm ]; then
+      chroot /host /usr/local/bin/iscsiadm "$@"
+    else
+      chroot /host iscsiadm "$@"
+    fi
+
+---
+
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
@@ -924,7 +946,7 @@ spec:
             capabilities:
               add: ["CAP_MKNOD", "CAP_SYS_ADMIN", "SYS_ADMIN"]
             allowPrivilegeEscalation: true
-          image: quay.io/openebs/cstor-csi-driver:ci
+          image: openebs/cstor-csi-driver:ci
           imagePullPolicy: IfNotPresent
           args:
             - "--nodeid=$(OPENEBS_NODE_ID)"
@@ -940,12 +962,14 @@ spec:
               value: unix:///plugin/csi.sock
             - name: OPENEBS_NODE_DRIVER
               value: node
-            - name: OPENEBS_API_URL
-              value: https://api.openebs.com/
-            - name: OPENEBS_MAPI_SVC
-              value: maya-apiserver-service
+            - name: OPENEBS_CSI_API_URL
+              value: https://openebs.io
+              # OpenEBS namespace where the openebs cstor operator components
+              # has been installed
             - name: OPENEBS_NAMESPACE
               value: openebs
+              # Enable/Disable auto-remount feature, when volumes
+              # recovers form the read-only state
             - name: REMOUNT
               value: "false"
           volumeMounts:
@@ -958,8 +982,11 @@ spec:
               # needed so that any mounts setup inside this container are
               # propagated back to the host machine.
               mountPropagation: "Bidirectional"
-            - name: iscsiadm-bin
+            - name: host-root
+              mountPath: /host
+            - name: chroot-iscsiadm
               mountPath: /sbin/iscsiadm
+              subPath: iscsiadm
       volumes:
         - name: device-dir
           hostPath:
@@ -977,7 +1004,11 @@ spec:
           hostPath:
             path: /var/lib/kubelet/
             type: Directory
-        - name: iscsiadm-bin
+        - name: chroot-iscsiadm
+          configMap:
+            defaultMode: 0755
+            name: openebs-cstor-csi-iscsiadm
+        - name: host-root
           hostPath:
-            path: /sbin/iscsiadm
-            type: File
+            path: /
+            type: Directory
