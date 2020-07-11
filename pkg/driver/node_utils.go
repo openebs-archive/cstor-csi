@@ -217,19 +217,22 @@ func IsUnmountRequired(volumeID, targetPath string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if len(currentMounts) > 1 {
-		logrus.Fatalf(
-			"More than one mounts for volume:%s mounts: %v",
+	if len(currentMounts) > 2 {
+		logrus.Warningf(
+			"Unexpected mounts for volume:%s mounts: %v",
 			volumeID, currentMounts,
 		)
 	}
 	if len(currentMounts) == 0 {
 		return false, nil
 	}
-	if currentMounts[0] != targetPath {
-		return false, err
+
+	for _, mounts := range currentMounts {
+		if strings.Contains(mounts, targetPath) {
+			return true, nil
+		}
 	}
-	return true, nil
+	return false, nil
 }
 
 // VerifyIfMountRequired returns true if volume is already mounted on targetPath
@@ -243,15 +246,18 @@ func VerifyIfMountRequired(volumeID, targetPath string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if len(currentMounts) > 1 {
+	if len(currentMounts) > 2 {
 		logrus.Warningf(
-			"More than one mounts for volume:%s mounts: %v",
+			"Unexpected mounts for volume:%s mounts: %v",
 			volumeID, currentMounts,
 		)
 	}
-	if len(currentMounts) == 1 {
-		if currentMounts[0] == targetPath {
-			return false, nil
+
+	if len(currentMounts) >= 1 {
+		for _, mounts := range currentMounts {
+			if strings.Contains(mounts, targetPath) {
+				return false, nil
+			}
 		}
 		if err = iscsiutils.Unmount(currentMounts[0]); err != nil {
 			return false, err
