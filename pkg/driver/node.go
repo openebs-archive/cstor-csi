@@ -252,7 +252,7 @@ func (ns *node) NodeUnstageVolume(
 	if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	logrus.Infof("hostpath: volume %s path: %s has been unmounted.",
+	logrus.Infof("cstor-csi: volume %s path: %s has been unmounted.",
 		volumeID, stagingTargetPath)
 
 	return &csi.NodeUnstageVolumeResponse{}, nil
