@@ -1,13 +1,7 @@
 # This manifest deploys the OpenEBS CSI control plane components,
 # with associated CRs & RBAC rules. This manifest has been verified
-# only with Ubuntu 16.04 and CentOS hosts, due to dependencies on
-# kernel components of iSCSI protocol.  For other ubuntu flavours and
-# linux distros, this needs to be modified.
-#
-# Instructions to modify:
-# Ubuntu-18.04 and above: https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-ubuntu-18.04-and-above-deps.yaml
-# SUSE Linux Enterprise Server 12:  https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-suse-enterprise-server-12-deps.yaml
-# SUSE Linux Enterprise Server 15:  https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-suse-enterprise-server-15-deps.yaml
+# only with different linux flavours and
+# linux distros.
 #
 # For supporting a differnet OS other than the above,
 # 1) Get the list of shared object files required for iscsiadm binary in that OS version.
@@ -496,6 +490,22 @@ status:
   storedVersions: []
 
 ---
+
+apiVersion: storage.k8s.io/v1beta1
+kind: CSIDriver
+metadata:
+  name: cstor.csi.openebs.io
+spec:
+  # Supports persistent and ephemeral inline volumes.
+  volumeLifecycleModes:
+  - Persistent
+  - Ephemeral
+  # To determine at runtime which mode a volume uses, pod info and its
+  # "csi.storage.k8s.io/ephemeral" entry are needed.
+  podInfoOnMount: true
+  attachRequired: true
+---
+
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -503,7 +513,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: openebs-cstor-csi-controller-sa
-    namespace: kube-system
+    namespace: openebs
 roleRef:
   kind: ClusterRole
   name: openebs-cstor-csi-snapshotter-role
@@ -564,7 +574,7 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: openebs-cstor-csi-controller-sa
-  namespace: kube-system
+  namespace: openebs
 
 ---
 kind: ClusterRole
@@ -615,7 +625,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: openebs-cstor-csi-controller-sa
-    namespace: kube-system
+    namespace: openebs
 roleRef:
   kind: ClusterRole
   name: openebs-cstor-csi-provisioner-role
@@ -626,7 +636,7 @@ kind: StatefulSet
 apiVersion: apps/v1
 metadata:
   name: openebs-cstor-csi-controller
-  namespace: kube-system
+  namespace: openebs
   labels:
     name: openebs-cstor-csi-controller
     openebs.io/component-name: openebs-cstor-csi-controller
@@ -726,7 +736,7 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-        - name: cstor-csi-plugin
+        - name: openebs-csi-plugin
           image: openebs/cstor-csi-driver:ci
           imagePullPolicy: IfNotPresent
           env:
@@ -781,7 +791,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: openebs-cstor-csi-controller-sa
-    namespace: kube-system
+    namespace: openebs
 roleRef:
   kind: ClusterRole
   name: openebs-cstor-csi-attacher-role
@@ -807,7 +817,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: openebs-cstor-csi-controller-sa
-    namespace: kube-system
+    namespace: openebs
 roleRef:
   kind: ClusterRole
   name: openebs-cstor-csi-cluster-registrar-role
@@ -825,7 +835,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: openebs-cstor-csi-node-sa
-  namespace: kube-system
+  namespace: openebs
 
 ---
 
@@ -853,7 +863,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: openebs-cstor-csi-node-sa
-    namespace: kube-system
+    namespace: openebs
 roleRef:
   kind: ClusterRole
   name: openebs-cstor-csi-registrar-role
@@ -865,7 +875,7 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: openebs-cstor-csi-iscsiadm
-  namespace: kube-system
+  namespace: openebs
 data:
   iscsiadm: |
     #!/bin/sh
@@ -887,7 +897,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: openebs-cstor-csi-node
-  namespace: kube-system
+  namespace: openebs
   labels:
     app: openebs-cstor-csi-node
     name: openebs-cstor-csi-node
@@ -940,7 +950,7 @@ spec:
               mountPath: /plugin
             - name: registration-dir
               mountPath: /registration
-        - name: cstor-csi-plugin
+        - name: openebs-csi-plugin
           securityContext:
             privileged: true
             capabilities:
