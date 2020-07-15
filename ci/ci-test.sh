@@ -22,7 +22,7 @@ VOL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/
 CSPC_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/cspc-crd.yaml
 CSPI_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/cspi-crd.yaml
 
-CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
+CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/tests/csi-operator-openebs.yaml"
 SNAPSHOT_CLASS="$GOPATH/src/github.com/openebs/cstor-csi/deploy/snapshot-class.yaml"
 
 DST_PATH="$GOPATH/src/github.com/openebs"

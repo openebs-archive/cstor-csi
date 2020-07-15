@@ -7,9 +7,10 @@ CSI driver implementation for OpenEBS CStor storage engine.
 This project is under active development and considered to be in Alpha state.
 
 The current implementation supports the following for CStor Volumes:
-1. Provisioning and De-provisioning with ext4 filesystems
+1. Provisioning and De-provisioning with ext4,xfs filesystems
 2. Snapshots and clones
 3. Volume Expansion
+4. Volume Metrics
 
 ## Usage
 
@@ -146,7 +147,7 @@ through various components.
    `cstor.csi.openebs.io`
 
 3. OpenEBS CSI Controller will create a custom resource called
-   `CStorVolumeClaim(CVC)` and returns the details of the newly
+   `CStorVolumeConfig(CVC)` and returns the details of the newly
    created object back to Kubernetes. The `CVC`s will be
    monitored by the cstor-operator (embedded in m-apiserver). The
    cstor-operator will wait to proceed with provisioning a `CStorVolume`
@@ -201,7 +202,7 @@ It is internally a two step process for volumes containing a file system:
 ### Snapshot And Clone CStor Volume using OpenEBS CStor CSI Driver
 
 #### Notes:
--  `VolumeSnapshotDataSource` feature gate needs to be enabled at kubelet and kube-apiserver
+-  `VolumeSnapshotDataSource` feature gate needs to be enabled at kubelet and kube-apiserver. From k8s version 1.17.0 onwards `VolumeSnapshotDataSource` feature enable by default.
 
 #### Steps:
 1. Create snapshot class pointing to cstor csi driver:

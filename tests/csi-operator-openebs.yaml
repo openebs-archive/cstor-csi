@@ -1,13 +1,7 @@
 # This manifest deploys the OpenEBS CSI control plane components,
 # with associated CRs & RBAC rules. This manifest has been verified
-# only with Ubuntu 18.04 and Debian 10 hosts, due to dependencies on
-# kernel components of iSCSI protocol.  For other ubuntu flavours and
-# linux distros, this needs to be modified.
-#
-# Instructions to modify:
-# Ubuntu-18.04 and above: https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-ubuntu-18.04-and-above-deps.yaml
-# SUSE Linux Enterprise Server 12:  https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-suse-enterprise-server-12-deps.yaml
-# SUSE Linux Enterprise Server 15:  https://github.com/openebs/cstor-csi/blob/master/deploy/iscsiadm-suse-enterprise-server-15-deps.yaml
+# only with different linux flavours and
+# linux distros.
 #
 # For supporting a differnet OS other than the above,
 # 1) Get the list of shared object files required for iscsiadm binary in that OS version.
@@ -81,7 +75,6 @@ spec:
 ###########                       ############
 ##############################################
 
----
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -497,6 +490,22 @@ status:
   storedVersions: []
 
 ---
+
+apiVersion: storage.k8s.io/v1beta1
+kind: CSIDriver
+metadata:
+  name: cstor.csi.openebs.io
+spec:
+  # Supports persistent and ephemeral inline volumes.
+  volumeLifecycleModes:
+  - Persistent
+  - Ephemeral
+  # To determine at runtime which mode a volume uses, pod info and its
+  # "csi.storage.k8s.io/ephemeral" entry are needed.
+  podInfoOnMount: true
+  attachRequired: true
+---
+
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -504,7 +513,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: openebs-cstor-csi-controller-sa
-    namespace: kube-system
+    namespace: openebs
 roleRef:
   kind: ClusterRole
   name: openebs-cstor-csi-snapshotter-role
@@ -565,7 +574,7 @@ kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: openebs-cstor-csi-controller-sa
-  namespace: kube-system
+  namespace: openebs
 
 ---
 kind: ClusterRole
@@ -600,7 +609,6 @@ rules:
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshotcontents"]
     verbs: ["get", "list"]
-
   - apiGroups: ["coordination.k8s.io"]
     resources: ["leases"]
     verbs: ["*"]
@@ -617,7 +625,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: openebs-cstor-csi-controller-sa
-    namespace: kube-system
+    namespace: openebs
 roleRef:
   kind: ClusterRole
   name: openebs-cstor-csi-provisioner-role
@@ -628,7 +636,7 @@ kind: StatefulSet
 apiVersion: apps/v1
 metadata:
   name: openebs-cstor-csi-controller
-  namespace: kube-system
+  namespace: openebs
   labels:
     name: openebs-cstor-csi-controller
     openebs.io/component-name: openebs-cstor-csi-controller
@@ -728,7 +736,7 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-        - name: cstor-csi-plugin
+        - name: openebs-csi-plugin
           image: openebs/cstor-csi-driver:ci
           imagePullPolicy: IfNotPresent
           env:
@@ -783,7 +791,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: openebs-cstor-csi-controller-sa
-    namespace: kube-system
+    namespace: openebs
 roleRef:
   kind: ClusterRole
   name: openebs-cstor-csi-attacher-role
@@ -809,7 +817,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: openebs-cstor-csi-controller-sa
-    namespace: kube-system
+    namespace: openebs
 roleRef:
   kind: ClusterRole
   name: openebs-cstor-csi-cluster-registrar-role
@@ -827,7 +835,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: openebs-cstor-csi-node-sa
-  namespace: kube-system
+  namespace: openebs
 
 ---
 
@@ -855,7 +863,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: openebs-cstor-csi-node-sa
-    namespace: kube-system
+    namespace: openebs
 roleRef:
   kind: ClusterRole
   name: openebs-cstor-csi-registrar-role
@@ -863,11 +871,33 @@ roleRef:
 
 ---
 
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: openebs-cstor-csi-iscsiadm
+  namespace: openebs
+data:
+  iscsiadm: |
+    #!/bin/sh
+    if [ -x /host/sbin/iscsiadm ]; then
+      chroot /host /sbin/iscsiadm "$@"
+    elif [ -x /host/usr/local/sbin/iscsiadm ]; then
+      chroot /host /usr/local/sbin/iscsiadm "$@"
+    elif [ -x /host/bin/iscsiadm ]; then
+      chroot /host /bin/iscsiadm "$@"
+    elif [ -x /host/usr/local/bin/iscsiadm ]; then
+      chroot /host /usr/local/bin/iscsiadm "$@"
+    else
+      chroot /host iscsiadm "$@"
+    fi
+
+---
+
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: openebs-cstor-csi-node
-  namespace: kube-system
+  namespace: openebs
   labels:
     app: openebs-cstor-csi-node
     name: openebs-cstor-csi-node
@@ -920,7 +950,7 @@ spec:
               mountPath: /plugin
             - name: registration-dir
               mountPath: /registration
-        - name: cstor-csi-plugin
+        - name: openebs-csi-plugin
           securityContext:
             privileged: true
             capabilities:
@@ -962,11 +992,11 @@ spec:
               # needed so that any mounts setup inside this container are
               # propagated back to the host machine.
               mountPropagation: "Bidirectional"
-            - name: iscsiadm-bin
+            - name: host-root
+              mountPath: /host
+            - name: chroot-iscsiadm
               mountPath: /sbin/iscsiadm
-            #Enable the following for Ubuntu 18.04
-            - name: iscsiadm-lib-isns-nocrypto
-              mountPath: /lib/x86_64-linux-gnu/libisns-nocrypto.so.0
+              subPath: iscsiadm
       volumes:
         - name: device-dir
           hostPath:
@@ -984,13 +1014,11 @@ spec:
           hostPath:
             path: /var/lib/kubelet/
             type: Directory
-        - name: iscsiadm-bin
+        - name: chroot-iscsiadm
+          configMap:
+            defaultMode: 0755
+            name: openebs-cstor-csi-iscsiadm
+        - name: host-root
           hostPath:
-            path: /sbin/iscsiadm
-            type: File
-        #Enable the following for Ubuntu 18.04
-        - name: iscsiadm-lib-isns-nocrypto
-          hostPath:
-            path: /lib/x86_64-linux-gnu/libisns-nocrypto.so.0
-            type: File
----
+            path: /
+            type: Directory
