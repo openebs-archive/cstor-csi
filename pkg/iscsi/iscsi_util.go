@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
+	"github.com/sirupsen/logrus"
 	utilexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 )
@@ -223,8 +223,9 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 		"iscsiadm", "-m", "iface",
 		"-I", b.Iface, "-o", "show",
 	).CombinedOutput()
+
 	if err != nil {
-		glog.Errorf(
+		logrus.Errorf(
 			"iscsi: could not read iface %s error: %s",
 			b.Iface, string(out),
 		)
@@ -242,7 +243,7 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 		newIface := bkpPortal[0] + ":" + b.VolName
 		err = cloneIface(b, newIface)
 		if err != nil {
-			glog.Errorf(
+			logrus.Errorf(
 				"iscsi: failed to clone iface: %s error: %v",
 				b.Iface, err,
 			)
@@ -261,14 +262,14 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 			"-p", tp, "-T", b.Iqn, "-R",
 		).CombinedOutput()
 		if err != nil {
-			glog.Errorf(
+			logrus.Errorf(
 				"iscsi: failed to rescan session with error: %s (%v)",
 				string(out), err,
 			)
 		}
 
 		if iscsiTransport == "" {
-			glog.Errorf(
+			logrus.Errorf(
 				"iscsi: could not find transport name in iface %s",
 				b.Iface,
 			)
@@ -291,7 +292,7 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 		}
 
 		if exist := waitForPathToExist(&devicePath, 1, iscsiTransport); exist {
-			glog.V(4).Infof("iscsi: devicepath (%s) exists", devicePath)
+			logrus.Infof("iscsi: devicepath (%s) exists", devicePath)
 			devicePaths = append(devicePaths, devicePath)
 			continue
 		}
@@ -302,7 +303,7 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 			"-I", b.Iface, "-o", "new",
 		).CombinedOutput()
 		if err != nil {
-			glog.Errorf(
+			logrus.Errorf(
 				"iscsi: failed to discover session with error: %s (%v)",
 				string(out), err,
 			)
@@ -345,6 +346,7 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 			)
 			continue
 		}
+
 		// login to iscsi target
 		out, err = b.exec.Command(
 			"iscsiadm", "-m", "node", "-p", tp,
@@ -363,7 +365,7 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 			continue
 		}
 		if exist := waitForPathToExist(&devicePath, 10, iscsiTransport); !exist {
-			glog.Errorf("Could not attach disk: Timeout after 10s")
+			logrus.Errorf("Could not attach disk: Timeout after 10s")
 			// update last error
 			lastErr = fmt.Errorf("Could not attach disk: Timeout after 10s")
 			continue
@@ -378,7 +380,7 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 			"iscsiadm", "-m", "iface",
 			"-I", b.Iface, "-o", "delete",
 		).CombinedOutput()
-		glog.Errorf(
+		logrus.Errorf(
 			"iscsi: failed to get any path for iscsi disk, last err seen:\n%v",
 			lastErr,
 		)
@@ -389,7 +391,7 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 			)
 	}
 	if lastErr != nil {
-		glog.Errorf("iscsi: last error occurred during iscsi init:\n%v", lastErr)
+		logrus.Errorf("iscsi: last error occurred during iscsi init:\n%v", lastErr)
 	}
 
 	// Make sure we use a valid devicepath to find mpio device.
@@ -404,18 +406,18 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 				"Heuristic determination of mount point failed:%v", err)
 	}
 	if !notMnt {
-		glog.Infof("iscsi: %s already mounted", mntPath)
+		logrus.Infof("iscsi: %s already mounted", mntPath)
 		return "", nil
 	}
 
 	/*
 		if err := os.MkdirAll(mntPath, 0750); err != nil {
-			glog.Errorf("iscsi: failed to mkdir %s, error", mntPath)
+			logrus.Errorf("iscsi: failed to mkdir %s, error", mntPath)
 			return "", err
 		}
 			// Persist iscsi disk config to json file for DetachDisk path
 			if err := util.persistISCSI(*(b.iscsiDisk), b.targetPath); err != nil {
-				glog.Errorf("iscsi: failed to save iscsi config with error: %v", err)
+				logrus.Errorf("iscsi: failed to save iscsi config with error: %v", err)
 				return "", err
 			}
 	*/
@@ -445,7 +447,7 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 
 	err = b.mounter.FormatAndMount(devicePath, mntPath, b.fsType, options)
 	if err != nil {
-		glog.Errorf(
+		logrus.Errorf(
 			"iscsi: failed to mount iscsi volume %s [%s] to %s, error %v",
 			devicePath, b.fsType, mntPath, err,
 		)
@@ -459,9 +461,10 @@ func (util *ISCSIUtil) DetachDisk(
 	c iscsiDiskUnmounter,
 	targetPath string,
 ) error {
+
 	_, cnt, err := mount.GetDeviceNameFromMount(c.mounter, targetPath)
 	if err != nil {
-		glog.Errorf(
+		logrus.Errorf(
 			"iscsi detach disk: failed to get device from mnt: %s\nError: %v",
 			targetPath, err,
 		)
@@ -470,7 +473,7 @@ func (util *ISCSIUtil) DetachDisk(
 
 	pathExists, pathErr := mount.PathExists(targetPath)
 	if pathErr == nil && !pathExists {
-		glog.Warningf(
+		logrus.Warningf(
 			"Warning: Unmount skipped because path does not exist: %v",
 			targetPath,
 		)
@@ -478,15 +481,25 @@ func (util *ISCSIUtil) DetachDisk(
 	}
 
 	if err = c.mounter.Unmount(targetPath); err != nil {
-		glog.Errorf(
+		logrus.Errorf(
 			"iscsi detach disk: failed to unmount: %s\nError: %v",
 			targetPath, err,
 		)
 		return err
 	}
-	cnt--
-	if cnt != 0 {
-		return nil
+
+	// fetch the reference count again
+	_, cnt, err = mount.GetDeviceNameFromMount(c.mounter, targetPath)
+	if err != nil {
+		logrus.Errorf(
+			"iscsi detach disk: failed to get device from mnt: %s\nError: %v",
+			targetPath, err,
+		)
+		return err
+	}
+
+	if cnt > 0 {
+		return fmt.Errorf("iscsi detach failed: volume still mounted at %q mount paths", cnt)
 	}
 
 	var bkpPortal []string
@@ -500,7 +513,7 @@ func (util *ISCSIUtil) DetachDisk(
 				c.iscsiDisk.Iface, c.iscsiDisk.VolName
 			initiatorName = c.iscsiDisk.InitiatorName
 		} else {
-			glog.Errorf(
+			logrus.Errorf(
 				"iscsi detach disk: failed to get iscsi config from path %s Error: %v",
 				targetPath, err,
 			)
@@ -528,19 +541,19 @@ func (util *ISCSIUtil) DetachDisk(
 			logoutArgs = append(logoutArgs, []string{"-I", iface}...)
 			deleteArgs = append(deleteArgs, []string{"-I", iface}...)
 		}
-		glog.Infof(
+		logrus.Infof(
 			"iscsi: log out target %s iqn %s iface %s",
 			portal, iqn, iface,
 		)
 		out, err := c.exec.Command("iscsiadm", logoutArgs...).CombinedOutput()
 		if err != nil {
-			glog.Errorf("iscsi: failed to detach disk Error: %s", string(out))
+			logrus.Errorf("iscsi: failed to detach disk Error: %s", string(out))
 		}
 		// Delete the node record
-		glog.Infof("iscsi: delete node record target %s iqn %s", portal, iqn)
+		logrus.Infof("iscsi: delete node record target %s iqn %s", portal, iqn)
 		out, err = c.exec.Command("iscsiadm", deleteArgs...).CombinedOutput()
 		if err != nil {
-			glog.Errorf(
+			logrus.Errorf(
 				"iscsi: failed to delete node record Error: %s",
 				string(out),
 			)
@@ -552,12 +565,12 @@ func (util *ISCSIUtil) DetachDisk(
 		deleteArgs := []string{"-m", "iface", "-I", iface, "-o", "delete"}
 		out, err := c.exec.Command("iscsiadm", deleteArgs...).CombinedOutput()
 		if err != nil {
-			glog.Errorf("iscsi: failed to delete iface Error: %s", string(out))
+			logrus.Errorf("iscsi: failed to delete iface Error: %s", string(out))
 		}
 	}
 
 	if err := os.RemoveAll(targetPath); err != nil {
-		glog.Errorf("iscsi: failed to remove mount path Error: %v", err)
+		logrus.Errorf("iscsi: failed to remove mount path Error: %v", err)
 		return err
 	}
 
@@ -675,7 +688,7 @@ func (util *ISCSIUtil) UnmountDisk(
 	if pathExists, pathErr := mount.PathExists(targetPath); pathErr != nil {
 		return fmt.Errorf("Error checking if path exists: %v", pathErr)
 	} else if !pathExists {
-		glog.Warningf(
+		logrus.Warningf(
 			"Warning: Unmount skipped because path does not exist: %v",
 			targetPath,
 		)
@@ -692,7 +705,7 @@ func (util *ISCSIUtil) ReScan(iqn, targetPortal string) error {
 	}
 	out, err := b.exec.Command("iscsiadm", "-m", "node", "-T", iqn, "-P", targetPortal, "--rescan").CombinedOutput()
 	if err != nil {
-		glog.Errorf("iscsi: rescan failed error: %s", string(out))
+		logrus.Errorf("iscsi: rescan failed error: %s", string(out))
 		return err
 	}
 	return nil
@@ -706,7 +719,7 @@ func (util *ISCSIUtil) ResizeExt4(path string) error {
 	}
 	out, err := b.exec.Command("resize2fs", path).CombinedOutput()
 	if err != nil {
-		glog.Errorf("iscsi: resize failed error: %s", string(out))
+		logrus.Errorf("iscsi: resize failed error: %s", string(out))
 		return err
 	}
 	return nil
@@ -720,7 +733,7 @@ func (util *ISCSIUtil) ResizeXFS(path string) error {
 	}
 	out, err := b.exec.Command("xfs_growfs", path).CombinedOutput()
 	if err != nil {
-		glog.Errorf("iscsi: resize failed error: %s", string(out))
+		logrus.Errorf("iscsi: resize failed error: %s", string(out))
 		return err
 	}
 	return nil
