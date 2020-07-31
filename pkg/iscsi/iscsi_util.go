@@ -31,6 +31,17 @@ import (
 	"k8s.io/utils/mount"
 )
 
+const (
+	// 'iscsiadm' error code stating that a session is logged in
+	// See https://github.com/open-iscsi/open-iscsi/blob/7d121d12ad6ba7783308c25ffd338a9fa0cc402b/include/iscsi_err.h#L37-L38
+	iscsiadmErrorSessExists = 15
+
+	// iscsiadm exit code for "session could not be found"
+	exit_ISCSI_ERR_SESS_NOT_FOUND = 2
+	// iscsiadm exit code for "no records/targets/sessions/portals found to execute operation on."
+	exit_ISCSI_ERR_NO_OBJS_FOUND = 21
+)
+
 var (
 	chapSt = []string{
 		"discovery.sendtargets.auth.username",
@@ -480,12 +491,15 @@ func (util *ISCSIUtil) DetachDisk(
 		return nil
 	}
 
-	if err = c.mounter.Unmount(targetPath); err != nil {
-		logrus.Errorf(
-			"iscsi detach disk: failed to unmount: %s\nError: %v",
-			targetPath, err,
-		)
+	notMnt, err := c.mounter.IsLikelyNotMountPoint(targetPath)
+	if err != nil {
 		return err
+	}
+	if !notMnt {
+		if err := c.mounter.Unmount(targetPath); err != nil {
+			logrus.Errorf("iscsi detach disk: failed to unmount: %s\nError: %v", targetPath, err)
+			return err
+		}
 	}
 
 	// fetch the reference count again
@@ -530,43 +544,9 @@ func (util *ISCSIUtil) DetachDisk(
 		)
 	}
 
-	for _, portal := range portals {
-		logoutArgs := []string{
-			"-m", "node", "-p", portal, "-T", iqn, "--logout",
-		}
-		deleteArgs := []string{
-			"-m", "node", "-p", portal, "-T", iqn, "-o", "delete",
-		}
-		if found {
-			logoutArgs = append(logoutArgs, []string{"-I", iface}...)
-			deleteArgs = append(deleteArgs, []string{"-I", iface}...)
-		}
-		logrus.Infof(
-			"iscsi: log out target %s iqn %s iface %s",
-			portal, iqn, iface,
-		)
-		out, err := c.exec.Command("iscsiadm", logoutArgs...).CombinedOutput()
-		if err != nil {
-			logrus.Errorf("iscsi: failed to detach disk Error: %s", string(out))
-		}
-		// Delete the node record
-		logrus.Infof("iscsi: delete node record target %s iqn %s", portal, iqn)
-		out, err = c.exec.Command("iscsiadm", deleteArgs...).CombinedOutput()
-		if err != nil {
-			logrus.Errorf(
-				"iscsi: failed to delete node record Error: %s",
-				string(out),
-			)
-		}
-	}
-	// Delete the iface after all sessions have logged out
-	// If the iface is not created via iscsi plugin, skip to delete
-	if initiatorName != "" && found && iface == (portals[0]+":"+volName) {
-		deleteArgs := []string{"-m", "iface", "-I", iface, "-o", "delete"}
-		out, err := c.exec.Command("iscsiadm", deleteArgs...).CombinedOutput()
-		if err != nil {
-			logrus.Errorf("iscsi: failed to delete iface Error: %s", string(out))
-		}
+	err = util.detachISCSIDisk(c.exec, portals, iqn, iface, volName, initiatorName, found)
+	if err != nil {
+		return fmt.Errorf("failed to finish detachISCSIDisk, err: %v", err)
 	}
 
 	if err := os.RemoveAll(targetPath); err != nil {
@@ -575,6 +555,59 @@ func (util *ISCSIUtil) DetachDisk(
 	}
 
 	return nil
+}
+
+func (util *ISCSIUtil) detachISCSIDisk(exec utilexec.Interface, portals []string, iqn, iface, volName, initiatorName string, found bool) error {
+	for _, portal := range portals {
+		logoutArgs := []string{"-m", "node", "-p", portal, "-T", iqn, "--logout"}
+		deleteArgs := []string{"-m", "node", "-p", portal, "-T", iqn, "-o", "delete"}
+		if found {
+			logoutArgs = append(logoutArgs, []string{"-I", iface}...)
+			deleteArgs = append(deleteArgs, []string{"-I", iface}...)
+		}
+		logrus.Infof("iscsi: log out target %s iqn %s iface %s", portal, iqn, iface)
+		out, err := exec.Command("iscsiadm", logoutArgs...).CombinedOutput()
+		err = ignoreExitCodes(err, exit_ISCSI_ERR_NO_OBJS_FOUND, exit_ISCSI_ERR_SESS_NOT_FOUND)
+		if err != nil {
+			logrus.Errorf("iscsi: failed to detach disk Error: %s", string(out))
+			return err
+		}
+		// Delete the node record
+		logrus.Infof("iscsi: delete node record target %s iqn %s", portal, iqn)
+		out, err = exec.Command("iscsiadm", deleteArgs...).CombinedOutput()
+		err = ignoreExitCodes(err, exit_ISCSI_ERR_NO_OBJS_FOUND, exit_ISCSI_ERR_SESS_NOT_FOUND)
+		if err != nil {
+			logrus.Errorf("iscsi: failed to delete node record Error: %s", string(out))
+			return err
+		}
+	}
+	// Delete the iface after all sessions have logged out
+	// If the iface is not created via iscsi plugin, skip to delete
+	if initiatorName != "" && found && iface == (portals[0]+":"+volName) {
+		deleteArgs := []string{"-m", "iface", "-I", iface, "-o", "delete"}
+		out, err := exec.Command("iscsiadm", deleteArgs...).CombinedOutput()
+		err = ignoreExitCodes(err, exit_ISCSI_ERR_NO_OBJS_FOUND, exit_ISCSI_ERR_SESS_NOT_FOUND)
+		if err != nil {
+			logrus.Errorf("iscsi: failed to delete iface Error: %s", string(out))
+			return err
+		}
+	}
+
+	return nil
+}
+
+func ignoreExitCodes(err error, ignoredExitCodes ...int) error {
+	exitError, ok := err.(utilexec.ExitError)
+	if !ok {
+		return err
+	}
+	for _, code := range ignoredExitCodes {
+		if exitError.ExitStatus() == code {
+			logrus.Debugf("ignored iscsiadm exit code %d", code)
+			return nil
+		}
+	}
+	return err
 }
 
 func extractTransportname(ifaceOutput string) (iscsiTransport string) {
