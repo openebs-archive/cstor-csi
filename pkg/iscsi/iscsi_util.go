@@ -473,21 +473,10 @@ func (util *ISCSIUtil) DetachDisk(
 	targetPath string,
 ) error {
 
-	_, cnt, err := mount.GetDeviceNameFromMount(c.mounter, targetPath)
-	if err != nil {
-		logrus.Errorf(
-			"iscsi detach disk: failed to get device from mnt: %s\nError: %v",
-			targetPath, err,
-		)
-		return err
-	}
-
-	pathExists, pathErr := mount.PathExists(targetPath)
-	if pathErr == nil && !pathExists {
-		logrus.Warningf(
-			"Warning: Unmount skipped because path does not exist: %v",
-			targetPath,
-		)
+	if pathExists, pathErr := mount.PathExists(targetPath); pathErr != nil {
+		return fmt.Errorf("Error checking if path exists: %v", pathErr)
+	} else if !pathExists {
+		logrus.Warningf("Warning: Unmount skipped because path does not exist: %v", targetPath)
 		return nil
 	}
 
@@ -503,7 +492,7 @@ func (util *ISCSIUtil) DetachDisk(
 	}
 
 	// fetch the reference count again
-	_, cnt, err = mount.GetDeviceNameFromMount(c.mounter, targetPath)
+	_, cnt, err := mount.GetDeviceNameFromMount(c.mounter, targetPath)
 	if err != nil {
 		logrus.Errorf(
 			"iscsi detach disk: failed to get device from mnt: %s\nError: %v",
@@ -546,7 +535,7 @@ func (util *ISCSIUtil) DetachDisk(
 
 	err = util.detachISCSIDisk(c.exec, portals, iqn, iface, volName, initiatorName, found)
 	if err != nil {
-		return fmt.Errorf("failed to finish detachISCSIDisk, err: %v", err)
+		return fmt.Errorf("failed to finish detachISCSIDisk operation of volume %s, err: %v", volName, err)
 	}
 
 	if err := os.RemoveAll(targetPath); err != nil {
@@ -603,7 +592,7 @@ func ignoreExitCodes(err error, ignoredExitCodes ...int) error {
 	}
 	for _, code := range ignoredExitCodes {
 		if exitError.ExitStatus() == code {
-			logrus.Debugf("ignored iscsiadm exit code %d", code)
+			logrus.Infof("ignored iscsiadm exit code %d", code)
 			return nil
 		}
 	}

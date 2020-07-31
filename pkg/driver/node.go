@@ -196,7 +196,6 @@ func (ns *node) NodeUnstageVolume(
 	var (
 		err error
 		vol *apis.CStorVolumeAttachment
-		//unmountRequired bool
 	)
 
 	if err = ns.validateNodeUnStageReq(req); err != nil {
@@ -217,13 +216,7 @@ func (ns *node) NodeUnstageVolume(
 	}
 	if vol.Spec.Volume.StagingTargetPath == "" {
 		return &csi.NodeUnstageVolumeResponse{}, nil
-
 	}
-	//	unmountRequired, err = IsUnmountRequired(volumeID, stagingTargetPath)
-	//if err != nil {
-	//return nil, status.Error(codes.Internal, err.Error())
-	//	}
-	//if unmountRequired {
 	// if node driver restarts before this step Kubelet will trigger the
 	// NodeUnpublish command again so there is no need to worry that when this
 	// driver restarts it will pick up the CStorVolumeAttachment CR and start monitoring
