@@ -194,9 +194,8 @@ func (ns *node) NodeUnstageVolume(
 	req *csi.NodeUnstageVolumeRequest,
 ) (*csi.NodeUnstageVolumeResponse, error) {
 	var (
-		err             error
-		vol             *apis.CStorVolumeAttachment
-		unmountRequired bool
+		err error
+		vol *apis.CStorVolumeAttachment
 	)
 
 	if err = ns.validateNodeUnStageReq(req); err != nil {
@@ -217,33 +216,26 @@ func (ns *node) NodeUnstageVolume(
 	}
 	if vol.Spec.Volume.StagingTargetPath == "" {
 		return &csi.NodeUnstageVolumeResponse{}, nil
-
 	}
-	unmountRequired, err = IsUnmountRequired(volumeID, stagingTargetPath)
-	if err != nil {
+	// if node driver restarts before this step Kubelet will trigger the
+	// NodeUnpublish command again so there is no need to worry that when this
+	// driver restarts it will pick up the CStorVolumeAttachment CR and start monitoring
+	// mount point again.
+	// If the node is down for some time, other node driver will first delete
+	// this node's CStorVolumeAttachment CR and then only will start its mount process.
+	// If there is a case that this node comes up and CStorVolumeAttachment CR is picked and
+	// this node starts monitoring the mount point while the other node is also
+	// trying to mount which appears to be a race condition but is not since
+	// first of  all this CR will be marked for deletion when the other node
+	// starts mounting. But lets say this node started monitoring and
+	// immediately other node deleted this node's CR, in that case iSCSI
+	// target(istgt) will pick up the new one and allow only that node to login,
+	// so all the cases are handled
+	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
+	if err = iscsiutils.UnmountAndDetachDisk(vol, stagingTargetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	if unmountRequired {
-		// if node driver restarts before this step Kubelet will trigger the
-		// NodeUnpublish command again so there is no need to worry that when this
-		// driver restarts it will pick up the CStorVolumeAttachment CR and start monitoring
-		// mount point again.
-		// If the node is down for some time, other node driver will first delete
-		// this node's CStorVolumeAttachment CR and then only will start its mount process.
-		// If there is a case that this node comes up and CStorVolumeAttachment CR is picked and
-		// this node starts monitoring the mount point while the other node is also
-		// trying to mount which appears to be a race condition but is not since
-		// first of  all this CR will be marked for deletion when the other node
-		// starts mounting. But lets say this node started monitoring and
-		// immediately other node deleted this node's CR, in that case iSCSI
-		// target(istgt) will pick up the new one and allow only that node to login,
-		// so all the cases are handled
-		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
-		if err = iscsiutils.UnmountAndDetachDisk(vol, stagingTargetPath); err != nil {
-			return nil, status.Error(codes.Internal, err.Error())
-		}
-		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmounted
-	}
+	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmounted
 	// It is safe to delete the CStorVolumeAttachment CR now since the volume has already
 	// been unmounted and logged out
 
