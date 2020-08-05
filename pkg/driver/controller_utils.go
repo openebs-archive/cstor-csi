@@ -154,7 +154,10 @@ func (cs *controller) validateVolumeCreateReq(req *csi.CreateVolumeRequest) erro
 			modeName := csi.VolumeCapability_AccessMode_Mode_name[int32(mode.GetMode())]
 			// we only support SINGLE_NODE_WRITER
 			if mode.GetMode() != csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER {
-				return status.Errorf(codes.InvalidArgument, "unsupported access mode: %s", modeName)
+				return status.Errorf(codes.InvalidArgument,
+					"only SINGLE_NODE_WRITER supported, unsupported access mode requested: %s",
+					modeName,
+				)
 			}
 		}
 	}
