@@ -18,9 +18,7 @@
 NDM_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/ndm-operator.yaml
 CSTOR_RBAC=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/rbac.yaml
 CSTOR_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/cstor-operator.yaml
-VOL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/volumes-crd.yaml
-CSPC_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/cspc-crd.yaml
-CSPI_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/cspi-crd.yaml
+ALL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/all_cstor_crds.yaml
 
 CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
 SNAPSHOT_CLASS="$GOPATH/src/github.com/openebs/cstor-csi/deploy/snapshot-class.yaml"
@@ -31,9 +29,7 @@ DST_PATH="$GOPATH/src/github.com/openebs"
 # Minikube is already running
 kubectl apply -f $CSTOR_RBAC
 kubectl apply -f $NDM_OPERATOR
-kubectl apply -f $VOL_CRD
-kubectl apply -f $CSPC_CRD
-kubectl apply -f $CSPI_CRD
+kubectl apply -f $ALL_CRD
 kubectl apply -f $CSTOR_OPERATOR
 kubectl apply -f $CSI_OPERATOR
 kubectl apply -f $SNAPSHOT_CLASS
