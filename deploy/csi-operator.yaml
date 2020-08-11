@@ -496,10 +496,9 @@ kind: CSIDriver
 metadata:
   name: cstor.csi.openebs.io
 spec:
-  # Supports persistent and ephemeral inline volumes.
+  # Supports persistent inline volumes.
   volumeLifecycleModes:
   - Persistent
-  - Ephemeral
   # To determine at runtime which mode a volume uses, pod info and its
   # "csi.storage.k8s.io/ephemeral" entry are needed.
   podInfoOnMount: true
@@ -736,7 +735,7 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-        - name: openebs-csi-plugin
+        - name: cstor-csi-plugin
           image: openebs/cstor-csi-driver:ci
           imagePullPolicy: IfNotPresent
           env:
@@ -954,7 +953,7 @@ spec:
               mountPath: /plugin
             - name: registration-dir
               mountPath: /registration
-        - name: openebs-csi-plugin
+        - name: cstor-csi-plugin
           securityContext:
             privileged: true
             capabilities:
@@ -1020,9 +1019,10 @@ spec:
             type: Directory
         - name: chroot-iscsiadm
           configMap:
-            defaultMode: 0755
+            defaultMode: 0555
             name: openebs-cstor-csi-iscsiadm
         - name: host-root
           hostPath:
             path: /
             type: Directory
+---

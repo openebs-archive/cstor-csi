@@ -7,9 +7,10 @@ CSI driver implementation for OpenEBS CStor storage engine.
 This project is under active development and considered to be in Alpha state.
 
 The current implementation supports the following for CStor Volumes:
-1. Provisioning and De-provisioning with ext4 filesystems
+1. Provisioning and De-provisioning with ext4,xfs filesystems
 2. Snapshots and clones
 3. Volume Expansion
+4. Volume Metrics
 
 ## Usage
 
@@ -18,16 +19,17 @@ The current implementation supports the following for CStor Volumes:
 Before setting up OpenEBS CStor CSI driver make sure your Kubernetes Cluster
 meets the following prerequisites:
 
-1. You will need to have Kubernetes version 1.14 or higher
-2. You will need to have OpenEBS Version 1.2 or higher installed.
+1. You will need to have Kubernetes version 1.17 or higher
+2. You will need to have OpenEBS Version 1.12 or higher installed.
    The steps to install OpenEBS are [here](https://docs.openebs.io/docs/next/quickstart.html)
 3. CStor CSI driver operates on the cStor Pools provisioned using the new schema called CSPC.
    Steps to provision the pools using the same are [here](https://docs.google.com/document/d/1CZLBqGgBy7mTAMth4G2kR_jBn5bOV0th03ce3idX8KA/edit?usp=sharing)
 4. iSCSI initiator utils installed on all the worker nodes
-5. You have access to install RBAC components into kube-system namespace.
-   The OpenEBS CStor CSI driver components are installed in kube-system
+5. You have access to install RBAC components into openebs namespace.
+   The OpenEBS CStor CSI driver components are installed in openebs
    namespace to allow them to be flagged as system critical components.
-6. You will need to turn on  ExpandCSIVolumes and ExpandInUsePersistentVolumes feature gates on  kubelets and kube-apiserver.
+
+Note: if older k8s version has been used, it requires to enable ExpandCSIVolumes and ExpandInUsePersistentVolumes, VolumeSnapshotDataSource feature gates on  kubelets and kube-apiserver
 
 ### Setup OpenEBS CStor CSI Driver
 
@@ -45,30 +47,22 @@ OpenEBS CStor CSI driver components can be installed by running the
 following command.
 
 The node components make use of the host iSCSI binaries for iSCSI
-connection management. Depending on the OS, the spec will have to
-be modified to load the required iSCSI files into the node pods.
+connection management. Depending on the OS, iscsi utils needs to be 
+installed and loaded in k8s workers nodes
 
-Depending on the OS select the appropriate deployment file.
-
-- For Ubuntu 16.04 and CentOS.
+- Install CStor CSI driver using below command.
   ```
   kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/deploy/csi-operator.yaml
   ```
 
-- For Ubuntu 18.04
+- Verify that the OpenEBS CSI Components are installed.
+
   ```
-  kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/deploy/csi-operator-ubuntu-18.04.yaml
+  $ kubectl get pods -n openebs -l role=openebs-cstor-csi
+  NAME                       READY   STATUS    RESTARTS   AGE
+  openebs-csi-controller-0   4/4     Running   0          6m14s
+  openebs-csi-node-56t5g     2/2     Running   0          6m13s
   ```
-
-Verify that the OpenEBS CSI Components are installed.
-
-```
-$ kubectl get pods -n kube-system -l role=openebs-csi
-NAME                       READY   STATUS    RESTARTS   AGE
-openebs-csi-controller-0   4/4     Running   0          6m14s
-openebs-csi-node-56t5g     2/2     Running   0          6m13s
-
-```
 
 ### Provision a cStor volume using OpenEBS CStor CSI driver
 
@@ -146,32 +140,17 @@ through various components.
    `cstor.csi.openebs.io`
 
 3. OpenEBS CSI Controller will create a custom resource called
-   `CStorVolumeClaim(CVC)` and returns the details of the newly
+   `CStorVolumeConfig(CVC)` and returns the details of the newly
    created object back to Kubernetes. The `CVC`s will be
-   monitored by the cstor-operator (embedded in m-apiserver). The
-   cstor-operator will wait to proceed with provisioning a `CStorVolume`
-   for a given `CVC` until the Kubernetes has scheduled the application
-   using the PVC/CVC to a node in the cluster.
+   monitored by the cvc-operator. The cvc-operator watches the CVC
+   resources and creates the respected volume specific resources like
+   CStorVolume(CV), Target deployement, CStorVolumeReplicas and K8s service.
 
-   This is in effect working like `waitforFirstConsumer`.
+   Once the cStor Volume is created, the CVC is updated with the reference to
+   the cStor Volume and change the status on CVC to bound.
 
-4. When the node is assigned for the application, Kubernetes will
-   invoke the `NodePublishVolume()` request with the node and the
-   volume details - which includes the identifier of the CVC.
-
-   This API will then specify the node details in the CVC.
-
-   After updating the node id, the OpenEBS CStor CSI Driver - Node
-   Service will wait for the CVC to be bound to an actual cStor Volume.
-
-5. The cstor-operator checks that node details are available on CVC,
-   and proceeds with the cStor Volume Creation. Once the cStor Volume
-   is created, the CVC is updated with the reference to the cStor Volume
-   and change the status on CVC to bound.
-
-6. Node Component which was waiting on the CVC status will proceed
+4. Node Component which was waiting on the CVC status to be `Bound` will proceed
    to connect to the cStor volume.
-
 
 Note: While the asynchronous handling of the Volume provisioning is
 in progress, the application pod may throw some errors like:
@@ -201,7 +180,8 @@ It is internally a two step process for volumes containing a file system:
 ### Snapshot And Clone CStor Volume using OpenEBS CStor CSI Driver
 
 #### Notes:
--  `VolumeSnapshotDataSource` feature gate needs to be enabled at kubelet and kube-apiserver
+-  `VolumeSnapshotDataSource` feature gate needs to be enabled at kubelet and kube-apiserver,
+    from k8s version 1.17.0 onwards `VolumeSnapshotDataSource` feature enable by default
 
 #### Steps:
 1. Create snapshot class pointing to cstor csi driver:
