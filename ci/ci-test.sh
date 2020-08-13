@@ -15,12 +15,12 @@
 #!/usr/bin/env bash
 
 #OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
-NDM_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/ndm-operator.yaml
-CSTOR_RBAC=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/rbac.yaml
-CSTOR_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/cstor-operator.yaml
-VOL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/volumes-crd.yaml
-CSPC_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/cspc-crd.yaml
-CSPI_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/cspi-crd.yaml
+NDM_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/v1.12.x/deploy/ndm-operator.yaml
+CSTOR_RBAC=https://raw.githubusercontent.com/openebs/cstor-operators/v1.12.x/deploy/rbac.yaml
+CSTOR_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/v1.12.x/deploy/cstor-operator.yaml
+VOL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/v1.12.x/deploy/crds/volumes-crd.yaml
+CSPC_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/v1.12.x/deploy/crds/cspc-crd.yaml
+CSPI_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/v1.12.x/deploy/crds/cspi-crd.yaml
 
 CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
 SNAPSHOT_CLASS="$GOPATH/src/github.com/openebs/cstor-csi/deploy/snapshot-class.yaml"
