@@ -31,7 +31,9 @@ DST_PATH="$GOPATH/src/github.com/openebs"
 # Minikube is already running
 kubectl apply -f $CSTOR_RBAC
 kubectl apply -f $NDM_OPERATOR
-kubectl apply -f $ALL_CRD
+kubectl apply -f $VOL_CRD
+kubectl apply -f $CSPC_CRD
+kubectl apply -f $CSPI_CRD
 kubectl apply -f $CSTOR_OPERATOR
 kubectl apply -f $CSI_OPERATOR
 kubectl apply -f $SNAPSHOT_CLASS
