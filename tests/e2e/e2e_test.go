@@ -322,6 +322,10 @@ spec:
 		By("reading data from a block device")
 		ReadBlockDevice(ns, "cstor-block-pvc-clone", "ubuntu-clone", deviceFile)
 
+		By("deleting the source PVC to verify the webhook validation failure")
+		stdout, stderr, err = kubectlWithInput([]byte(claimYAML), "delete", "-n", ns, "-f", "-")
+		Expect(err).Should(HaveOccurred(), "stdout=%s, stderr=%s", stdout, stderr)
+
 		By("deleting the clone Pod and PVC")
 		stdout, stderr, err = kubectlWithInput([]byte(clonePodYAML), "delete", "-n", ns, "-f", "-")
 		Expect(err).ShouldNot(HaveOccurred(), "stdout=%s, stderr=%s", stdout, stderr)
