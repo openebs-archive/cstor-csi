@@ -1,5 +1,32 @@
 # Changelog
 
+
+## [v2.0.0](https://github.com/openebs/cstor-csi/tree/v2.0.0) (2020-08-14)
+
+**Merged pull requests:**
+
+- fix\(create\): validate create volume request access mode [\#109](https://github.com/openebs/cstor-csi/pull/109) ([prateekpandey14](https://github.com/prateekpandey14))
+- fix\(NodeUnstage\): avoid stale iscsi sessions [\#108](https://github.com/openebs/cstor-csi/pull/108) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(operator\): install csi driver in openebs  ns instead of kube-system [\#105](https://github.com/openebs/cstor-csi/pull/105) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(operator\): mount host root partition inside container [\#101](https://github.com/openebs/cstor-csi/pull/101) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(cvc\): add pvc annotation during provisioning [\#100](https://github.com/openebs/cstor-csi/pull/100) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(vendor\):  sync with openebs apis changes [\#98](https://github.com/openebs/cstor-csi/pull/98) ([prateekpandey14](https://github.com/prateekpandey14))
+
+## [v2.0.0-RC2](https://github.com/openebs/cstor-csi/tree/v2.0.0-RC2) (2020-08-14)
+
+ No Changes
+
+## [v2.0.0-RC1](https://github.com/openebs/cstor-csi/tree/v2.0.0-RC1) (2020-08-06)
+
+**Merged pull requests:**
+
+- fix\(create\): validate create volume request access mode [\#109](https://github.com/openebs/cstor-csi/pull/109) ([prateekpandey14](https://github.com/prateekpandey14))
+- fix\(NodeUnstage\): avoid stale iscsi sessions [\#108](https://github.com/openebs/cstor-csi/pull/108) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(operator\): install csi driver in openebs  ns instead of kube-system [\#105](https://github.com/openebs/cstor-csi/pull/105) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(operator\): mount host root partition inside container [\#101](https://github.com/openebs/cstor-csi/pull/101) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(cvc\): add pvc annotation during provisioning [\#100](https://github.com/openebs/cstor-csi/pull/100) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(vendor\):  sync with openebs apis changes [\#98](https://github.com/openebs/cstor-csi/pull/98) ([prateekpandey14](https://github.com/prateekpandey14))
+
 ## [v1.12.0](https://github.com/openebs/cstor-csi/tree/v1.12.0) (2020-07-14)
 
 **Merged pull requests:**
