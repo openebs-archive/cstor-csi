@@ -339,6 +339,43 @@ func CleanupOnRestart() {
 	}
 }
 
+// IsVolumeReachable makes a TCP connection to target
+// and checks if volume is Reachable
+func IsVolumeReachable(targetPortal string) (bool, error) {
+	var (
+		err  error
+		conn net.Conn
+	)
+
+	// Create a connection to test if the iSCSI Portal is reachable,
+	if conn, err = net.Dial("tcp", targetPortal); err == nil {
+		conn.Close()
+		logrus.Infof("Volume is reachable to create connections")
+		return true, nil
+	}
+	logrus.Infof(
+		"iSCSI Target not reachable, TargetPortal %v, err:%v",
+		targetPortal, err,
+	)
+	return false, err
+}
+
+// IsVolumeReady retrieves the volume info from cstorVolume CR and
+// verifies if consistency factor is met for connected replicas
+func IsVolumeReady(volumeID string) (bool, error) {
+	volStatus, err := getVolStatus(volumeID)
+	if err != nil {
+		return false, err
+	}
+	if volStatus == "Healthy" || volStatus == "Degraded" {
+		// In both healthy and degraded states the volume can serve IOs
+		logrus.Infof("Volume is ready to accept IOs")
+		return true, nil
+	}
+	logrus.Infof("Volume is not ready: Replicas yet to connect to controller")
+	return false, nil
+}
+
 // WaitForVolumeReadyAndReachable waits until the volume is ready to accept IOs
 // and is reachable, this function will not come out until both the conditions
 // are met. This function stops the driver from overloading the OS with iSCSI
@@ -374,14 +411,15 @@ func verifyMountOpts(opts []string, desiredOpt string) bool {
 func RemountVolume(
 	stagingPathExists bool, targetPathExists bool,
 	vol *apis.CStorVolumeAttachment,
-) (err error) {
+) error {
 	mounter := mount.New("")
 	options := []string{"rw"}
 
-	// Wait until it is possible to chhange the state of mountpoint or when
-	// login to volume is possible
-	if err = WaitForVolumeReadyAndReachable(vol); err != nil {
-		return
+	if ready, err := IsVolumeReady(vol.Spec.Volume.Name); err != nil || !ready {
+		return fmt.Errorf("Volume is not ready")
+	}
+	if reachable, err := IsVolumeReachable(vol.Spec.ISCSI.TargetPortal); err != nil || !reachable {
+		return fmt.Errorf("Volume is not reachable")
 	}
 	if stagingPathExists {
 		mounter.Unmount(vol.Spec.Volume.StagingTargetPath)
@@ -392,15 +430,15 @@ func RemountVolume(
 
 	// Unmount and mount operation is performed instead of just remount since
 	// the remount option didn't give the desired results
-	if err = mounter.Mount(vol.Spec.Volume.DevicePath,
+	if err := mounter.Mount(vol.Spec.Volume.DevicePath,
 		vol.Spec.Volume.StagingTargetPath, "", options,
 	); err != nil {
-		return
+		return err
 	}
 	options = []string{"bind"}
-	err = mounter.Mount(vol.Spec.Volume.StagingTargetPath,
+	err := mounter.Mount(vol.Spec.Volume.StagingTargetPath,
 		vol.Spec.Volume.TargetPath, "", options)
-	return
+	return err
 }
 
 // GetMounts gets mountpoints for the specified volume
