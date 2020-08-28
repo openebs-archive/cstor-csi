@@ -11,7 +11,6 @@ EXTERNAL_TOOLS=\
 	golang.org/x/tools/cmd/cover \
 	github.com/axw/gocov/gocov \
 	gopkg.in/matm/v1/gocov-html \
-	github.com/ugorji/go/codec/codecgen \
 	github.com/onsi/ginkgo/ginkgo \
 	github.com/onsi/gomega/...
 
@@ -115,7 +114,8 @@ test: format
 bootstrap:
 	@for tool in  $(EXTERNAL_TOOLS) ; do \
 		echo "+ Installing $$tool" ; \
-		go get -u $$tool; \
+		go get $$tool; \
+		cd && GO111MODULE=on go get $$tool; \
 	done
 
 # SRC_PKG is the path of code files

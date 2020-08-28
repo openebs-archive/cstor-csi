@@ -4,7 +4,6 @@ go 1.13
 
 require (
 	github.com/container-storage-interface/spec v1.2.0
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/protobuf v1.3.2
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/kubernetes-csi/csi-lib-iscsi v0.0.0-20200118015005-959f12c91ca8
@@ -16,9 +15,9 @@ require (
 	github.com/prometheus/client_golang v1.4.1 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
-	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553
+	golang.org/x/net v0.0.0-20200822124328-c89045814202
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
-	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82
+	golang.org/x/sys v0.0.0-20200828081204-131dc92a58d5
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	golang.org/x/tools v0.0.0-20191029190741-b9c20aec41a5 // indirect
 	google.golang.org/grpc v1.26.0
