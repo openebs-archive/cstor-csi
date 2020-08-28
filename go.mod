@@ -19,7 +19,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	golang.org/x/sys v0.0.0-20200828081204-131dc92a58d5
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
-	golang.org/x/tools v0.0.0-20191029190741-b9c20aec41a5 // indirect
+	golang.org/x/tools v0.0.0-20200828013309-97019fc2e64b // indirect
 	google.golang.org/grpc v1.26.0
 	k8s.io/api v0.17.3
 	k8s.io/apimachinery v0.17.3
