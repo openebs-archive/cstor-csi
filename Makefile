@@ -114,7 +114,6 @@ test: format
 bootstrap:
 	@for tool in  $(EXTERNAL_TOOLS) ; do \
 		echo "+ Installing $$tool" ; \
-		go get $$tool; \
 		cd && GO111MODULE=on go get $$tool; \
 	done
 
