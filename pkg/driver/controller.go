@@ -17,12 +17,14 @@ limitations under the License.
 package driver
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
 	csipayload "github.com/openebs/cstor-csi/pkg/payload"
+	analytics "github.com/openebs/cstor-csi/pkg/usage"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
 	errors "github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -131,6 +133,8 @@ func (cs *controller) CreateVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	sendEventOrIgnore(pvcName, volName, strconv.FormatInt(int64(size), 10), "cstor-csi", analytics.VolumeProvision)
+
 createVolumeResponse:
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
@@ -177,6 +181,9 @@ func (cs *controller) DeleteVolume(
 			)
 		}
 	}
+
+	sendEventOrIgnore("", volumeID, getCapacity(cvc), "cstor-csi", analytics.VolumeDeprovision)
+
 deleteResponse:
 	return csipayload.NewDeleteVolumeResponseBuilder().Build(), nil
 }
@@ -335,4 +342,18 @@ func getAccessibilityRequirements(requirement *csi.TopologyRequirement) string {
 		return preferredNode
 	}
 	return ""
+}
+
+// sendEventOrIgnore sends anonymous local-pv provision/delete events
+func sendEventOrIgnore(pvcName, pvName, capacity, stgType, method string) {
+	if utils.GoogleAnalyticsEnabled == "true" {
+		analytics.New().Build().ApplicationBuilder().
+			SetVolumeType(stgType, method).
+			SetDocumentTitle(pvName).
+			SetCampaignName(pvcName).
+			SetLabel(analytics.EventLabelCapacity).
+			SetReplicaCount(analytics.CStorPVReplicaCount, method).
+			SetCategory(method).
+			SetVolumeCapacity(capacity).Send()
+	}
 }

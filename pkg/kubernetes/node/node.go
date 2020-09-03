@@ -14,7 +14,9 @@
 
 package v1alpha1
 
-import v1 "k8s.io/api/core/v1"
+import (
+	corev1 "k8s.io/api/core/v1"
+)
 
 const (
 	kubeletReady = "KubeletReady"
@@ -22,7 +24,7 @@ const (
 
 // node holds the api's node object
 type node struct {
-	object *v1.Node
+	object *corev1.Node
 }
 
 // NodeList holds the list of node instances
@@ -47,7 +49,7 @@ type ListBuilder struct {
 // WithAPIList builds the list of node
 // instances based on the provided
 // node list
-func (b *ListBuilder) WithAPIList(nodes *v1.NodeList) *ListBuilder {
+func (b *ListBuilder) WithAPIList(nodes *corev1.NodeList) *ListBuilder {
 	if nodes == nil {
 		return b
 	}
@@ -63,7 +65,7 @@ func (b *ListBuilder) WithObject(nodes ...*node) *ListBuilder {
 }
 
 // WithAPIObject builds the list of node instances based on node api instances
-func (b *ListBuilder) WithAPIObject(nodes ...v1.Node) *ListBuilder {
+func (b *ListBuilder) WithAPIObject(nodes ...corev1.Node) *ListBuilder {
 	for _, n := range nodes {
 		n := n
 		b.list.items = append(b.list.items, &node{&n})
@@ -92,8 +94,8 @@ func NewListBuilder() *ListBuilder {
 }
 
 // ToAPIList converts NodeList to API NodeList
-func (n *NodeList) ToAPIList() *v1.NodeList {
-	nlist := &v1.NodeList{}
+func (n *NodeList) ToAPIList() *corev1.NodeList {
+	nlist := &corev1.NodeList{}
 	for _, node := range n.items {
 		nlist.Items = append(nlist.Items, *node.object)
 	}
@@ -115,7 +117,7 @@ func (l predicateList) all(n *node) bool {
 // IsReady retuns true if the node is in ready state
 func (n *node) IsReady() bool {
 	for _, nodeCond := range n.object.Status.Conditions {
-		if nodeCond.Reason == kubeletReady && nodeCond.Type == v1.NodeReady {
+		if nodeCond.Reason == kubeletReady && nodeCond.Type == corev1.NodeReady {
 			return true
 		}
 	}

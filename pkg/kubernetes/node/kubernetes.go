@@ -149,3 +149,23 @@ func (k *Kubeclient) List(opts metav1.ListOptions) (*corev1.NodeList, error) {
 
 	return k.list(cli, opts)
 }
+
+// NumberOfNodes returns the number of nodes registered in a Kubernetes cluster
+func NumberOfNodes() (int, error) {
+	nodes, err := NewKubeClient().List(metav1.ListOptions{})
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to get the number of nodes")
+	}
+	return len(nodes.Items), nil
+}
+
+// GetOSAndKernelVersion gets us the OS,Kernel version
+func GetOSAndKernelVersion() (string, error) {
+	// get a single node
+	firstNode, err := NewKubeClient().List(metav1.ListOptions{Limit: 1})
+	if err != nil {
+		return "unknown, unknown", errors.Wrapf(err, "failed to get the os kernel/arch")
+	}
+	nodedetails := firstNode.Items[0].Status.NodeInfo
+	return nodedetails.OSImage + ", " + nodedetails.KernelVersion, nil
+}

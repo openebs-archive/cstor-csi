@@ -37,6 +37,9 @@ const (
 	// send usage data to OpenEBS core-developers using the Google Analytics platform
 	OpenEBSEnableAnalytics ENVKey = "OPENEBS_IO_ENABLE_ANALYTICS"
 
+	// OpenEBSPingPeriod  ping interval of volume io analytics
+	OpenEBSPingPeriod ENVKey = "OPENEBS_IO_ANALYTICS_PING_INTERVAL"
+
 	// OpenEBSVersion is the environment variable to get openebs version
 	OpenEBSVersion ENVKey = "OPENEBS_IO_VERSION"
 
