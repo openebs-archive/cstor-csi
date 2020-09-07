@@ -28,7 +28,7 @@ type Usage struct {
 	Event
 
 	// https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters#an
-	// use-case: cstor or jiva volume, or m-apiserver application
+	// use-case: cstor volume, m-apiserver/cstor-opertors application
 	// Embedded field for application
 	Application
 
@@ -236,12 +236,10 @@ func (u *Usage) SetVolumeType(volType, method string) *Usage {
 }
 
 // SetReplicaCount Wrapper for setting replica count for volume events
-// NOTE: This doesn't get the replica count in a volume de-provision event.
-// TODO: Pick the current value of replica-count from the CAS-engine
 func (u *Usage) SetReplicaCount(count, method string) *Usage {
 	if method == VolumeProvision && count == "" {
 		// Case: When volume-provision the replica count isn't specified
-		// it is set to three by default by the m-apiserver
+		// it is set to three by default by the cstor-operators
 		u.SetAction(DefaultReplicaCount)
 	} else {
 		// Catch all case for volume-deprovision event and

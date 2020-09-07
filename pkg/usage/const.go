@@ -47,8 +47,4 @@ const (
 
 	// DefaultCASType Event application name constant for volume event
 	DefaultCASType string = "cstor-csi"
-
-	// CStorPVReplicaCount is the constant used by usage to represent
-	// replication factor in cstor csi
-	CStorPVReplicaCount string = "3"
 )

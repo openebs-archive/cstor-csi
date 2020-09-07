@@ -59,9 +59,6 @@ var (
 	// ReqMountList contains the list of volumes which are required
 	// to be remounted. This list is secured by ReqMountListLock
 	ReqMountList map[string]apis.CStorVolumeAttachmentStatus
-
-	// should send google analytics or not
-	GoogleAnalyticsEnabled string
 )
 
 const (
@@ -80,7 +77,6 @@ func init() {
 		logrus.Fatalf("OPENEBS_NODE_ID not set")
 	}
 
-	GoogleAnalyticsEnabled = os.Getenv(GoogleAnalyticsKey)
 	TransitionVolList = make(map[string]apis.CStorVolumeAttachmentStatus)
 	ReqMountList = make(map[string]apis.CStorVolumeAttachmentStatus)
 

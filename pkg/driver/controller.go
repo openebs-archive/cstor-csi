@@ -23,6 +23,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
+	"github.com/openebs/cstor-csi/pkg/env"
 	csipayload "github.com/openebs/cstor-csi/pkg/payload"
 	analytics "github.com/openebs/cstor-csi/pkg/usage"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
@@ -133,7 +134,11 @@ func (cs *controller) CreateVolume(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	sendEventOrIgnore(pvcName, volName, strconv.FormatInt(int64(size), 10), "cstor-csi", analytics.VolumeProvision)
+	sendEventOrIgnore(pvcName, volName, strconv.FormatInt(int64(size), 10),
+		rCount,
+		"cstor-csi",
+		analytics.VolumeProvision,
+	)
 
 createVolumeResponse:
 	return &csi.CreateVolumeResponse{
@@ -182,7 +187,11 @@ func (cs *controller) DeleteVolume(
 		}
 	}
 
-	sendEventOrIgnore("", volumeID, getCapacity(cvc), "cstor-csi", analytics.VolumeDeprovision)
+	sendEventOrIgnore(cvc.GetAnnotations()[utils.OpenebsPVC], volumeID, getCapacity(cvc),
+		strconv.Itoa(cvc.Spec.Provision.ReplicaCount),
+		"cstor-csi",
+		analytics.VolumeDeprovision,
+	)
 
 deleteResponse:
 	return csipayload.NewDeleteVolumeResponseBuilder().Build(), nil
@@ -344,15 +353,15 @@ func getAccessibilityRequirements(requirement *csi.TopologyRequirement) string {
 	return ""
 }
 
-// sendEventOrIgnore sends anonymous local-pv provision/delete events
-func sendEventOrIgnore(pvcName, pvName, capacity, stgType, method string) {
-	if utils.GoogleAnalyticsEnabled == "true" {
+// sendEventOrIgnore sends anonymous cstor provision/delete events
+func sendEventOrIgnore(pvcName, pvName, capacity, replicaCount, stgType, method string) {
+	if env.Truthy(env.OpenEBSEnableAnalytics) {
 		analytics.New().Build().ApplicationBuilder().
 			SetVolumeType(stgType, method).
 			SetDocumentTitle(pvName).
 			SetCampaignName(pvcName).
 			SetLabel(analytics.EventLabelCapacity).
-			SetReplicaCount(analytics.CStorPVReplicaCount, method).
+			SetReplicaCount(replicaCount, method).
 			SetCategory(method).
 			SetVolumeCapacity(capacity).Send()
 	}
