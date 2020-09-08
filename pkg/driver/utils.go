@@ -19,8 +19,10 @@ package driver
 import (
 	"fmt"
 
+	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -85,4 +87,10 @@ func addVolumeToTransitionList(volumeID string, status apis.CStorVolumeAttachmen
 	}
 	utils.TransitionVolList[volumeID] = status
 	return nil
+}
+
+// getCapacity converts capacity as string
+func getCapacity(cvc *apisv1.CStorVolumeConfig) string {
+	qCap := cvc.Spec.Capacity[corev1.ResourceStorage]
+	return qCap.String()
 }

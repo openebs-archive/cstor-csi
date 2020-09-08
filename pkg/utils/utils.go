@@ -52,6 +52,9 @@ const (
 	// MonitorMountRetryTimeout indicates the time gap between two consecutive
 	//monitoring attempts
 	MonitorMountRetryTimeout = 5
+
+	// This environment variable is set via env
+	GoogleAnalyticsKey string = "OPENEBS_IO_ENABLE_ANALYTICS"
 )
 
 var (

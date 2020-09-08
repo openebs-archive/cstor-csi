@@ -93,3 +93,7 @@ func GetGitCommit() string {
 func Verbose() string {
 	return strings.Join([]string{Get(), GetGitCommit()[0:7]}, "-")
 }
+
+func GetVersionDetails() string {
+	return strings.Join([]string{Get(), GetGitCommit()[0:7]}, "-")
+}
