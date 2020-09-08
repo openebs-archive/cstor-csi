@@ -46,5 +46,5 @@ const (
 	DefaultReplicaCount string = "replica:3"
 
 	// DefaultCASType Event application name constant for volume event
-	DefaultCASType string = "cstor-csi"
+	DefaultCASType string = "cstor"
 )
