@@ -753,7 +753,7 @@ spec:
             - name: OPENEBS_IO_INSTALLER_TYPE
               value: "cstor-operator"
             - name: OPENEBS_IO_ENABLE_ANALYTICS
-              value: "true"
+              value: "false"
           args :
             - "--endpoint=$(OPENEBS_CSI_ENDPOINT)"
             - "--url=$(OPENEBS_CSI_API_URL)"
