@@ -1,0 +1,10 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: openebs-csi-cstor-sparse
+provisioner: cstor.csi.openebs.io
+allowVolumeExpansion: true
+parameters:
+  cas-type: cstor
+  replicaCount: "1"
+  cstorPoolCluster: cstor-sparse-cspc

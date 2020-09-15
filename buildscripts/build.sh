@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
+
+# Copyright 2020 The OpenEBS Authors. All rights reserved.
 #
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # This script builds the application from source for multiple platforms.
 set -e
 
@@ -12,9 +26,9 @@ DIR="$( cd -P "$( dirname "$SOURCE" )/../" && pwd )"
 cd "$DIR"
 
 # Get the git commit
-if [ -f $GOPATH/src/github.com/openebs/csi/GITCOMMIT ];
+if [ -f $GOPATH/src/github.com/openebs/cstor-csi/GITCOMMIT ];
 then
-    GIT_COMMIT="$(cat $GOPATH/src/github.com/openebs/csi/GITCOMMIT)"
+    GIT_COMMIT="$(cat $GOPATH/src/github.com/openebs/cstor-csi/GITCOMMIT)"
 else
     GIT_COMMIT="$(git rev-parse HEAD)"
 fi
@@ -25,8 +39,36 @@ if [[ -n "$TRAVIS_TAG" ]] && [[ $TRAVIS_TAG != *"RC"* ]]; then
 fi
 
 # Get the version details
-VERSION="$(cat $GOPATH/src/github.com/openebs/csi/VERSION)"
-VERSION_META="$(cat $GOPATH/src/github.com/openebs/csi/BUILDMETA)"
+# VERSION="$(cat $GOPATH/src/github.com/openebs/cstor-csi/VERSION)"
+
+# Determine the current branch
+CURRENT_BRANCH=""
+if [ -z "${TRAVIS_BRANCH}" ];
+then
+  CURRENT_BRANCH=$(git branch | grep "\*" | cut -d ' ' -f2)
+else
+  CURRENT_BRANCH="${TRAVIS_BRANCH}"
+fi
+
+## Populate the version based on release tag
+## If travis tag is set then assign it as VERSION and
+## if travis tag is empty then mark version as ci
+if [ -n "$TRAVIS_TAG" ]; then
+    # Trim the `v` from the TRAVIS_TAG if it exists
+    # Example: v1.10.0 maps to 1.10.0
+    # Example: 1.10.0 maps to 1.10.0
+    # Example: v1.10.0-custom maps to 1.10.0-custom
+    # So Version will be same as TRAVIS_TAG by triming v
+    VERSION="${TRAVIS_TAG#v}"
+else
+    ## Marking VERSION as current_branch-dev
+    ## Example: master maps to master-dev
+    ## Example: v1.11.x-ee to 1.11.x-ee-dev
+    ## Example: v1.10.x to 1.10.x-dev
+    VERSION="${CURRENT_BRANCH#v}-dev"
+fi
+
+echo "Building for VERSION ${VERSION}"
 
 # Determine the arch/os combos we're building for
 UNAME=$(uname)
@@ -86,10 +128,9 @@ if [ $GOOS = "windows" ]; then
     output_name+='.exe'
 fi
 env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags \
-    "-X github.com/openebs/csi/pkg/version.GitCommit=${GIT_COMMIT} \
+    "-X github.com/openebs/cstor-csi/pkg/version.GitCommit=${GIT_COMMIT} \
     -X main.CtlName='${CTLNAME}' \
-    -X github.com/openebs/csi/pkg/version.Version=${VERSION} \
-    -X github.com/openebs/csi/pkg/version.VersionMeta=${VERSION_META}"\
+    -X github.com/openebs/cstor-csi/pkg/version.Version=${VERSION}" \
     -o $output_name\
     ./cmd
 

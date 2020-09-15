@@ -14,23 +14,25 @@
 
 #!/usr/bin/env bash
 
-OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
-CSPC_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/cspc-operator.yaml
-CSI_OPERATOR="$GOPATH/src/github.com/openebs/csi/deploy/csi-operator.yaml"
+#OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
+NDM_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/ndm-operator.yaml
+CSTOR_RBAC=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/rbac.yaml
+CSTOR_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/cstor-operator.yaml
+ALL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/all_cstor_crds.yaml
 
-SRC_REPO="https://github.com/openebs/maya.git"
+CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
+SNAPSHOT_CLASS="$GOPATH/src/github.com/openebs/cstor-csi/deploy/snapshot-class.yaml"
+
 DST_PATH="$GOPATH/src/github.com/openebs"
 
 # Prepare env for runnging BDD tests
 # Minikube is already running
-kubectl apply -f $OPENEBS_OPERATOR
-kubectl apply -f $CSPC_OPERATOR
+kubectl apply -f $CSTOR_RBAC
+kubectl apply -f $NDM_OPERATOR
+kubectl apply -f $ALL_CRD
+kubectl apply -f $CSTOR_OPERATOR
 kubectl apply -f $CSI_OPERATOR
-
-# Start running BDD tests in maya for CSI
-mkdir -p $DST_PATH
-git clone $SRC_REPO $DST_PATH/maya
-cd $DST_PATH/maya
+kubectl apply -f $SNAPSHOT_CLASS
 
 function dumpCSINodeLogs() {
   LC=$1
@@ -50,16 +52,9 @@ function dumpCSIControllerLogs() {
   printf "\n\n"
 }
 
-function dumpMayaAPIServerLogs() {
-  LC=$1
-  MAPIPOD=$(kubectl get pods -o jsonpath='{.items[?(@.spec.containers[0].name=="maya-apiserver")].metadata.name}' -n openebs)
-  kubectl logs --tail=${LC} $MAPIPOD -n openebs
-  printf "\n\n"
-}
-
-# Run BDD tests for volume provisioning via CSI
-cd $DST_PATH/maya/tests/csi/cstor/volume
-ginkgo -v -- -kubeconfig="$HOME/.kube/config" --cstor-replicas=1 --cstor-maxpools=1
+# Run e2e tests for csi volumes
+cd $DST_PATH/cstor-csi/tests/e2e
+make e2e-test
 
 if [ $? -ne 0 ]; then
 echo "******************** CSI Controller logs***************************** "
@@ -68,8 +63,8 @@ dumpCSIControllerLogs 1000
 echo "********************* CSI Node logs *********************************"
 dumpCSINodeLogs 1000
 
-echo "******************CSI Maya-apiserver logs ********************"
-dumpMayaAPIServerLogs 1000
+#echo "******************CSI Maya-apiserver logs ********************"
+#dumpMayaAPIServerLogs 1000
 
 echo "get all the pods"
 kubectl get pods --all-namespaces

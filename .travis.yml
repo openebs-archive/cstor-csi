@@ -12,32 +12,38 @@ services:
 - docker
 language: go
 go:
-- 1.12.9
+- 1.14.7
 addons:
   apt:
     update: true
+
+before_install:
+- sudo apt-get -qq -y install conntrack
+
 install:
 - make bootstrap
 - make format
+- make license-check
 before_script:
-- curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.14.2/bin/linux/amd64/kubectl
+- curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.18.1/bin/linux/amd64/kubectl
   && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
-- curl -Lo minikube https://storage.googleapis.com/minikube/releases/v1.1.0/minikube-linux-amd64
+- curl -Lo minikube https://storage.googleapis.com/minikube/releases/v1.8.1/minikube-linux-amd64
   && chmod +x minikube && sudo mv minikube /usr/local/bin/
 - mkdir -p $HOME/.kube $HOME/.minikube
 - touch $KUBECONFIG
-- sudo minikube start --vm-driver=none --kubernetes-version=v1.14.2
-- 'sudo chown -R travis: /home/travis/.minikube/'
+- sudo minikube start --profile=minikube --vm-driver=none --kubernetes-version=v1.18.1
+- minikube update-context --profile=minikube
+- "sudo chown -R travis: /home/travis/.minikube/"
+- eval "$(minikube docker-env --profile=minikube)" && export DOCKER_CLI='docker'
 - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}';
   until kubectl get nodes -o jsonpath="$JSONPATH" 2>&1 | grep -q "Ready=True"; do
   sleep 1; done
 script:
 - kubectl cluster-info
 - JSONPATH='{range .items[*]}{@.metadata.name}:{range @.status.conditions[*]}{@.type}={@.status};{end}{end}';
-  until kubectl -n kube-system get pods -lcomponent=kube-addon-manager -o jsonpath="$JSONPATH"
-  2>&1 | grep -q "Ready=True"; do sleep 1;echo "waiting for kube-addon-manager to
+  until kubectl -n kube-system get pods -lk8s-app=kube-dns -o jsonpath="$JSONPATH"
+  2>&1 | grep -q "Ready=True"; do sleep 1;echo "waiting for kube-dns to
   be available"; kubectl get pods --all-namespaces; done
-- kubectl get deployment
 - "./buildscripts/travis-build.sh"
 - sudo apt-get install -y open-iscsi
 - sudo service iscsid start
@@ -48,17 +54,5 @@ after_success:
 notifications:
   email:
     recipients:
-    - kiran.mova@openebs.io
-deploy:
-  provider: releases
-  api_key:
-    secure: JYNHyi2m9pqOitOen9zX6FYjU0Q/uNjUhMpUDvHYq+RlqQ7zliJfiecRe91l+LKW1AmnGhNp4f2Shu2R9dQJwmle6y5ohsts3wRlRLAKxoex6jXo8uxCMVS5wE7+MlMmPWXaBSGy4Hcds+Jpzr90knO1avCDVdsM3ETbaE5tVQJuW8tgiCkWs+3V1xsjtpfT2s61tyikdbrRX1BevyN4/0mm0fJiowq8IelWwe+FEDUsVY3qg9D/aw7yEG9ApL34livin/VkWFqKq9ih1uB3timOjY3tVMyAgpmKcYqPxJPy3GjWYOeutwJcQZj8Zb4BowpVBj7rA70Fgqs9nVQXUyfc6LQ80+QIU+WBswqFGLA+SzyEGo/k+P45gYiawW4m3Bfap58X5hiQpUpHs5QBZuWC6cDt7q+BInf/+wlRI9pJF3QIv7KTEaySNdUtysMoAw0WGl5Sr7FtGrKKdyZB5E/eKbXGraCMXiY+jX2+YtUgyynO+G3gSY5PVr2BTseSFCCXLcvY8PG+x2ecc5nk4nNhpFkWrzGdwZJiriIMxrXStKB8dUWd55LEvuO475nbNUpnYVMY+br4NpUyqPyG33BM4my5sK8BimT6YO1tFsoFPx9TXSpuDAuk3QTzjZZET8P7SlFqJRwSjfLV1UkjrvHMkRaN7nSGmBaxtAP8Ucw=
-  file: bin/csi/csi-linux_*.zip
-  skip_cleanup: true
-  overwrite: true
-  on:
-    repo: openebs/csi
-    tags: true
-branches:
-  except:
-  - "/^*-v[0-9]/"
+    - kiran.mova@mayadata.io
+    - prateek.pandey@mayadata.io
