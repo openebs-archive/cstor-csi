@@ -285,8 +285,8 @@ func MonitorMounts() {
 				}
 				if _, ok := TransitionVolList[vol.Spec.Volume.Name]; !ok {
 					csivol := vol
-					TransitionVolList[csivol.Spec.Volume.Name] = csivol.Status
-					ReqMountList[csivol.Spec.Volume.Name] = csivol.Status
+					TransitionVolList[csivol.Spec.Volume.Name] = apis.CStorVolumeAttachmentStatusRemountUnderProgress
+					ReqMountList[csivol.Spec.Volume.Name] = apis.CStorVolumeAttachmentStatusRemountUnderProgress
 					go func(csivol apis.CStorVolumeAttachment) {
 						logrus.Infof("Remounting vol: %s at %s and %s",
 							csivol.Spec.Volume.Name, csivol.Spec.Volume.StagingTargetPath,
