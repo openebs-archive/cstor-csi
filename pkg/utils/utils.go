@@ -251,6 +251,10 @@ func MonitorMounts() {
 				break
 			}
 			for _, vol := range csivolList.Items {
+				// ignore monitoring for volumes with deletion timestamp set
+				if vol.DeletionTimestamp != nil {
+					continue
+				}
 				// ignore monitoring the mount for a block device
 				if vol.Spec.Volume.AccessType == "block" {
 					continue
