@@ -233,6 +233,10 @@ func MonitorMounts() {
 				break
 			}
 			for _, vol := range csivolList.Items {
+				// ignore monitoring for volumes with deletion timestamp set
+				if vol.DeletionTimestamp != nil {
+					continue
+				}
 				// ignore monitoring the mount for a block device
 				if vol.Spec.Volume.AccessType == "block" {
 					continue
@@ -262,19 +266,19 @@ func MonitorMounts() {
 					continue
 				}
 				if _, ok := TransitionVolList[vol.Spec.Volume.Name]; !ok {
-					TransitionVolList[vol.Spec.Volume.Name] = vol.Status
-					ReqMountList[vol.Spec.Volume.Name] = vol.Status
 					csivol := vol
-					go func() {
+					TransitionVolList[csivol.Spec.Volume.Name] = apis.CStorVolumeAttachmentStatusRemountUnderProgress
+					ReqMountList[csivol.Spec.Volume.Name] = apis.CStorVolumeAttachmentStatusRemountUnderProgress
+					go func(csivol apis.CStorVolumeAttachment) {
 						logrus.Infof("Remounting vol: %s at %s and %s",
-							vol.Spec.Volume.Name, vol.Spec.Volume.StagingTargetPath,
-							vol.Spec.Volume.TargetPath)
+							csivol.Spec.Volume.Name, csivol.Spec.Volume.StagingTargetPath,
+							csivol.Spec.Volume.TargetPath)
 						defer func() {
 							TransitionVolListLock.Lock()
 							// Remove the volume from ReqMountList once the remount operation is
 							// complete
-							delete(TransitionVolList, vol.Spec.Volume.Name)
-							delete(ReqMountList, vol.Spec.Volume.Name)
+							delete(TransitionVolList, csivol.Spec.Volume.Name)
+							delete(ReqMountList, csivol.Spec.Volume.Name)
 							TransitionVolListLock.Unlock()
 						}()
 						if err := RemountVolume(
@@ -283,15 +287,15 @@ func MonitorMounts() {
 						); err != nil {
 							logrus.Errorf(
 								"Remount failed for vol: %s : err: %v",
-								vol.Spec.Volume.Name, err,
+								csivol.Spec.Volume.Name, err,
 							)
 						} else {
 							logrus.Infof(
 								"Remount successful for vol: %s",
-								vol.Spec.Volume.Name,
+								csivol.Spec.Volume.Name,
 							)
 						}
-					}()
+					}(csivol)
 				}
 			}
 			TransitionVolListLock.Unlock()
