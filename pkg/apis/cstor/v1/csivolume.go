@@ -156,6 +156,8 @@ const (
 	// CStorVolumeAttachmentStatusWaitingForVolumeToBeReady indicates that the replicas are
 	// yet to connect to target
 	CStorVolumeAttachmentStatusWaitingForVolumeToBeReady CStorVolumeAttachmentStatus = "WaitingForVolumeToBeReady"
+	// CStorVolumeAttachmentStatusRemountUnderProgress indicates that the volume is being remounted
+	CStorVolumeAttachmentStatusRemountUnderProgress CStorVolumeAttachmentStatus = "RemountUnderProgress"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
