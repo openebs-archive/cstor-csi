@@ -15,7 +15,7 @@
 package v1alpha1
 
 import (
-	v1apis "github.com/openebs/api/pkg/apis/cstor/v1"
+	v1apis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
 )
 
 // CStorVolume a wrapper for CStorVolume object

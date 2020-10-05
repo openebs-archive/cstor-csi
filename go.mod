@@ -16,7 +16,7 @@ require (
 	github.com/kubernetes-csi/csi-lib-utils v0.7.0
 	github.com/onsi/ginkgo v1.10.3
 	github.com/onsi/gomega v1.7.1
-	github.com/openebs/api v1.12.1-0.20200729172328-4b0764aeaaf6
+	github.com/openebs/api/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.4.1 // indirect
 	github.com/sirupsen/logrus v1.4.2
@@ -41,7 +41,6 @@ require (
 
 replace (
 	k8s.io/api => k8s.io/api v0.17.3
-
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.17.3
 
 	k8s.io/apimachinery => k8s.io/apimachinery v0.17.4-beta.0
