@@ -19,7 +19,7 @@ package volumeconfig
 import (
 	"strconv"
 
-	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
+	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"

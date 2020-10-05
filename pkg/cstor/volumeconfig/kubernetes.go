@@ -20,9 +20,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	apismaya "github.com/openebs/api/pkg/apis/cstor/v1"
+	apismaya "github.com/openebs/api/v2/pkg/apis/cstor/v1"
 
-	clientset "github.com/openebs/api/pkg/client/clientset/versioned"
+	clientset "github.com/openebs/api/v2/pkg/client/clientset/versioned"
 	client "github.com/openebs/cstor-csi/pkg/kubernetes/client"
 
 	"github.com/pkg/errors"

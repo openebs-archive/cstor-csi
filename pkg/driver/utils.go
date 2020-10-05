@@ -19,7 +19,7 @@ package driver
 import (
 	"fmt"
 
-	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
+	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
 	"golang.org/x/sys/unix"

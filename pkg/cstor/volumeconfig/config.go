@@ -17,7 +17,7 @@ limitations under the License.
 package volumeconfig
 
 import (
-	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
+	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
 )
 
 // CStorVolumeConfig a wrapper for ume object

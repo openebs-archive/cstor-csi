@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	apisv1 "github.com/openebs/api/pkg/apis/cstor/v1"
+	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
 	"github.com/openebs/cstor-csi/pkg/env"
 	csipayload "github.com/openebs/cstor-csi/pkg/payload"
 	analytics "github.com/openebs/cstor-csi/pkg/usage"
