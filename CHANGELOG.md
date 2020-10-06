@@ -1,5 +1,69 @@
 # Changelog
 
+## [v2.1.0](https://github.com/openebs/cstor-csi/tree/v2.1.0) (2020-09-15)
+- cherry-pick\(remount-fix\): resolve race condition in remount code [\#123](https://github.com/openebs/cstor-csi/pull/123) ([payes](https://github.com/payes))
+- feat\(analytics\): adding google analytics for cstor csi volumes [\#118](https://github.com/openebs/cstor-csi/pull/118) ([prateekpandey14](https://github.com/prateekpandey14))
+- Add license-check for .go , .sh , Dockerfile and Makefile [\#119](https://github.com/openebs/cstor-csi/pull/119) ([AJEETRAI707](https://github.com/AJEETRAI707))
+- fix\(build\): update Makefile to go get deps in different dir  [\#117](https://github.com/openebs/cstor-csi/pull/117) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(build\): update go version to 1.14.7 [\#116](https://github.com/openebs/cstor-csi/pull/116) ([mittachaitu](https://github.com/mittachaitu))
+- fix\(remount\): return immediately if volume is not ready for mounting in case of remount feature is enabled [\#115](https://github.com/openebs/cstor-csi/pull/115) ([mittachaitu](https://github.com/mittachaitu))
+- chore\(docs\): add 2.0.0 release CHANGELOG [\#114](https://github.com/openebs/cstor-csi/pull/114) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(test\): add clone pvc delete test to verify the webhook validations [\#113](https://github.com/openebs/cstor-csi/pull/113) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(docs\): update README and archive old operator yamls [\#111](https://github.com/openebs/cstor-csi/pull/111) ([prateekpandey14](https://github.com/prateekpandey14))
+
+## [v2.1.0-RC2](https://github.com/openebs/cstor-csi/tree/v2.1.0-RC2) (2020-09-15)
+
+No Changes
+
+## [v2.1.0-RC1](https://github.com/openebs/cstor-csi/tree/v2.1.0-RC1) (2020-09-09)
+
+**Merged pull requests:**
+
+- feat\(analytics\): adding google analytics for cstor csi volumes [\#118](https://github.com/openebs/cstor-csi/pull/118) ([prateekpandey14](https://github.com/prateekpandey14))
+- Add license-check for .go , .sh , Dockerfile and Makefile [\#119](https://github.com/openebs/cstor-csi/pull/119) ([AJEETRAI707](https://github.com/AJEETRAI707))
+- fix\(build\): update Makefile to go get deps in different dir  [\#117](https://github.com/openebs/cstor-csi/pull/117) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(build\): update go version to 1.14.7 [\#116](https://github.com/openebs/cstor-csi/pull/116) ([mittachaitu](https://github.com/mittachaitu))
+- fix\(remount\): return immediately if volume is not ready for mounting in case of remount feature is enabled [\#115](https://github.com/openebs/cstor-csi/pull/115) ([mittachaitu](https://github.com/mittachaitu))
+- chore\(docs\): add 2.0.0 release CHANGELOG [\#114](https://github.com/openebs/cstor-csi/pull/114) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(test\): add clone pvc delete test to verify the webhook validations [\#113](https://github.com/openebs/cstor-csi/pull/113) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(docs\): update README and archive old operator yamls [\#111](https://github.com/openebs/cstor-csi/pull/111) ([prateekpandey14](https://github.com/prateekpandey14))
+
+## [v1.12.1-RC1](https://github.com/openebs/cstor-csi/tree/v1.12.1-RC1) (2020-08-13)
+
+No Changes
+
+## [v1.12.1](https://github.com/openebs/cstor-csi/tree/v1.12.1) (2020-08-13)
+
+**Merged pull requests:**
+
+- fix\(travis\): update cstor operators CRDs reference [\#112](https://github.com/openebs/cstor-csi/pull/112) ([prateekpandey14](https://github.com/prateekpandey14))
+- cherry-pick\(fix\): cherry-pick of PR \#109 and \#108 [\#110](https://github.com/openebs/cstor-csi/pull/110) ([mittachaitu](https://github.com/mittachaitu))
+
+## [v2.1.0-RC1](https://github.com/openebs/cstor-csi/tree/v2.1.0-RC1) (2020-09-09)
+
+No Changes
+
+## [v2.1.0-RC2](https://github.com/openebs/cstor-csi/tree/v2.1.0-RC2) (2020-09-09)
+
+**Merged pull requests:**
+- feat\(analytics\): adding google analytics for cstor csi volumes [\#118](https://github.com/openebs/cstor-csi/pull/118) ([prateekpandey14](https://github.com/prateekpandey14))
+- Add license-check for .go , .sh , Dockerfile and Makefile [\#119](https://github.com/openebs/cstor-csi/pull/119) ([AJEETRAI707](https://github.com/AJEETRAI707))
+- fix\(build\): update Makefile to go get deps in different dir  [\#117](https://github.com/openebs/cstor-csi/pull/117) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(build\): update go version to 1.14.7 [\#116](https://github.com/openebs/cstor-csi/pull/116) ([mittachaitu](https://github.com/mittachaitu))
+- fix\(remount\): return immediately if volume is not ready for mounting in case of remount feature is enabled [\#115](https://github.com/openebs/cstor-csi/pull/115) ([mittachaitu](https://github.com/mittachaitu))
+- refact\(test\): add clone pvc delete test to verify the webhook validations [\#113](https://github.com/openebs/cstor-csi/pull/113) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(docs\): update README and archive old operator yamls [\#111](https://github.com/openebs/cstor-csi/pull/111) ([prateekpandey14](https://github.com/prateekpandey14))
+
+## [v1.12.1-RC1](https://github.com/openebs/cstor-csi/tree/v1.12.1-RC1) (2020-08-13)
+
+ No Changes
+
+## [v1.12.1](https://github.com/openebs/cstor-csi/tree/v1.12.1) (2020-08-13)
+
+**Merged pull requests:**
+
+- fix\(travis\): update cstor operators CRDs reference [\#112](https://github.com/openebs/cstor-csi/pull/112) ([prateekpandey14](https://github.com/prateekpandey14))
+- cherry-pick\(fix\): cherry-pick of PR \#109 and \#108 [\#110](https://github.com/openebs/cstor-csi/pull/110) ([mittachaitu](https://github.com/mittachaitu))
 
 ## [v2.0.0](https://github.com/openebs/cstor-csi/tree/v2.0.0) (2020-08-14)
 
