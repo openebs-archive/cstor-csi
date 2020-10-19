@@ -1,6 +1,27 @@
 # Changelog
 
+## [v2.2.0](https://github.com/openebs/cstor-csi/tree/v2.2.0) (2020-10-07)
+
+- feat\(metrics\): add volumes metrics support for raw block volume [\#74](https://github.com/openebs/cstor-csi/pull/74) ([prateekpandey14](https://github.com/prateekpandey14))
+- fix\(remount\): resolve race condition in remount code [\#122](https://github.com/openebs/cstor-csi/pull/122) ([payes](https://github.com/payes))
+- chore\(travis\): add recipients for travis notifications. [\#126](https://github.com/openebs/cstor-csi/pull/126) ([sonasingh46](https://github.com/sonasingh46))
+
+## [v2.2.0-RC2](https://github.com/openebs/cstor-csi/tree/v2.2.0-RC2) (2020-10-07)
+
+No Changes
+
+## [v2.2.0-RC1](https://github.com/openebs/cstor-csi/tree/v2.2.0-RC1) (2020-10-07)
+
+**Merged pull requests:**
+
+- feat\(metrics\): add volumes metrics support for raw block volume [\#74](https://github.com/openebs/cstor-csi/pull/74) ([prateekpandey14](https://github.com/prateekpandey14))
+- fix\(remount\): resolve race condition in remount code [\#122](https://github.com/openebs/cstor-csi/pull/122) ([payes](https://github.com/payes))
+- chore\(travis\): add recipients for travis notifications. [\#126](https://github.com/openebs/cstor-csi/pull/126) ([sonasingh46](https://github.com/sonasingh46))
+
 ## [v2.1.0](https://github.com/openebs/cstor-csi/tree/v2.1.0) (2020-09-15)
+
+**Merged pull requests:**
+
 - cherry-pick\(remount-fix\): resolve race condition in remount code [\#123](https://github.com/openebs/cstor-csi/pull/123) ([payes](https://github.com/payes))
 - feat\(analytics\): adding google analytics for cstor csi volumes [\#118](https://github.com/openebs/cstor-csi/pull/118) ([prateekpandey14](https://github.com/prateekpandey14))
 - Add license-check for .go , .sh , Dockerfile and Makefile [\#119](https://github.com/openebs/cstor-csi/pull/119) ([AJEETRAI707](https://github.com/AJEETRAI707))
