@@ -178,3 +178,6 @@ license-check:
        fi
 	@echo "--> Done checking license."
 	@echo
+
+
+include Makefile.buildx.mk

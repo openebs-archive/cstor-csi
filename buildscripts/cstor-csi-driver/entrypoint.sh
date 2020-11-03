@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright 2020 The OpenEBS Authors. All rights reserved.
 #

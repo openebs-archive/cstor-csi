@@ -8,6 +8,9 @@ env:
   - MINIKUBE_HOME=$HOME
   - CHANGE_MINIKUBE_NONE_USER=true
   - KUBECONFIG=$HOME/.kube/config
+  - RELEASE_TAG="$TRAVIS_TAG"
+  - BRANCH="$TRAVIS_BRANCH"
+
 services:
 - docker
 language: go
