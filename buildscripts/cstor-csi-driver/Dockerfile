@@ -18,7 +18,6 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN apt-get update; exit 0
 RUN apt-get -y install rsyslog xfsprogs ca-certificates
 
-ARG ARCH
 ARG DBUILD_DATE
 ARG DBUILD_REPO_URL
 ARG DBUILD_SITE_URL

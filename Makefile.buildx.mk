@@ -1,4 +1,3 @@
-
 # Copyright 2018-2020 The OpenEBS Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,18 +16,13 @@
 # Experimental docker feature to build cross platform multi-architecture docker images
 # https://docs.docker.com/buildx/working-with-buildx/
 
-# ==============================================================================
-# Build Options
-
-export DBUILD_ARGS=--build-arg DBUILD_DATE=${DBUILD_DATE} --build-arg DBUILD_REPO_URL=${DBUILD_REPO_URL} --build-arg DBUILD_SITE_URL=${DBUILD_SITE_URL}
-
 ifeq (${TAG}, )
   export TAG=ci
 endif
 
 # default list of platforms for which multiarch image is built
 ifeq (${PLATFORMS}, )
-	export PLATFORMS="linux/amd64,linux/arm64,linux/ppc64le"
+	export PLATFORMS="linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le"
 endif
 
 # if IMG_RESULT is unspecified, by default the image will be pushed to registry
