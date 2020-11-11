@@ -54,6 +54,8 @@ then
   exit 1
 fi
 
+DIMAGE="${DIMAGE}-${XC_ARCH}"
+
 # Generate a unique tag based on the commit and tag
 BUILD_ID=$(git describe --tags --always)
 
