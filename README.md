@@ -1,4 +1,5 @@
 # OpenEBS CStor CSI Driver
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fopenebs%2Fcsi.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fopenebs%2Fcsi?ref=badge_shield)
 
 CSI driver implementation for OpenEBS CStor storage engine.
 
@@ -209,3 +210,5 @@ NAME                    STATUS   VOLUME                                     CAPA
 demo-csivol-claim       Bound    pvc-52d88903-0518-11ea-b887-42010a80006c   5Gi        RWO            openebs-csi-cstor-sparse  3d1h
 pvc-clone               Bound    pvc-2f2d65fc-0784-11ea-b887-42010a80006c   5Gi        RWO            openebs-csi-cstor-sparse  3s
 ```
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fopenebs%2Fcsi.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fopenebs%2Fcsi?ref=badge_large)
