@@ -1,4 +1,17 @@
-# Changelog
+v2.3.0 / 2020-11-14
+========================
+* feat(build): support for multi arch container image ([#128](https://github.com/openebs/cstor-csi/pull/128),[@prateekpandey14](https://github.com/prateekpandey14))
+* refact(deps): use openebs/api v2 release modules ([#125](https://github.com/openebs/cstor-csi/pull/125),[@prateekpandey14](https://github.com/prateekpandey14))
+
+
+v2.3.0-RC2 / 2020-11-13
+========================
+
+
+v2.3.0-RC1 / 2020-11-13
+========================
+* feat(build): support for multi arch container image ([#128](https://github.com/openebs/cstor-csi/pull/128),[@prateekpandey14](https://github.com/prateekpandey14))
+* refact(deps): use openebs/api v2 release modules ([#125](https://github.com/openebs/cstor-csi/pull/125),[@prateekpandey14](https://github.com/prateekpandey14))
 
 ## [v2.2.0](https://github.com/openebs/cstor-csi/tree/v2.2.0) (2020-10-07)
 
