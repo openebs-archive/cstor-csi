@@ -211,11 +211,7 @@ func (cs *controller) ControllerPublishVolume(
 	req *csi.ControllerPublishVolumeRequest,
 ) (*csi.ControllerPublishVolumeResponse, error) {
 
-	if err := prepareVolumeForNode(req); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	return &csi.ControllerPublishVolumeResponse{}, nil
+	return nil, status.Error(codes.Unimplemented, "")
 }
 
 // ControllerUnpublishVolume removes a previously
@@ -226,10 +222,7 @@ func (cs *controller) ControllerUnpublishVolume(
 	ctx context.Context,
 	req *csi.ControllerUnpublishVolumeRequest,
 ) (*csi.ControllerUnpublishVolumeResponse, error) {
-	if err := utils.DeleteCStorVolumeAttachmentCR(req.GetVolumeId() + "-" + req.GetNodeId()); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-	return &csi.ControllerUnpublishVolumeResponse{}, nil
+	return nil, status.Error(codes.Unimplemented, "")
 }
 
 // ControllerExpandVolume resizes previously provisioned volume
