@@ -24,6 +24,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
 	"github.com/openebs/cstor-csi/pkg/env"
+	k8snode "github.com/openebs/cstor-csi/pkg/kubernetes/node"
 	csipayload "github.com/openebs/cstor-csi/pkg/payload"
 	analytics "github.com/openebs/cstor-csi/pkg/usage"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
@@ -33,6 +34,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // controller is the server implementation
@@ -106,7 +108,10 @@ func (cs *controller) CreateVolume(
 	pvcName := req.GetParameters()[pvcNameKey]
 	pvcNamespace := req.GetParameters()[pvcNamespaceKey]
 
-	nodeID = getAccessibilityRequirements(req.GetAccessibilityRequirements())
+	nodeID, err = getAccessibilityRequirements(req.GetAccessibilityRequirements())
+	if err != nil {
+		return nil, err
+	}
 
 	contentSource := req.GetVolumeContentSource()
 	if contentSource != nil && contentSource.GetSnapshot() != nil {
@@ -337,20 +342,20 @@ func (cs *controller) ListVolumes(
 	return nil, status.Error(codes.Unimplemented, "")
 }
 
-func getAccessibilityRequirements(requirement *csi.TopologyRequirement) string {
+func getAccessibilityRequirements(requirement *csi.TopologyRequirement) (string, error) {
 	if requirement == nil {
-		return ""
+		return "", status.Error(codes.Internal, "accessibility_requirements not found")
 	}
 
-	preferredNode, exists := requirement.GetPreferred()[0].GetSegments()[TopologyNodeKey]
-	if exists {
-		return preferredNode
+	node, err := getNode(requirement)
+	if err != nil {
+		return "", status.Errorf(codes.Internal, "failed to get the accessibility_requirements node %v", err)
 	}
-	preferredNode, exists = requirement.GetRequisite()[0].GetSegments()[TopologyNodeKey]
-	if exists {
-		return preferredNode
+
+	if len(node) == 0 {
+		return "", status.Error(codes.Internal, "can not find any node")
 	}
-	return ""
+	return node, nil
 }
 
 // sendEventOrIgnore sends anonymous cstor provision/delete events
@@ -365,4 +370,29 @@ func sendEventOrIgnore(pvcName, pvName, capacity, replicaCount, stgType, method 
 			SetCategory(method).
 			SetVolumeCapacity(capacity).Send()
 	}
+}
+
+// getNode gets the node which satisfies the topology info
+func getNode(topo *csi.TopologyRequirement) (string, error) {
+
+	list, err := k8snode.NewKubeClient().List(metav1.ListOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	for _, prf := range topo.Preferred {
+		for _, node := range list.Items {
+			nodeFiltered := false
+			for key, value := range prf.Segments {
+				if node.Labels[key] != value {
+					nodeFiltered = true
+					break
+				}
+			}
+			if nodeFiltered == false {
+				return node.Name, nil
+			}
+		}
+	}
+	return "", nil
 }
