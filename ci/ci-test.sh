@@ -37,18 +37,18 @@ kubectl apply -f $SNAPSHOT_CLASS
 function dumpCSINodeLogs() {
   LC=$1
   CSINodePOD=$(kubectl get pods -l app=openebs-csi-node -o jsonpath='{.items[0].metadata.name}' -n kube-system)
-  kubectl describe po $CSINodePOD -n kube-system
+  kubectl describe po $CSINodePOD -n openebs
   printf "\n\n"
-  kubectl logs --tail=${LC} $CSINodePOD -n kube-system -c openebs-csi-plugin
+  kubectl logs --tail=${LC} $CSINodePOD -n openebs -c openebs-csi-plugin
   printf "\n\n"
 }
 
 function dumpCSIControllerLogs() {
   LC=$1
   CSIControllerPOD=$(kubectl get pods -l app=openebs-csi-controller -o jsonpath='{.items[0].metadata.name}' -n kube-system)
-  kubectl describe po $CSIControllerPOD -n kube-system
+  kubectl describe po $CSIControllerPOD -n openebs
   printf "\n\n"
-  kubectl logs --tail=${LC} $CSIControllerPOD -n kube-system -c openebs-csi-plugin
+  kubectl logs --tail=${LC} $CSIControllerPOD -n openebs -c openebs-csi-plugin
   printf "\n\n"
 }
 
