@@ -52,6 +52,9 @@ function dumpCSIControllerLogs() {
   printf "\n\n"
 }
 
+sleep 10
+kubectl wait --for=condition=available --timeout=300s sts/openebs-cstor-csi-controller -n openebs
+
 # Run e2e tests for csi volumes
 cd $DST_PATH/cstor-csi/tests/e2e
 make e2e-test
