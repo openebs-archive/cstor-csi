@@ -23,7 +23,7 @@ ALL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/
 CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
 SNAPSHOT_CLASS="$GOPATH/src/github.com/openebs/cstor-csi/deploy/snapshot-class.yaml"
 
-DST_PATH="$GOPATH/src/github.com/openebs"
+#DST_PATH="$GOPATH/src/github.com/openebs"
 
 # Prepare env for runnging BDD tests
 # Minikube is already running
@@ -31,8 +31,8 @@ kubectl apply -f $CSTOR_RBAC
 kubectl apply -f $NDM_OPERATOR
 kubectl apply -f $ALL_CRD
 kubectl apply -f $CSTOR_OPERATOR
-kubectl apply -f $CSI_OPERATOR
-kubectl apply -f $SNAPSHOT_CLASS
+kubectl apply -f ./deploy/csi-operator.yaml
+kubectl apply -f ./deploy/snapshot-class.yaml
 
 function dumpCSINodeLogs() {
   LC=$1
@@ -56,7 +56,7 @@ sleep 10
 kubectl wait --for=condition=available --timeout=300s sts/openebs-cstor-csi-controller -n openebs
 
 # Run e2e tests for csi volumes
-cd $DST_PATH/cstor-csi/tests/e2e
+cd ./tests/e2e
 make e2e-test
 
 if [ $? -ne 0 ]; then

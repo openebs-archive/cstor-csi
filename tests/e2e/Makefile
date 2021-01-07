@@ -13,8 +13,8 @@
 # limitations under the License.
 #
 GOFLAGS=-mod=vendor
+GINKGO=$(shell which ginkgo)
 export GOFLAGS
-GINKGO=$(GOPATH)/bin/ginkgo
 KUBECTL=/usr/local/bin/kubectl
 
 
@@ -35,4 +35,3 @@ e2e-test:
 		GOFLAGS=$(GOFLAGS) \
 		TEST_KUBERNETES_VERSION=$(TEST_KUBERNETES_VERSION) \
 		$(GINKGO) --failFast -v .
-
