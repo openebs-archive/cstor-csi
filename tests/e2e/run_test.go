@@ -100,7 +100,7 @@ func verifyVolumeCreated(ns, pvc string) string {
 	Expect(volName).NotTo(BeEmpty(), "not able to get pv name from PVC.Spec.VolumeName")
 	Eventually(func() (bool, error) {
 		return checkCStorVolumeIsHealthy(volName, "openebs")
-	}, 120, 10).Should(BeTrue())
+	}, 300, 10).Should(BeTrue())
 	return volName
 }
 
