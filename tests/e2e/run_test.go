@@ -77,6 +77,10 @@ func getBDAndNodeName() (string, string, error) {
 		if string(bd.Status.ClaimState) != "Unclaimed" {
 			continue
 		}
+		if strings.Contains(bd.Name, "blockdevice-") {
+			continue
+		}
+
 		nodeName := bd.Labels[string("kubernetes.io/hostname")]
 		return bd.Name, nodeName, nil
 	}
