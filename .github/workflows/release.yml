@@ -49,8 +49,8 @@ jobs:
       - name: Build images locally
         run: make csi-driver-image || exit 1;
 
-      - name: Install ginkgo
-        run: go get github.com/onsi/ginkgo/ginkgo && go get github.com/onsi/gomega/...
+      - name: Install tests dependencies
+        run: make bootstrap
 
       - name: Running tests
         run: ./ci/ci-test.sh
