@@ -147,6 +147,10 @@ func (ns *node) NodeStageVolume(
 	}
 	defer removeVolumeFromTransitionList(volumeID)
 
+	if err := ns.prepareVolumeForNode(req); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	if vol, err = utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -281,6 +285,9 @@ func (ns *node) NodeUnstageVolume(
 	logrus.Infof("cstor-csi: volume %s path: %s has been unmounted.",
 		volumeID, stagingTargetPath)
 
+	if err := utils.DeleteCStorVolumeAttachmentCR(req.GetVolumeId() + "-" + ns.driver.config.NodeID); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	return &csi.NodeUnstageVolumeResponse{}, nil
 }
 

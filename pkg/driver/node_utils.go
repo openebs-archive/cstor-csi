@@ -22,14 +22,19 @@ import (
 	"path/filepath"
 	"strings"
 
+	"time"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/kubernetes-csi/csi-lib-iscsi/iscsi"
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
+	"github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	iscsiutils "github.com/openebs/cstor-csi/pkg/iscsi"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	k8serror "k8s.io/apimachinery/pkg/api/errors"
 )
 
 func getTargetIP(url string) string {
@@ -308,6 +313,71 @@ func (ns *node) validateNodeUnStageReq(
 	if req.GetStagingTargetPath() == "" {
 		return status.Error(codes.InvalidArgument,
 			"Target path missing in request")
+	}
+	return nil
+}
+
+func (ns *node) prepareVolumeForNode(
+	req *csi.NodeStageVolumeRequest,
+) error {
+	volumeID := req.GetVolumeId()
+	nodeID := ns.driver.config.NodeID
+
+	if err := utils.PatchCVCNodeID(volumeID, nodeID); err != nil {
+		return err
+	}
+
+	labels := map[string]string{
+		"nodeID":  nodeID,
+		"Volname": volumeID,
+	}
+
+	// If the access type is block, do nothing for stage
+	var accessType string
+	switch req.GetVolumeCapability().GetAccessType().(type) {
+	case *csi.VolumeCapability_Block:
+		accessType = "block"
+	case *csi.VolumeCapability_Mount:
+		accessType = "mount"
+	}
+
+	vol, err := volumeattachment.NewBuilder().
+		WithName(volumeID + "-" + nodeID).
+		WithLabels(labels).
+		WithVolName(req.GetVolumeId()).
+		WithAccessType(accessType).
+		WithFSType(req.GetVolumeCapability().GetMount().GetFsType()).
+		WithReadOnly(false).Build()
+	if err != nil {
+		return err
+	}
+	if isCVCBound, err := utils.IsCVCBound(volumeID); err != nil {
+		return status.Error(codes.Internal, err.Error())
+	} else if !isCVCBound {
+		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusWaitingForCVCBound
+		time.Sleep(10 * time.Second)
+		return errors.New("Waiting for CVC to be bound")
+	}
+
+	if err = utils.FetchAndUpdateISCSIDetails(volumeID, vol); err != nil {
+		return err
+	}
+
+	oldvol, err := utils.GetCStorVolumeAttachment(vol.Name)
+	if err != nil && !k8serror.IsNotFound(err) {
+		return err
+	} else if err == nil && oldvol != nil {
+		if oldvol.DeletionTimestamp != nil {
+			return errors.Errorf("Volume still mounted on node: %s", nodeID)
+		}
+		return nil
+	}
+
+	if err = utils.DeleteOldCStorVolumeAttachmentCRs(volumeID); err != nil {
+		return status.Error(codes.Internal, err.Error())
+	}
+	if err = utils.CreateCStorVolumeAttachmentCR(vol, nodeID); err != nil {
+		return status.Error(codes.Internal, err.Error())
 	}
 	return nil
 }
