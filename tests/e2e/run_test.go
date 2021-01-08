@@ -197,7 +197,7 @@ func verifyCVDeleted(cvName string) {
 			return fmt.Errorf("cstorvolume exists %s", cvName)
 		}
 		return nil
-	}).Should(Succeed())
+	}, 300, 10).Should(Succeed())
 }
 
 func verifySnapshotDeleted(snapName string) {
