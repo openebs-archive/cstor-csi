@@ -25,6 +25,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"github.com/google/uuid"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
 	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 	"github.com/openebs/cstor-csi/pkg/cstor/snapshot"
@@ -116,13 +117,27 @@ func logGRPC(
 	ctx context.Context, req interface{},
 	info *grpc.UnaryServerInfo, handler grpc.UnaryHandler,
 ) (interface{}, error) {
-	logrus.Debugf("GRPC call: %s", info.FullMethod)
-	logrus.Debugf("GRPC request: %s", protosanitizer.StripSecrets(req))
+
+	var printlog bool
+	id := uuid.New()
+	if strings.Contains(info.FullMethod, "NodeGetCapabilities") ||
+		strings.Contains(info.FullMethod, "NodeGetVolumeStats") ||
+		strings.Contains(info.FullMethod, "ControllerGetCapabilities") ||
+		strings.Contains(info.FullMethod, "GetPluginInfo") ||
+		strings.Contains(info.FullMethod, "GetPluginCapabilities") ||
+		strings.Contains(info.FullMethod, "Probe") {
+		printlog = true
+	}
+	if !printlog {
+		logrus.Infof("Req %s: %s %s", id, info.FullMethod, protosanitizer.StripSecrets(req))
+	}
 	resp, err := handler(ctx, req)
 	if err != nil {
 		logrus.Errorf("GRPC error: %v", err)
 	} else {
-		logrus.Infof("GRPC response: %s", protosanitizer.StripSecrets(resp))
+		if !printlog {
+			logrus.Infof("Resp %s: %s", id, protosanitizer.StripSecrets(resp))
+		}
 	}
 	return resp, err
 }
@@ -135,7 +150,7 @@ func ChmodMountPath(mountPath string) error {
 
 // WaitForVolumeToBeReachable keeps the mounts on hold until the volume is
 // reachable
-func WaitForVolumeToBeReachable(targetPortal string) error {
+func WaitForVolumeToBeReachable(volumeID string, targetPortal string) error {
 	var (
 		retries int
 		err     error
@@ -146,7 +161,7 @@ func WaitForVolumeToBeReachable(targetPortal string) error {
 		// Create a connection to test if the iSCSI Portal is reachable,
 		if conn, err = net.Dial("tcp", targetPortal); err == nil {
 			conn.Close()
-			logrus.Infof("Volume is reachable to create connections")
+			logrus.Infof("Volume %s is reachable to create connections", volumeID)
 			return nil
 		}
 		// wait until the iSCSI targetPortal is reachable
@@ -160,8 +175,8 @@ func WaitForVolumeToBeReachable(targetPortal string) error {
 			// based on the kubelets retrying logic. Kubelet retries to publish
 			// volume after every 14s )
 			return fmt.Errorf(
-				"iSCSI Target not reachable, TargetPortal %v, err:%v",
-				targetPortal, err)
+				"iSCSI Target not reachable for %s, TargetPortal %v, err:%v",
+				volumeID, targetPortal, err)
 		}
 	}
 }
@@ -177,14 +192,15 @@ checkVolumeStatus:
 		return err
 	} else if volStatus == "Healthy" || volStatus == "Degraded" {
 		// In both healthy and degraded states the volume can serve IOs
-		logrus.Infof("Volume is ready to accept IOs")
+		logrus.Infof("Volume %s is ready to accept IOs", volumeID)
 	} else if retries >= VolumeWaitRetryCount {
 		// Let the caller function decide further if the volume is still not
 		// ready to accdept IOs after 12 seconds ( This number was arrived at
 		// based on the kubelets retrying logic. Kubelet retries to publish
 		// volume after every 14s )
 		return fmt.Errorf(
-			"Volume is not ready: Replicas yet to connect to controller",
+			"Volume %s is not ready: Replicas yet to connect to controller",
+			volumeID,
 		)
 	} else {
 		TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusWaitingForVolumeToBeReady
@@ -238,6 +254,7 @@ func MonitorMounts() {
 	mounter := mount.New("")
 	ticker := time.NewTicker(MonitorMountRetryTimeout * time.Second)
 	for {
+		cleanupRequired := false
 		select {
 		case <-ticker.C:
 			// Get list of mounted paths present with the node
@@ -253,6 +270,7 @@ func MonitorMounts() {
 			for _, vol := range csivolList.Items {
 				// ignore monitoring for volumes with deletion timestamp set
 				if vol.DeletionTimestamp != nil {
+					cleanupRequired = true
 					continue
 				}
 				// ignore monitoring the mount for a block device
@@ -318,22 +336,32 @@ func MonitorMounts() {
 			}
 			TransitionVolListLock.Unlock()
 		}
+		if cleanupRequired {
+			Cleanup()
+		}
 	}
 }
 
-// CleanupOnRestart unmounts and detaches the volumes having
+// Cleanup unmounts and detaches the volumes having
 // DeletionTimestamp set and removes finalizers from the
 // corresponding CStorVolumeAttachment CRs
-func CleanupOnRestart() {
+func Cleanup() (err error) {
 	var (
-		err        error
 		csivolList *apis.CStorVolumeAttachmentList
 	)
 	// Get list of mounted paths present with the node
 	TransitionVolListLock.Lock()
 	defer TransitionVolListLock.Unlock()
-	if csivolList, err = GetVolListForNode(); err != nil {
-		return
+	count := 0
+	for {
+		if csivolList, err = GetVolListForNode(); err == nil {
+			break
+		}
+		time.Sleep(time.Second)
+		count++
+		if count == 5 {
+			return
+		}
 	}
 	for _, Vol := range csivolList.Items {
 		if Vol.DeletionTimestamp == nil {
@@ -344,6 +372,7 @@ func CleanupOnRestart() {
 		// This is being run in a go routine so that if unmount and detach
 		// commands take time, the startup is not delayed
 		go func(vol *apis.CStorVolumeAttachment) {
+			logrus.Infof("Cleaning up %s from node", vol.Spec.Volume.Name)
 			if err := iscsiutils.UnmountAndDetachDisk(vol, vol.Spec.Volume.StagingTargetPath); err == nil {
 				vol.Finalizers = nil
 				if vol, err = UpdateCStorVolumeAttachmentCR(vol); err != nil {
@@ -354,16 +383,16 @@ func CleanupOnRestart() {
 			}
 
 			TransitionVolListLock.Lock()
-			TransitionVolList[vol.Spec.Volume.Name] = apis.CStorVolumeAttachmentStatusUnmounted
 			delete(TransitionVolList, vol.Spec.Volume.Name)
 			TransitionVolListLock.Unlock()
 		}(&vol)
 	}
+	return
 }
 
 // IsVolumeReachable makes a TCP connection to target
 // and checks if volume is Reachable
-func IsVolumeReachable(targetPortal string) (bool, error) {
+func IsVolumeReachable(volumeID, targetPortal string) (bool, error) {
 	var (
 		err  error
 		conn net.Conn
@@ -372,12 +401,12 @@ func IsVolumeReachable(targetPortal string) (bool, error) {
 	// Create a connection to test if the iSCSI Portal is reachable,
 	if conn, err = net.Dial("tcp", targetPortal); err == nil {
 		conn.Close()
-		logrus.Infof("Volume is reachable to create connections")
+		logrus.Infof("Volume %s is reachable to create connections", volumeID)
 		return true, nil
 	}
 	logrus.Infof(
-		"iSCSI Target not reachable, TargetPortal %v, err:%v",
-		targetPortal, err,
+		"iSCSI Target not reachable, VolumeID: %s TargetPortal %v, err:%v",
+		volumeID, targetPortal, err,
 	)
 	return false, err
 }
@@ -391,10 +420,10 @@ func IsVolumeReady(volumeID string) (bool, error) {
 	}
 	if volStatus == "Healthy" || volStatus == "Degraded" {
 		// In both healthy and degraded states the volume can serve IOs
-		logrus.Infof("Volume is ready to accept IOs")
+		logrus.Infof("Volume %s is ready to accept IOs", volumeID)
 		return true, nil
 	}
-	logrus.Infof("Volume is not ready: Replicas yet to connect to controller")
+	logrus.Infof("Volume %s is not ready: Replicas yet to connect to controller", volumeID)
 	return false, nil
 }
 
@@ -410,7 +439,7 @@ func WaitForVolumeReadyAndReachable(vol *apis.CStorVolumeAttachment) error {
 		return err
 	}
 	// This function return after 12s in case the volume is not reachable
-	err = WaitForVolumeToBeReachable(vol.Spec.ISCSI.TargetPortal)
+	err = WaitForVolumeToBeReachable(vol.Spec.Volume.Name, vol.Spec.ISCSI.TargetPortal)
 	if err != nil {
 		logrus.Error(err)
 		return err
@@ -438,10 +467,10 @@ func RemountVolume(
 	options := []string{"rw"}
 
 	if ready, err := IsVolumeReady(vol.Spec.Volume.Name); err != nil || !ready {
-		return fmt.Errorf("Volume is not ready")
+		return fmt.Errorf("Volume %s is not ready", vol.Spec.Volume.Name)
 	}
-	if reachable, err := IsVolumeReachable(vol.Spec.ISCSI.TargetPortal); err != nil || !reachable {
-		return fmt.Errorf("Volume is not reachable")
+	if reachable, err := IsVolumeReachable(vol.Spec.Volume.Name, vol.Spec.ISCSI.TargetPortal); err != nil || !reachable {
+		return fmt.Errorf("Volume %s is not reachable", vol.Spec.Volume.Name)
 	}
 	if stagingPathExists {
 		mounter.Unmount(vol.Spec.Volume.StagingTargetPath)
