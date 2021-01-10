@@ -375,6 +375,7 @@ func Cleanup() (err error) {
 			logrus.Infof("Cleaning up %s from node", vol.Spec.Volume.Name)
 			if err := iscsiutils.UnmountAndDetachDisk(vol, vol.Spec.Volume.StagingTargetPath); err == nil {
 				vol.Finalizers = nil
+				logrus.Infof("Cleaning up cva %s", vol.Name)
 				if vol, err = UpdateCStorVolumeAttachmentCR(vol); err != nil {
 					logrus.Errorf(err.Error())
 				}

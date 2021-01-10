@@ -213,7 +213,7 @@ func (ns *node) NodeStageVolume(
 			// There might still be a case that the attach was successful,
 			// therefore not cleaning up the staging path from CR
 			if _, uerr := utils.UpdateCStorVolumeAttachmentCR(vol); uerr != nil {
-				logrus.Errorf("Failed to update CStorVolumeAttachment for %s: %v", volumeID, uerr.Error())
+				logrus.Errorf("Failed to update cva for %s: %v", volumeID, uerr.Error())
 			}
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -252,6 +252,7 @@ func (ns *node) NodeUnstageVolume(
 
 	if vol, err = utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV); err != nil {
 		if k8serror.IsNotFound(err) {
+			logrus.Infof("cva for %s has already been deleted", volumeID)
 			return &csi.NodeUnstageVolumeResponse{}, nil
 		}
 		return nil, status.Error(codes.Internal, err.Error())
@@ -365,6 +366,7 @@ func (ns *node) NodeUnpublishVolume(
 	vol, err := utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV)
 	if err != nil {
 		if k8serror.IsNotFound(err) {
+			logrus.Infof("cva for %s has already been deleted", volumeID)
 			return &csi.NodeUnpublishVolumeResponse{}, nil
 		}
 		return nil, status.Error(codes.Internal, err.Error())
