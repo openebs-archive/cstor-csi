@@ -360,6 +360,7 @@ func Cleanup() (err error) {
 		time.Sleep(time.Second)
 		count++
 		if count == 5 {
+			logrus.Errorf("Failed to get cva list, err: %v", err)
 			return
 		}
 	}
