@@ -95,8 +95,8 @@ func addVolumeToTransitionList(volumeID string, status apis.CStorVolumeAttachmen
 	defer utils.TransitionVolListLock.Unlock()
 
 	if _, ok := utils.TransitionVolList[volumeID]; ok {
-		return fmt.Errorf("Volume Busy, status: %v",
-			utils.TransitionVolList[volumeID])
+		return fmt.Errorf("Volume %s Busy, status: %v",
+			volumeID, utils.TransitionVolList[volumeID])
 	}
 	utils.TransitionVolList[volumeID] = status
 	return nil
