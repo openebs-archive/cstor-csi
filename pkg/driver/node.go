@@ -32,6 +32,7 @@ import (
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -206,13 +207,13 @@ func (ns *node) NodeStageVolume(
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
-		logrus.Info("NodeStageVolume: start format and mount operation")
+		logrus.Infof("NodeStageVolume %v: start format and mount operation", volumeID)
 		if err := ns.formatAndMount(req, devicePath); err != nil {
 			vol.Finalizers = nil
 			// There might still be a case that the attach was successful,
 			// therefore not cleaning up the staging path from CR
 			if _, uerr := utils.UpdateCStorVolumeAttachmentCR(vol); uerr != nil {
-				logrus.Errorf("Failed to update CStorVolumeAttachment:%v", uerr.Error())
+				logrus.Errorf("Failed to update cva for %s: %v", volumeID, uerr.Error())
 			}
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -250,8 +251,13 @@ func (ns *node) NodeUnstageVolume(
 	defer removeVolumeFromTransitionList(volumeID)
 
 	if vol, err = utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV); err != nil {
+		if k8serror.IsNotFound(err) {
+			logrus.Infof("cva for %s has already been deleted", volumeID)
+			return &csi.NodeUnstageVolumeResponse{}, nil
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
 	if vol.Spec.Volume.StagingTargetPath == "" {
 		return &csi.NodeUnstageVolumeResponse{}, nil
 	}
@@ -359,6 +365,10 @@ func (ns *node) NodeUnpublishVolume(
 	}
 	vol, err := utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV)
 	if err != nil {
+		if k8serror.IsNotFound(err) {
+			logrus.Infof("cva for %s has already been deleted", volumeID)
+			return &csi.NodeUnpublishVolumeResponse{}, nil
+		}
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	vol.Spec.Volume.TargetPath = ""

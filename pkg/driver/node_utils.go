@@ -323,10 +323,6 @@ func (ns *node) prepareVolumeForNode(
 	volumeID := req.GetVolumeId()
 	nodeID := ns.driver.config.NodeID
 
-	if err := utils.PatchCVCNodeID(volumeID, nodeID); err != nil {
-		return err
-	}
-
 	labels := map[string]string{
 		"nodeID":  nodeID,
 		"Volname": volumeID,
@@ -356,7 +352,7 @@ func (ns *node) prepareVolumeForNode(
 	} else if !isCVCBound {
 		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusWaitingForCVCBound
 		time.Sleep(10 * time.Second)
-		return errors.New("Waiting for CVC to be bound")
+		return errors.Errorf("Waiting for %s's CVC to be bound", volumeID)
 	}
 
 	if err = utils.FetchAndUpdateISCSIDetails(volumeID, vol); err != nil {
@@ -368,7 +364,7 @@ func (ns *node) prepareVolumeForNode(
 		return err
 	} else if err == nil && oldvol != nil {
 		if oldvol.DeletionTimestamp != nil {
-			return errors.Errorf("Volume still mounted on node: %s", nodeID)
+			return errors.Errorf("Volume %s still mounted on node: %s", volumeID, nodeID)
 		}
 		return nil
 	}
