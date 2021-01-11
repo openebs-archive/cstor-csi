@@ -21,6 +21,7 @@ import (
 	node "github.com/openebs/cstor-csi/pkg/kubernetes/node"
 	pv "github.com/openebs/cstor-csi/pkg/kubernetes/persistentvolume"
 	errors "github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -151,6 +152,7 @@ func DeleteOldCStorVolumeAttachmentCRs(volumeID string) error {
 	}
 
 	for _, csivol := range csivols.Items {
+		logrus.Infof("Marking cva %s for deletion", csivol.Name)
 		err = csivolume.NewKubeclient().
 			WithNamespace(OpenEBSNamespace).Delete(csivol.Name)
 		if err != nil {
@@ -165,6 +167,7 @@ func DeleteOldCStorVolumeAttachmentCRs(volumeID string) error {
 
 // DeleteCStorVolumeAttachmentCR removes the CStorVolumeAttachmentCR for the specified path
 func DeleteCStorVolumeAttachmentCR(csivolName string) error {
+	logrus.Infof("Deleting cva %s", csivolName)
 	return csivolume.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).Delete(csivolName)
 }
