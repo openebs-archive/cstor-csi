@@ -32,6 +32,7 @@ type CstorV1Interface interface {
 	CStorPoolInstancesGetter
 	CStorRestoresGetter
 	CStorVolumesGetter
+	CStorVolumeAttachmentsGetter
 	CStorVolumeConfigsGetter
 	CStorVolumePoliciesGetter
 	CStorVolumeReplicasGetter
@@ -64,6 +65,10 @@ func (c *CstorV1Client) CStorRestores(namespace string) CStorRestoreInterface {
 
 func (c *CstorV1Client) CStorVolumes(namespace string) CStorVolumeInterface {
 	return newCStorVolumes(c, namespace)
+}
+
+func (c *CstorV1Client) CStorVolumeAttachments(namespace string) CStorVolumeAttachmentInterface {
+	return newCStorVolumeAttachments(c, namespace)
 }
 
 func (c *CstorV1Client) CStorVolumeConfigs(namespace string) CStorVolumeConfigInterface {

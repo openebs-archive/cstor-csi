@@ -30,6 +30,8 @@ type CStorRestoreExpansion interface{}
 
 type CStorVolumeExpansion interface{}
 
+type CStorVolumeAttachmentExpansion interface{}
+
 type CStorVolumeConfigExpansion interface{}
 
 type CStorVolumePolicyExpansion interface{}
