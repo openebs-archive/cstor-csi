@@ -53,7 +53,7 @@ function dumpCSIControllerLogs() {
 }
 
 sleep 10
-kubectl wait --for=condition=available --timeout=300s sts/openebs-cstor-csi-controller -n openebs
+kubectl wait --for=condition=Ready --timeout=300s pods/openebs-cstor-csi-controller-0 -n openebs
 
 # Run e2e tests for csi volumes
 cd ./tests/e2e

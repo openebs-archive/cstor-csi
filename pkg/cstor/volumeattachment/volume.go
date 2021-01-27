@@ -15,7 +15,7 @@
 package volumeattachment
 
 import (
-	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
+	apis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
 )
 
 // CStorVolumeAttachment is a wrapper over
