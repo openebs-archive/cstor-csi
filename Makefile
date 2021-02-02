@@ -131,21 +131,6 @@ bootstrap:
 		cd && GO111MODULE=on go get $$tool; \
 	done
 
-# SRC_PKG is the path of code files
-SRC_PKG := github.com/openebs/cstor-csi/pkg
-
-# code generation for custom resources
-.PHONY: kubegen
-kubegen:
-	./buildscripts/update-codegen.sh
-
-# deletes generated code by codegen
-.PHONY: kubegendelete
-kubegendelete:
-	@rm -rf pkg/client/clientset
-	@rm -rf pkg/client/lister
-	@rm -rf pkg/client/informer
-
 .PHONY: csi-driver
 csi-driver:
 	@echo "--------------------------------"

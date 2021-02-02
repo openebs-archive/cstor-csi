@@ -45,12 +45,6 @@ rc=$?; if [[ $rc != 0 ]]; then echo "make format failed"; exit $rc; fi
 checkGitDiff "make format"
 printf "\n"
 
-echo "Running : make kubegen"
-make kubegen
-rc=$?; if [[ $rc != 0 ]]; then echo "make kubegen failed"; exit $rc; fi
-checkGitDiff "make kubegen"
-printf "\n"
-
 ./buildscripts/test-cov.sh
 rc=$?; if [[ $rc != 0 ]]; then exit $rc; fi
 

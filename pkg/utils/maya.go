@@ -23,7 +23,6 @@ import (
 	"time"
 
 	cstorapis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
-	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 	cv "github.com/openebs/cstor-csi/pkg/cstor/volume"
 	csivol "github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	cvc "github.com/openebs/cstor-csi/pkg/cstor/volumeconfig"
@@ -207,7 +206,7 @@ func GetVolumeSourceDetails(snapshotID string) (string, string, error) {
 
 //FetchAndUpdateISCSIDetails fetches the iSCSI details from cstor volume
 //resource and updates the corresponding csivolume resource
-func FetchAndUpdateISCSIDetails(volumeID string, vol *apis.CStorVolumeAttachment) error {
+func FetchAndUpdateISCSIDetails(volumeID string, vol *cstorapis.CStorVolumeAttachment) error {
 	getOptions := metav1.GetOptions{}
 	cstorVolume, err := cv.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).

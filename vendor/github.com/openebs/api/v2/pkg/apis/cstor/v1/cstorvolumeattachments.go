@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 The OpenEBS Authors
+Copyright © 2020 The OpenEBS Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,12 +25,14 @@ import (
 // +resource:path=csivolume
 
 // CStorVolumeAttachment represents a CSI based volume
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope=Namespaced,shortName=cva
 type CStorVolumeAttachment struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   CStorVolumeAttachmentSpec   `json:"spec"`
-	Status CStorVolumeAttachmentStatus `json:"status"`
+	Status CStorVolumeAttachmentStatus `json:"status,omitempty"`
 }
 
 // CStorVolumeAttachmentSpec is the spec for a CStorVolume resource
@@ -102,18 +104,18 @@ type VolumeInfo struct {
 // by the vendor is iSCSI
 type ISCSIInfo struct {
 	// Iqn of this volume
-	Iqn string `json:"iqn"`
+	Iqn string `json:"iqn,omitempty"`
 
 	// TargetPortal holds the target portal
 	// of this volume
-	TargetPortal string `json:"targetPortal"`
+	TargetPortal string `json:"targetPortal,omitempty"`
 
 	// IscsiInterface of this volume
-	IscsiInterface string `json:"iscsiInterface"`
+	IscsiInterface string `json:"iscsiInterface,omitempty"`
 
 	// Lun specify the lun number 0, 1.. on
 	// iSCSI Volume. (default: 0)
-	Lun string `json:"lun"`
+	Lun string `json:"lun,omitempty"`
 }
 
 // CStorVolumeAttachmentStatus status represents the current mount status of the volume

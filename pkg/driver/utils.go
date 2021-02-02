@@ -20,7 +20,6 @@ import (
 	"fmt"
 
 	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
-	apis "github.com/openebs/cstor-csi/pkg/apis/cstor/v1"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
 	"golang.org/x/sys/unix"
 	corev1 "k8s.io/api/core/v1"
@@ -90,7 +89,7 @@ func removeVolumeFromTransitionList(volumeID string) {
 	delete(utils.TransitionVolList, volumeID)
 }
 
-func addVolumeToTransitionList(volumeID string, status apis.CStorVolumeAttachmentStatus) error {
+func addVolumeToTransitionList(volumeID string, status apisv1.CStorVolumeAttachmentStatus) error {
 	utils.TransitionVolListLock.Lock()
 	defer utils.TransitionVolListLock.Unlock()
 
