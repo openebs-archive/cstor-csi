@@ -1,3 +1,74 @@
+# Changelog
+
+## [v2.6.0](https://github.com/openebs/cstor-csi/tree/v2.6.0) (2021-02-13)
+
+**Merged pull requests:**
+
+- chore\(operator\): use k8s.gcr.io multi arch images for csi sidecars [\#146](https://github.com/openebs/cstor-csi/pull/146) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(api\): move cva to openebs/api and upgrade to v1 CRDs [\#145](https://github.com/openebs/cstor-csi/pull/145) ([prateekpandey14](https://github.com/prateekpandey14))
+- fix\(cleanup\): add cleanup of volumes from node  to monitor func [\#142](https://github.com/openebs/cstor-csi/pull/142) ([payes](https://github.com/payes))
+
+## [v2.6.0-RC2](https://github.com/openebs/cstor-csi/tree/v2.6.0-RC2) (2021-02-11)
+
+## [v2.6.0-RC1](https://github.com/openebs/cstor-csi/tree/v2.6.0-RC1) (2021-02-09)
+
+**Merged pull requests:**
+
+- chore\(operator\): use k8s.gcr.io multi arch images for csi sidecars [\#146](https://github.com/openebs/cstor-csi/pull/146) ([prateekpandey14](https://github.com/prateekpandey14))
+- refact\(api\): move cva to openebs/api and upgrade to v1 CRDs [\#145](https://github.com/openebs/cstor-csi/pull/145) ([prateekpandey14](https://github.com/prateekpandey14))
+- fix\(cleanup\): add cleanup of volumes from node  to monitor func [\#142](https://github.com/openebs/cstor-csi/pull/142) ([payes](https://github.com/payes))
+
+## [v2.5.0](https://github.com/openebs/cstor-csi/tree/v2.5.0) (2021-01-13)
+
+**Merged pull requests:**
+
+- cherry-pick\(cleanup-fix\): add cleanup of volumes from node  to monitor func \(\#142\) [\#143](https://github.com/openebs/cstor-csi/pull/143) ([payes](https://github.com/payes))
+- chore\(actions\): move travis tests to github action [\#140](https://github.com/openebs/cstor-csi/pull/140) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(operator\): bump k8s csi to latest stable container images [\#139](https://github.com/openebs/cstor-csi/pull/139) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(build\): bump buildx action version v0.5.1 [\#138](https://github.com/openebs/cstor-csi/pull/138) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(travis\):bump minikube version to use k8s 1.20.1 version [\#137](https://github.com/openebs/cstor-csi/pull/137) ([prateekpandey14](https://github.com/prateekpandey14))
+- feat\(topology\): add support for custom topology keys [\#135](https://github.com/openebs/cstor-csi/pull/135) ([prateekpandey14](https://github.com/prateekpandey14))
+- fix\(multi-attach\): remove volume attach-detach functionality [\#134](https://github.com/openebs/cstor-csi/pull/134) ([payes](https://github.com/payes))
+
+
+## [v2.5.0-RC2](https://github.com/openebs/cstor-csi/tree/v2.5.0-RC2) (2021-01-12)
+
+**Merged pull requests:**
+
+- cherry-pick\(cleanup-fix\): add cleanup of volumes from node  to monitor func \(\#142\) [\#143](https://github.com/openebs/cstor-csi/pull/143) ([payes](https://github.com/payes))
+
+## [v2.5.0-RC1](https://github.com/openebs/cstor-csi/tree/v2.5.0-RC1) (2021-01-09)
+
+- chore\(actions\): move travis tests to github action [\#140](https://github.com/openebs/cstor-csi/pull/140) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(operator\): bump k8s csi to latest stable container images [\#139](https://github.com/openebs/cstor-csi/pull/139) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(build\): bump buildx action version v0.5.1 [\#138](https://github.com/openebs/cstor-csi/pull/138) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(travis\):bump minikube version to use k8s 1.20.1 version [\#137](https://github.com/openebs/cstor-csi/pull/137) ([prateekpandey14](https://github.com/prateekpandey14))
+- feat\(topology\): add support for custom topology keys [\#135](https://github.com/openebs/cstor-csi/pull/135) ([prateekpandey14](https://github.com/prateekpandey14))
+- fix\(multi-attach\): remove volume attach-detach functionality [\#134](https://github.com/openebs/cstor-csi/pull/134) ([payes](https://github.com/payes))
+
+## [v2.4.1](https://github.com/openebs/cstor-csi/tree/v2.4.1) (2020-12-19)
+
+**Merged pull requests:**
+
+- feat\(topology\): add support for custom topology keys [\#136](https://github.com/openebs/cstor-csi/pull/136) ([prateekpandey14](https://github.com/prateekpandey14))
+
+## [v2.4.0](https://github.com/openebs/cstor-csi/tree/v2.4.0) (2020-12-14)
+
+**Merged pull requests:**
+
+- chore\(CHANGELOG\): add changelogs for v2.3.0 [\#133](https://github.com/openebs/cstor-csi/pull/133) ([shubham14bajpai](https://github.com/shubham14bajpai))
+- chore\(build\): fix buildscript and github action workflows [\#132](https://github.com/openebs/cstor-csi/pull/132) ([akhilerm](https://github.com/akhilerm))
+
+## [v2.4.0-RC2](https://github.com/openebs/cstor-csi/tree/v2.4.0-RC2) (2020-12-12)
+
+
+## [v2.4.0-RC1](https://github.com/openebs/cstor-csi/tree/v2.4.0-RC1) (2020-12-10)
+
+**Merged pull requests:**
+
+- chore\(CHANGELOG\): add changelogs for v2.3.0 [\#133](https://github.com/openebs/cstor-csi/pull/133) ([shubham14bajpai](https://github.com/shubham14bajpai))
+- chore\(build\): fix buildscript and github action workflows [\#132](https://github.com/openebs/cstor-csi/pull/132) ([akhilerm](https://github.com/akhilerm))
+
 v2.3.0 / 2020-11-14
 ========================
 * feat(build): support for multi arch container image ([#128](https://github.com/openebs/cstor-csi/pull/128),[@prateekpandey14](https://github.com/prateekpandey14))
