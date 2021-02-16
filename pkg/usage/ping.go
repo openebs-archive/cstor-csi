@@ -17,6 +17,7 @@ limitations under the License.
 package usage
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/openebs/cstor-csi/pkg/env"
@@ -47,7 +48,7 @@ func PingCheck() {
 
 // getPingPeriod sets the duration of health events, defaults to 24
 func getPingPeriod() time.Duration {
-	value := env.GetOrDefault(env.OpenEBSPingPeriod, string(defaultPingPeriod))
+	value := env.GetOrDefault(env.OpenEBSPingPeriod, fmt.Sprint(defaultPingPeriod))
 	duration, _ := time.ParseDuration(value)
 	// Sanitychecks for setting time duration of health events
 	// This way, we are checking for negative and zero time duration and we
