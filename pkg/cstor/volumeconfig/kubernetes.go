@@ -17,6 +17,7 @@ limitations under the License.
 package volumeconfig
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -148,7 +149,7 @@ func defaultGet(
 ) (*apismaya.CStorVolumeConfig, error) {
 	return cli.CstorV1().
 		CStorVolumeConfigs(namespace).
-		Get(name, opts)
+		Get(context.TODO(), name, opts)
 }
 
 // defaultList is the default implementation to list
@@ -160,7 +161,7 @@ func defaultList(
 ) (*apismaya.CStorVolumeConfigList, error) {
 	return cli.CstorV1().
 		CStorVolumeConfigs(namespace).
-		List(opts)
+		List(context.TODO(), opts)
 }
 
 // defaultCreate is the default implementation to delete
@@ -174,7 +175,7 @@ func defaultDel(
 	opts.PropagationPolicy = &deletePropagation
 	err := cli.CstorV1().
 		CStorVolumeConfigs(namespace).
-		Delete(name, opts)
+		Delete(context.TODO(), name, *opts)
 	return err
 }
 
@@ -187,7 +188,7 @@ func defaultCreate(
 ) (*apismaya.CStorVolumeConfig, error) {
 	return cli.CstorV1().
 		CStorVolumeConfigs(namespace).
-		Create(cvc)
+		Create(context.TODO(), cvc, metav1.CreateOptions{})
 }
 
 // defaultPatch is the default implementation to patch
@@ -210,8 +211,8 @@ func defaultPatch(
 	updatedCVC, updateErr := cli.CstorV1().
 		CStorVolumeConfigs(oldCVC.Namespace).
 		Patch(
-			oldCVC.Name, types.MergePatchType,
-			patchBytes, subresources...,
+			context.TODO(), oldCVC.Name, types.MergePatchType,
+			patchBytes, metav1.PatchOptions{}, subresources...,
 		)
 	if updateErr != nil {
 		return nil,
@@ -231,7 +232,7 @@ func defaultUpdate(
 ) (*apismaya.CStorVolumeConfig, error) {
 	return cli.CstorV1().
 		CStorVolumeConfigs(namespace).
-		Update(cvc)
+		Update(context.TODO(), cvc, metav1.UpdateOptions{})
 }
 
 // withDefaults sets the default options

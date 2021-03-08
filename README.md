@@ -5,9 +5,7 @@
 
 CSI driver implementation for OpenEBS CStor storage engine.
 
-## Project Status
-
-This project is under active development and considered to be in Alpha state.
+## Project Status: Beta
 
 The current implementation supports the following for CStor Volumes:
 1. Provisioning and De-provisioning with ext4,xfs filesystems

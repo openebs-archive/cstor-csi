@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	"context"
 	"encoding/json"
 
 	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
@@ -123,7 +124,7 @@ func defaultGet(
 ) (*apisv1.CStorVolume, error) {
 	return cli.CstorV1().
 		CStorVolumes(namespace).
-		Get(name, opts)
+		Get(context.TODO(), name, opts)
 }
 
 // defaultList is the default implementation to list
@@ -135,7 +136,7 @@ func defaultList(
 ) (*apisv1.CStorVolumeList, error) {
 	return cli.CstorV1().
 		CStorVolumes(namespace).
-		List(opts)
+		List(context.TODO(), opts)
 }
 
 // defaultDel is the default implementation to delete a
@@ -154,7 +155,7 @@ func defaultDel(
 	opts.PropagationPolicy = &deletePropagation
 	err := cli.CstorV1().
 		CStorVolumes(namespace).
-		Delete(name, opts)
+		Delete(context.TODO(), name, *opts)
 	return err
 }
 
@@ -167,7 +168,7 @@ func defaultCreate(
 ) (*apisv1.CStorVolume, error) {
 	return cli.CstorV1().
 		CStorVolumes(namespace).
-		Create(vol)
+		Create(context.TODO(), vol, metav1.CreateOptions{})
 }
 
 // withDefaults sets the default options
