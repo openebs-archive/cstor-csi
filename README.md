@@ -1,5 +1,7 @@
 # OpenEBS CStor CSI Driver
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fopenebs%2Fcsi.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fopenebs%2Fcsi?ref=badge_shield)
+[![Build Status](https://github.com/openebs/cstor-csi/actions/workflows/build.yml/badge.svg)](https://github.com/openebs/cstor-csi/actions/workflows/build.yml)
+
 
 CSI driver implementation for OpenEBS CStor storage engine.
 

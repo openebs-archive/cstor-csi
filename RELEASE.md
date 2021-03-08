@@ -26,7 +26,7 @@ Once the release branch is created, changelog from `changelogs/unreleased` needs
 
 The format of the release tag is either "Release-Name-RC1" or "Release-Name" depending on whether the tag is a release candidate or a release. (Example: v1.9.0-RC1 is a GitHub release tag for the cstor-csi release build. v1.9.0 is the release tag that is created after the release criteria are satisfied by the cstor-csi builds.)
 
-Once the release is triggered, Travis build process has to be monitored. Once Travis build is passed images are pushed to docker hub and quay.io. Images can be verified by going through docker hub and quay.io. Also the images shouldn't have any high-level vulnerabilities.
+Once the release is triggered, github actions release workflow process has to be monitored. Once github actions release workflow is passed images are pushed to docker hub and quay.io. Images can be verified by going through docker hub and quay.io. Also the images shouldn't have any high-level vulnerabilities.
 
 Images are published at the following location:
 https://quay.io/repository/openebs/cstor-csi?tab=tags

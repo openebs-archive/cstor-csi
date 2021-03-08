@@ -33,7 +33,7 @@ else
     GIT_COMMIT="$(git rev-parse HEAD)"
 fi
 
-# Set BUILDMETA based on travis tag
+# Set BUILDMETA based on release tag
 if [[ -n "$RELEASE_TAG" ]] && [[ $RELEASE_TAG != *"RC"* ]]; then
     echo "released" > BUILDMETA
 fi
@@ -51,8 +51,8 @@ else
 fi
 
 ## Populate the version based on release tag
-## If travis tag is set then assign it as VERSION and
-## if travis tag is empty then mark version as ci
+## If release tag is set then assign it as VERSION and
+## if release tag is empty then mark version as ci
 if [ -n "$RELEASE_TAG" ]; then
     # Trim the `v` from the RELEASE_TAG if it exists
     # Example: v1.10.0 maps to 1.10.0
