@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	"encoding/json"
 
 	client "github.com/openebs/cstor-csi/pkg/kubernetes/client"
@@ -75,7 +76,7 @@ func (k *Kubeclient) withDefaults() {
 			r *corev1.Service, err error) {
 			r, err = cli.CoreV1().
 				Services(namespace).
-				Get(name, opts)
+				Get(context.TODO(), name, opts)
 			return
 		}
 	}
@@ -85,7 +86,7 @@ func (k *Kubeclient) withDefaults() {
 			rl *corev1.ServiceList, err error) {
 			rl, err = cli.CoreV1().
 				Services(namespace).
-				List(opts)
+				List(context.TODO(), opts)
 			return
 		}
 	}
@@ -96,7 +97,7 @@ func (k *Kubeclient) withDefaults() {
 			opts.PropagationPolicy = &deletePropagation
 			err = cli.CoreV1().
 				Services(namespace).
-				Delete(name, opts)
+				Delete(context.TODO(), name, *opts)
 			return
 		}
 	}

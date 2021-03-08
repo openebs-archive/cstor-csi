@@ -15,6 +15,7 @@
 package volumeattachment
 
 import (
+	"context"
 	"encoding/json"
 
 	apis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
@@ -142,7 +143,7 @@ func defaultGet(
 ) (*apis.CStorVolumeAttachment, error) {
 	return cli.CstorV1().
 		CStorVolumeAttachments(namespace).
-		Get(name, opts)
+		Get(context.TODO(), name, opts)
 }
 
 // defaultList is the default implementation to list
@@ -154,7 +155,7 @@ func defaultList(
 ) (*apis.CStorVolumeAttachmentList, error) {
 	return cli.CstorV1().
 		CStorVolumeAttachments(namespace).
-		List(opts)
+		List(context.TODO(), opts)
 }
 
 // defaultDel is the default implementation to delete
@@ -168,7 +169,7 @@ func defaultDel(
 	opts.PropagationPolicy = &deletePropagation
 	err := cli.CstorV1().
 		CStorVolumeAttachments(namespace).
-		Delete(name, opts)
+		Delete(context.TODO(), name, *opts)
 	return err
 }
 
@@ -181,7 +182,7 @@ func defaultCreate(
 ) (*apis.CStorVolumeAttachment, error) {
 	return cli.CstorV1().
 		CStorVolumeAttachments(namespace).
-		Create(vol)
+		Create(context.TODO(), vol, metav1.CreateOptions{})
 }
 
 // defaultUpdate is the default implementation to update
@@ -193,7 +194,7 @@ func defaultUpdate(
 ) (*apis.CStorVolumeAttachment, error) {
 	return cli.CstorV1().
 		CStorVolumeAttachments(namespace).
-		Update(vol)
+		Update(context.TODO(), vol, metav1.UpdateOptions{})
 }
 
 // withDefaults sets the default options

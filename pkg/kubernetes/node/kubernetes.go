@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"context"
+
 	client "github.com/openebs/cstor-csi/pkg/kubernetes/client"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -74,13 +76,13 @@ func (k *Kubeclient) withDefaults() {
 
 	if k.list == nil {
 		k.list = func(cli *kubernetes.Clientset, opts metav1.ListOptions) (*corev1.NodeList, error) {
-			return cli.CoreV1().Nodes().List(opts)
+			return cli.CoreV1().Nodes().List(context.TODO(), opts)
 		}
 	}
 
 	if k.get == nil {
 		k.get = func(cli *kubernetes.Clientset, name string, opts metav1.GetOptions) (*corev1.Node, error) {
-			return cli.CoreV1().Nodes().Get(name, opts)
+			return cli.CoreV1().Nodes().Get(context.TODO(), name, opts)
 		}
 	}
 }
