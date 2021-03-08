@@ -67,11 +67,11 @@ ifeq (${IMAGE_TAG}, )
   export IMAGE_TAG
 endif
 
-ifeq (${TRAVIS_TAG}, )
+ifeq (${RELEASE_TAG}, )
   BASE_TAG = ci
   export BASE_TAG
 else
-  BASE_TAG = ${TRAVIS_TAG}
+  BASE_TAG = ${RELEASE_TAG}
   export BASE_TAG
 endif
 
