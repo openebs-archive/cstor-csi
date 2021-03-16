@@ -1,4 +1,16 @@
-# Changelog
+v2.7.0 / 2021-03-11
+========================
+* refact(deps): bump k8s and client-go deps to version v0.20.2 ([#149](https://github.com/openebs/cstor-csi/pull/149),[@prateekpandey14](https://github.com/prateekpandey14))
+
+
+v2.7.0-RC2 / 2021-03-10
+========================
+
+
+v2.7.0-RC1 / 2021-03-08
+========================
+* refact(deps): bump k8s and client-go deps to version v0.20.2 ([#149](https://github.com/openebs/cstor-csi/pull/149),[@prateekpandey14](https://github.com/prateekpandey14))
+
 
 ## [v2.6.0](https://github.com/openebs/cstor-csi/tree/v2.6.0) (2021-02-13)
 
