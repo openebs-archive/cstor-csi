@@ -1,7 +1,9 @@
 # OpenEBS CStor CSI Driver
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fopenebs%2Fcsi.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fopenebs%2Fcsi?ref=badge_shield)
 [![Build Status](https://github.com/openebs/cstor-csi/actions/workflows/build.yml/badge.svg)](https://github.com/openebs/cstor-csi/actions/workflows/build.yml)
-
+[![Go Report](https://goreportcard.com/badge/github.com/openebs/cstor-csi)](https://goreportcard.com/report/github.com/openebs/cstor-csi)
+[![Slack](https://img.shields.io/badge/JOIN-SLACK-blue)](https://kubernetes.slack.com/messages/openebs/)
+[![Community Meetings](https://img.shields.io/badge/Community-Meetings-blue)](https://openebs.io/community)
 
 CSI driver implementation for OpenEBS CStor storage engine.
 
@@ -20,13 +22,11 @@ The current implementation supports the following for CStor Volumes:
 Before setting up OpenEBS CStor CSI driver make sure your Kubernetes Cluster
 meets the following prerequisites:
 
-1. You will need to have Kubernetes version 1.17 or higher
-2. You will need to have OpenEBS Version 1.12 or higher installed.
-   The steps to install OpenEBS are [here](https://docs.openebs.io/docs/next/quickstart.html)
-3. CStor CSI driver operates on the cStor Pools provisioned using the new schema called CSPC.
-   Steps to provision the pools using the same are [here](https://docs.google.com/document/d/1CZLBqGgBy7mTAMth4G2kR_jBn5bOV0th03ce3idX8KA/edit?usp=sharing)
-4. iSCSI initiator utils installed on all the worker nodes
-5. You have access to install RBAC components into openebs namespace.
+1. You will need to have Kubernetes version 1.18 or higher
+2. CStor CSI driver operates on the cStor Pools provisioned using the new schema called CSPC.
+   Steps to provision the pools using the same are [here](https://github.com/openebs/cstor-operators/tree/master/docs/tutorial/cspc)
+3. iSCSI initiator utils installed on all the worker nodes
+4. You have access to install RBAC components into openebs namespace.
    The OpenEBS CStor CSI driver components are installed in openebs
    namespace to allow them to be flagged as system critical components.
 
@@ -210,5 +210,22 @@ NAME                    STATUS   VOLUME                                     CAPA
 demo-csivol-claim       Bound    pvc-52d88903-0518-11ea-b887-42010a80006c   5Gi        RWO            openebs-csi-cstor-sparse  3d1h
 pvc-clone               Bound    pvc-2f2d65fc-0784-11ea-b887-42010a80006c   5Gi        RWO            openebs-csi-cstor-sparse  3s
 ```
+
+## Contributing
+
+OpenEBS welcomes your feedback and contributions in any form possible.
+
+- [Join OpenEBS community on Kubernetes Slack](https://kubernetes.slack.com)
+  - Already signed up? Head to our discussions at [#openebs](https://kubernetes.slack.com/messages/openebs/)
+- Want to raise an issue or help with fixes and features?
+  - See [open issues](https://github.com/openebs/openebs/issues)
+  - See [contributing guide](./CONTRIBUTING.md)
+  - See [Project Roadmap](https://github.com/orgs/openebs/projects/9)
+  - Want to join our contributor community meetings, [check this out](https://hackmd.io/mfG78r7MS86oMx8oyaV8Iw?view).
+- Join our OpenEBS CNCF Mailing lists
+  - For OpenEBS project updates, subscribe to [OpenEBS Announcements](https://lists.cncf.io/g/cncf-openebs-announcements)
+  - For interacting with other OpenEBS users, subscribe to [OpenEBS Users](https://lists.cncf.io/g/cncf-openebs-users)
+
+
 ## License
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fopenebs%2Fcsi.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fopenebs%2Fcsi?ref=badge_large)
