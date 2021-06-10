@@ -1,15 +1,15 @@
-# OpenEBS CStor CSI Driver
+# OpenEBS cStor CSI Driver
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fopenebs%2Fcsi.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fopenebs%2Fcsi?ref=badge_shield)
 [![Build Status](https://github.com/openebs/cstor-csi/actions/workflows/build.yml/badge.svg)](https://github.com/openebs/cstor-csi/actions/workflows/build.yml)
 [![Go Report](https://goreportcard.com/badge/github.com/openebs/cstor-csi)](https://goreportcard.com/report/github.com/openebs/cstor-csi)
 [![Slack](https://img.shields.io/badge/JOIN-SLACK-blue)](https://kubernetes.slack.com/messages/openebs/)
 [![Community Meetings](https://img.shields.io/badge/Community-Meetings-blue)](https://openebs.io/community)
 
-CSI driver implementation for OpenEBS CStor storage engine.
+CSI driver implementation for OpenEBS cStor storage engine.
 
 ## Project Status: Beta
 
-The current implementation supports the following for CStor Volumes:
+The current implementation supports the following for cStor Volumes:
 1. Provisioning and De-provisioning with ext4,xfs filesystems
 2. Snapshots and clones
 3. Volume Expansion
@@ -19,22 +19,22 @@ The current implementation supports the following for CStor Volumes:
 
 ### Prerequisites
 
-Before setting up OpenEBS CStor CSI driver make sure your Kubernetes Cluster
+Before setting up OpenEBS cStor CSI driver make sure your Kubernetes Cluster
 meets the following prerequisites:
 
 1. You will need to have Kubernetes version 1.18 or higher
-2. CStor CSI driver operates on the cStor Pools provisioned using the new schema called CSPC.
+2. cStor CSI driver operates on the cStor Pools provisioned using the new schema called CSPC.
    Steps to provision the pools using the same are [here](https://github.com/openebs/cstor-operators/tree/master/docs/tutorial/cspc)
 3. iSCSI initiator utils installed on all the worker nodes
 4. You have access to install RBAC components into openebs namespace.
-   The OpenEBS CStor CSI driver components are installed in openebs
+   The OpenEBS cStor CSI driver components are installed in openebs
    namespace to allow them to be flagged as system critical components.
 
 Note: if older k8s version has been used, it requires to enable ExpandCSIVolumes and ExpandInUsePersistentVolumes, VolumeSnapshotDataSource feature gates on  kubelets and kube-apiserver
 
-### Setup OpenEBS CStor CSI Driver
+### Setup OpenEBS cStor CSI Driver
 
-OpenEBS CStor CSI driver comprises of 2 components:
+OpenEBS cStor CSI driver comprises of 2 components:
 - A controller component launched as a StatefulSet,
   implementing the CSI controller services. The Control Plane
   services are responsible for creating/deleting the required
@@ -44,14 +44,14 @@ OpenEBS CStor CSI driver comprises of 2 components:
   responsible for performing the iSCSI connection management and
   connecting to the OpenEBS Volume.
 
-OpenEBS CStor CSI driver components can be installed by running the
+OpenEBS cStor CSI driver components can be installed by running the
 following command.
 
 The node components make use of the host iSCSI binaries for iSCSI
 connection management. Depending on the OS, iscsi utils needs to be 
 installed and loaded in k8s workers nodes
 
-- Install CStor CSI driver using below command.
+- Install cStor CSI driver using below command.
   ```
   kubectl apply -f https://raw.githubusercontent.com/openebs/cstor-csi/master/deploy/csi-operator.yaml
   ```
@@ -65,7 +65,7 @@ installed and loaded in k8s workers nodes
   openebs-csi-node-56t5g     2/2     Running   0          6m13s
   ```
 
-### Provision a cStor volume using OpenEBS CStor CSI driver
+### Provision a cStor volume using OpenEBS cStor CSI driver
 
 1. Make sure you already have a cStor Pool Created or you can
    create one using the below command. In the below cspc.yaml make sure
@@ -133,7 +133,7 @@ installed and loaded in k8s workers nodes
 The following steps indicate the PV provisioning workflow as it passes
 through various components.
 
-1. Create PVC with Storage Class referring to OpenEBS CStor CSI Driver.
+1. Create PVC with Storage Class referring to OpenEBS cStor CSI Driver.
 
 2. Kubernetes will pass the PV creation request to the OpenEBS
    CSI Controller service via `CreateVolume()`, as this controller
@@ -163,7 +163,7 @@ in progress, the application pod may throw some errors like:
 On successful completion of the above steps the application pod can
 be seen in running state.
 
-### Expand a cStor volume using OpenEBS CStor CSI driver
+### Expand a cStor volume using OpenEBS cStor CSI driver
 
 #### Notes:
 - Only dynamically provisioned volumes can be resized.
@@ -178,7 +178,7 @@ It is internally a two step process for volumes containing a file system:
 1. Volume expansion
 2. FileSystem expansion
 
-### Snapshot And Clone CStor Volume using OpenEBS CStor CSI Driver
+### Snapshot And Clone cStor Volume using OpenEBS cStor CSI Driver
 
 #### Notes:
 -  `VolumeSnapshotDataSource` feature gate needs to be enabled at kubelet and kube-apiserver,
