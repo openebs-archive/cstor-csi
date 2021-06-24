@@ -29,6 +29,7 @@ import (
 	apis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
 	"github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	iscsiutils "github.com/openebs/cstor-csi/pkg/iscsi"
+	k8snode "github.com/openebs/cstor-csi/pkg/kubernetes/node"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -323,6 +324,53 @@ func (ns *node) prepareVolumeForNode(
 	volumeID := req.GetVolumeId()
 	nodeID := ns.driver.config.NodeID
 
+	// As of now Kubernetes will alow multiple pods to consume same
+	// volume(from different nodes) eventhough volume is marked for
+	// RWO this happens due to disabiling creation of VolumeAttachments.
+	// To handle this case we added checks to restrict pods from different
+	// nodes consuming same volume
+	//
+	// 1. List all the CStorVolumeAttachments(CVA) related to requested volume
+	//    1.1 If CVA exist and corresponding node is stll running then return an error
+	//
+	//
+	// LIMITATIONS:
+	//				1. Canary deployments model & Rolling update strategy will not work pods
+	//                 will reamin in pending state.
+	//				2. Multiple pod instances of same (or) different deployments can run on same
+	//				   node(If we add checks then rolling update strategy will never work).
+
+	existingCSIVols, err := utils.GetVolList(volumeID)
+	if err != nil {
+		return err
+	}
+	for _, csiVol := range existingCSIVols.Items {
+		if csiVol.Name == volumeID+"-"+nodeID {
+			// In older Kubernetes version Kubelet will send NodeStage &
+			// Unstage request even by deleting the pod to honor it we are
+			// allowing login only after cleanup of old pod
+			if csiVol.DeletionTimestamp != nil {
+				return errors.Errorf("Volume %s still mounted on node: %s", volumeID, nodeID)
+			}
+			// This is a case where after creation of CVA if login/attachment/mount
+			// operation failed during in next reconciliation things should work smooth
+			continue
+		}
+		oldNodeName := csiVol.GetLabels()["nodeID"]
+
+		if oldNodeName == nodeID {
+			return errors.Errorf("Volume %s still mounted on node: %s", volumeID, nodeID)
+		}
+
+		isNodeReady, err := k8snode.IsNodeReady(oldNodeName)
+		if err != nil && !k8serror.IsNotFound(err) {
+			logrus.Errorf("failed to get the node %s details error: %s", oldNodeName, err.Error())
+			return errors.Wrapf(err, "failed to get node %s details to know previous mounts", oldNodeName)
+		} else if err == nil && isNodeReady {
+			return errors.Errorf("Volume %s still mounted on node %s", volumeID, nodeID)
+		}
+	}
+
 	labels := map[string]string{
 		"nodeID":  nodeID,
 		"Volname": volumeID,
@@ -357,16 +405,6 @@ func (ns *node) prepareVolumeForNode(
 
 	if err = utils.FetchAndUpdateISCSIDetails(volumeID, vol); err != nil {
 		return err
-	}
-
-	oldvol, err := utils.GetCStorVolumeAttachment(vol.Name)
-	if err != nil && !k8serror.IsNotFound(err) {
-		return err
-	} else if err == nil && oldvol != nil {
-		if oldvol.DeletionTimestamp != nil {
-			return errors.Errorf("Volume %s still mounted on node: %s", volumeID, nodeID)
-		}
-		return nil
 	}
 
 	if err = utils.DeleteOldCStorVolumeAttachmentCRs(volumeID); err != nil {

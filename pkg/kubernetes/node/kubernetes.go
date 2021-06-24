@@ -20,6 +20,7 @@ import (
 	client "github.com/openebs/cstor-csi/pkg/kubernetes/client"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -170,4 +171,21 @@ func GetOSAndKernelVersion() (string, error) {
 	}
 	nodedetails := firstNode.Items[0].Status.NodeInfo
 	return nodedetails.OSImage + ", " + nodedetails.KernelVersion, nil
+}
+
+// IsNodeReady will return true if node has KubeletReady condition
+// set to true else return false
+func IsNodeReady(nodeName string) (bool, error) {
+	node, err := NewKubeClient().Get(nodeName, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	for _, cond := range node.Status.Conditions {
+		if cond.Type == v1.NodeReady {
+			if cond.Status == v1.ConditionTrue {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
 }
