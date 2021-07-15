@@ -1,3 +1,51 @@
+# Changelog
+
+## [v2.11.0](https://github.com/openebs/cstor-csi/tree/v2.11.0) (2021-07-14)
+
+**Merged pull requests:**
+
+- fix\(mount\): allow staging of cStor volume only from one node [\#154](https://github.com/openebs/cstor-csi/pull/154) ([mittachaitu](https://github.com/mittachaitu))
+- refact\(docs\): update README with community and badges links [\#153](https://github.com/openebs/cstor-csi/pull/153) ([prateekpandey14](https://github.com/prateekpandey14))
+
+
+## [v2.11.0-RC2](https://github.com/openebs/cstor-csi/tree/v2.11.0-RC2) (2021-07-13)
+
+No Changes
+
+## [v2.11.0-RC1](https://github.com/openebs/cstor-csi/tree/v2.11.0-RC1) (2021-07-06)
+
+- fix\(mount\): allow staging of cStor volume only from one node [\#154](https://github.com/openebs/cstor-csi/pull/154) ([mittachaitu](https://github.com/mittachaitu))
+- refact\(docs\): update README with community and badges links [\#153](https://github.com/openebs/cstor-csi/pull/153) ([prateekpandey14](https://github.com/prateekpandey14))
+
+
+## [v2.10.0](https://github.com/openebs/cstor-csi/tree/v2.10.0) (2021-06-15)
+
+**Merged pull requests:**
+
+- chore\(build\): use ubuntu 18.04 as container base image [\#152](https://github.com/openebs/cstor-csi/pull/152) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(github-action\): Refine GitHub Actions criteria and add Build & Push jobs [\#151](https://github.com/openebs/cstor-csi/pull/151) ([niladrih](https://github.com/niladrih))
+
+
+## [v2.10.0-RC2](https://github.com/openebs/cstor-csi/tree/v2.10.0-RC1) (2021-06-13)
+
+No Changes
+
+## [v2.10.0-RC1](https://github.com/openebs/cstor-csi/tree/v2.10.0-RC2) (2021-06-06)
+
+**Merged pull requests:**
+
+- chore\(build\): use ubuntu 18.04 as container base image [\#152](https://github.com/openebs/cstor-csi/pull/152) ([prateekpandey14](https://github.com/prateekpandey14))
+- chore\(github-action\): Refine GitHub Actions criteria and add Build & Push jobs [\#151](https://github.com/openebs/cstor-csi/pull/151) ([niladrih](https://github.com/niladrih))
+
+
+## [v2.9.0](https://github.com/openebs/cstor-csi/tree/v2.9.0) (2021-05-15)
+
+No Changes
+
+## [v2.8.0](https://github.com/openebs/cstor-csi/tree/v2.8.0-RC1) (2021-04-16)
+
+No Changes
+
 v2.7.0 / 2021-03-11
 ========================
 * refact(deps): bump k8s and client-go deps to version v0.20.2 ([#149](https://github.com/openebs/cstor-csi/pull/149),[@prateekpandey14](https://github.com/prateekpandey14))
