@@ -359,7 +359,7 @@ func (ns *node) prepareVolumeForNode(
 		oldNodeName := csiVol.GetLabels()["nodeID"]
 
 		if oldNodeName == nodeID {
-			return errors.Errorf("Volume %s still mounted on node: %s", volumeID, nodeID)
+			return errors.Errorf("Volume %s still mounted on node: %s", volumeID, oldNodeName)
 		}
 
 		isNodeReady, err := k8snode.IsNodeReady(oldNodeName)
@@ -367,7 +367,7 @@ func (ns *node) prepareVolumeForNode(
 			logrus.Errorf("failed to get the node %s details error: %s", oldNodeName, err.Error())
 			return errors.Wrapf(err, "failed to get node %s details to know previous mounts", oldNodeName)
 		} else if err == nil && isNodeReady {
-			return errors.Errorf("Volume %s still mounted on node %s", volumeID, nodeID)
+			return errors.Errorf("Volume %s still mounted on node %s", volumeID, oldNodeName)
 		}
 	}
 
