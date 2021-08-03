@@ -48,15 +48,6 @@ func FormatListWithSpaces(in []string) string {
 	return columnize.Format(in, columnConf)
 }
 
-// Limits the length of the string.
-func limit(s string, length int) string {
-	if len(s) < length {
-		return s
-	}
-
-	return s[:length]
-}
-
 // FormatTime formats the time to string based on RFC822
 func FormatTime(t time.Time) string {
 	return t.Format("01/02/06 15:04:05 MST")

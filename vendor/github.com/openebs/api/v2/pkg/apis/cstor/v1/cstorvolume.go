@@ -199,3 +199,19 @@ const (
 	// ConditionSuccess states resizing underlying volumes are successfull
 	ConditionSuccess ConditionStatus = "Success"
 )
+
+// Status written onto CStorVolume objects.
+const (
+	// volume is getting initialized
+	CVStatusInit CStorVolumePhase = "Init"
+	// volume allows IOs and snapshot
+	CVStatusHealthy CStorVolumePhase = "Healthy"
+	// volume only satisfies consistency factor
+	CVStatusDegraded CStorVolumePhase = "Degraded"
+	// Volume is offline
+	CVStatusOffline CStorVolumePhase = "Offline"
+	// Error in retrieving volume details
+	CVStatusError CStorVolumePhase = "Error"
+	// volume controller config generation failed due to invalid parameters
+	CVStatusInvalid CStorVolumePhase = "Invalid"
+)
