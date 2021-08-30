@@ -116,16 +116,16 @@ func getVolumeCondition(vol *apisv1.CStorVolume) *csi.VolumeCondition {
 
 	switch vol.Status.Phase {
 	case apisv1.CVStatusHealthy:
-		condition.Message = "Volume status is up"
+		condition.Message = "Volume status is Healthy"
 
 	case apisv1.CVStatusInit:
-		condition.Message = "Volume status is in init state"
+		condition.Message = "Volume is getting initialized, replicas are not yet connected to the target"
 
 	case apisv1.CVStatusOffline:
-		condition.Message = "Volume status is offline"
+		condition.Message = fmt.Sprintf("Volume status is offline, No replicas are connected to target")
 
 	case apisv1.CVStatusDegraded:
-		condition.Message = "Volume status is degraded"
+		condition.Message = fmt.Sprintf("Volume status is degraded, more then 1 replica is not connected to target")
 
 	default:
 		condition.Message = "Volume status is unknown"

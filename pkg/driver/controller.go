@@ -394,17 +394,16 @@ func (cs *controller) ControllerGetVolume(ctx context.Context, req *csi.Controll
 
 	volume, err := utils.GetCStorVolume(req.GetVolumeId())
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Internal, "failed to get the cstorvolume %v", err)
 	}
 
 	logrus.Infof("Healthy state: %s Volume: %s", volume.Name, volume.Status.Phase)
 	return &csi.ControllerGetVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      volume.Name,
-			CapacityBytes: volume.Spec.Capacity.MilliValue(),
+			CapacityBytes: volume.Status.Capacity.MilliValue(),
 		},
 		Status: &csi.ControllerGetVolumeResponse_VolumeStatus{
-			//PublishedNodeIds: []string{volume.NodeID},
 			VolumeCondition: getVolumeCondition(volume),
 		},
 	}, nil
