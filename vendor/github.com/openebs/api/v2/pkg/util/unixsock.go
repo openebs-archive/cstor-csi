@@ -99,12 +99,15 @@ func (r RealUnixSock) SendCommand(cmd string) ([]string, error) {
 	}
 	err = Writer(c, cmd+EndOfLine)
 	if err != nil {
-		c.Close()
+		errc := c.Close()
+		if errc != nil {
+			return nil, errc
+		}
 		return nil, err
 	}
 	resp := Reader(c, cmd)
-	c.Close()
-	return resp, err
+	errc := c.Close()
+	return resp, errc
 }
 
 //TestUnixSock is used as a dummy UnixSock

@@ -307,3 +307,9 @@ func getCVC(cvcName string) (*cstorapis.CStorVolumeConfig, error) {
 		WithNamespace(OpenEBSNamespace).
 		Get(cvcName, metav1.GetOptions{})
 }
+
+func GetCStorVolume(volName string) (*cstorapis.CStorVolume, error) {
+	return cv.NewKubeclient().
+		WithNamespace(OpenEBSNamespace).
+		Get(volName, metav1.GetOptions{})
+}

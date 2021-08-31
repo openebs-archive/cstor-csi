@@ -389,3 +389,22 @@ func getNode(topo *csi.TopologyRequirement) (string, error) {
 	}
 	return "", nil
 }
+
+func (cs *controller) ControllerGetVolume(ctx context.Context, req *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
+
+	volume, err := utils.GetCStorVolume(req.GetVolumeId())
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to get the cstorvolume %v", err)
+	}
+
+	logrus.Infof("Healthy state: %s Volume: %s", volume.Name, volume.Status.Phase)
+	return &csi.ControllerGetVolumeResponse{
+		Volume: &csi.Volume{
+			VolumeId:      volume.Name,
+			CapacityBytes: volume.Status.Capacity.MilliValue(),
+		},
+		Status: &csi.ControllerGetVolumeResponse_VolumeStatus{
+			VolumeCondition: getVolumeCondition(volume),
+		},
+	}, nil
+}

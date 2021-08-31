@@ -101,6 +101,8 @@ github.com/codegangsta/negroni v1.0.0/go.mod h1:v0y3T5G7Y1UlFfyxFn/QLRU4a2EuNau2
 github.com/container-storage-interface/spec v1.1.0/go.mod h1:6URME8mwIBbpVyZV93Ce5St17xBiQJQY67NDsuohiy4=
 github.com/container-storage-interface/spec v1.2.0 h1:bD9KIVgaVKKkQ/UbVUY9kCaH/CJbhNxe0eeB4JeJV2s=
 github.com/container-storage-interface/spec v1.2.0/go.mod h1:6URME8mwIBbpVyZV93Ce5St17xBiQJQY67NDsuohiy4=
+github.com/container-storage-interface/spec v1.4.0 h1:ozAshSKxpJnYUfmkpZCTYyF/4MYeYlhdXbAvPvfGmkg=
+github.com/container-storage-interface/spec v1.4.0/go.mod h1:6URME8mwIBbpVyZV93Ce5St17xBiQJQY67NDsuohiy4=
 github.com/containerd/cgroups v0.0.0-20200531161412-0dbf7f05ba59/go.mod h1:pA0z1pT8KYB3TCXK/ocprsh7MAkoW8bZVzPdih9snmM=
 github.com/containerd/console v0.0.0-20180822173158-c12b1e7919c1/go.mod h1:Tj/on1eG8kiEhd0+fhSDzsPAFESxzBBvdyEgyryXffw=
 github.com/containerd/console v1.0.0/go.mod h1:8Pf4gM6VEbTNRIT26AyyU7hxdQU3MvAvxVI0sc00XBE=
@@ -483,6 +485,8 @@ github.com/openebs/api/v2 v2.2.1-0.20210302070038-f282f96d77c6 h1:P+gwyB2xycGJrx
 github.com/openebs/api/v2 v2.2.1-0.20210302070038-f282f96d77c6/go.mod h1:nLCaNvVjgjkjeD2a+n1fMbv5HjoEYP4XB8OAbwmIXtY=
 github.com/openebs/api/v2 v2.3.0 h1:tkgysm2FnxkkEiC9RxxZ5rTbN4W6iA4qXspcmKRMzPk=
 github.com/openebs/api/v2 v2.3.0/go.mod h1:nLCaNvVjgjkjeD2a+n1fMbv5HjoEYP4XB8OAbwmIXtY=
+github.com/openebs/api/v2 v2.4.0 h1:MiDyuNe1TnwskN+1JAQr5DoiI/IWxbgljKg7ssGPIjg=
+github.com/openebs/api/v2 v2.4.0/go.mod h1:nLCaNvVjgjkjeD2a+n1fMbv5HjoEYP4XB8OAbwmIXtY=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
