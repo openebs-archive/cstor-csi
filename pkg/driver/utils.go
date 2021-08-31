@@ -19,6 +19,7 @@ package driver
 import (
 	"fmt"
 
+	"github.com/container-storage-interface/spec/lib/go/csi"
 	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
 	"golang.org/x/sys/unix"
@@ -105,4 +106,30 @@ func addVolumeToTransitionList(volumeID string, status apisv1.CStorVolumeAttachm
 func getCapacity(cvc *apisv1.CStorVolumeConfig) string {
 	qCap := cvc.Spec.Capacity[corev1.ResourceStorage]
 	return qCap.String()
+}
+
+func getVolumeCondition(vol *apisv1.CStorVolume) *csi.VolumeCondition {
+	condition := &csi.VolumeCondition{}
+	if vol.Status.Phase != apisv1.CVStatusHealthy {
+		condition.Abnormal = true
+	}
+
+	switch vol.Status.Phase {
+	case apisv1.CVStatusHealthy:
+		condition.Message = "Volume status is Healthy"
+
+	case apisv1.CVStatusInit:
+		condition.Message = "Volume is getting initialized, quorum no. of replicas are not yet connected to the target"
+
+	case apisv1.CVStatusOffline:
+		condition.Message = fmt.Sprintf("Volume status is offline, No replicas are connected to target")
+
+	case apisv1.CVStatusDegraded:
+		condition.Message = fmt.Sprintf("Volume status is degraded, quorum no. of replicas are not in healthy state")
+
+	default:
+		condition.Message = "Volume status is unknown"
+	}
+
+	return condition
 }
