@@ -17,8 +17,8 @@ name: ci
 on:
   pull_request:
     branches:
-      # on pull requests to master and release branches
-      - 'master'
+      # on pull requests to develop and release branches
+      - 'develop'
       - 'v*'
     paths-ignore:
       - '*.md'
@@ -82,7 +82,7 @@ jobs:
         run: |
           BRANCH="${GITHUB_REF##*/}"
           CI_TAG=${BRANCH#v}-ci
-          if [ ${BRANCH} = "master" ]; then
+          if [ ${BRANCH} = "develop" ]; then
             CI_TAG="ci"
           fi
           echo "TAG=${CI_TAG}" >> $GITHUB_ENV
