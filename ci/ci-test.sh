@@ -14,11 +14,11 @@
 
 #!/usr/bin/env bash
 
-#OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/master/k8s/openebs-operator.yaml
-NDM_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/ndm-operator.yaml
-CSTOR_RBAC=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/rbac.yaml
-CSTOR_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/cstor-operator.yaml
-ALL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/master/deploy/crds/all_cstor_crds.yaml
+#OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/HEAD/k8s/openebs-operator.yaml
+NDM_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/ndm-operator.yaml
+CSTOR_RBAC=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/rbac.yaml
+CSTOR_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/cstor-operator.yaml
+ALL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/crds/all_cstor_crds.yaml
 
 CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
 SNAPSHOT_CLASS="$GOPATH/src/github.com/openebs/cstor-csi/deploy/snapshot-class.yaml"

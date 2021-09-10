@@ -1,7 +1,7 @@
 <!--  Thanks for sending a pull request!  Before submitting:
 
 1. Read our CONTRIBUTING.md guide for detailed contributing guidelines.
-2. Rebase your PR if it gets out of sync with master
+2. Rebase your PR if it gets out of sync with develop
 -->
 
 **What this PR does**:
