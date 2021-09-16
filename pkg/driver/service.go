@@ -21,6 +21,8 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	config "github.com/openebs/cstor-csi/pkg/config"
+	"github.com/openebs/cstor-csi/pkg/env"
+	analytics "github.com/openebs/cstor-csi/pkg/usage"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
@@ -118,6 +120,14 @@ func (d *CSIDriver) Run() error {
 	s := utils.NewNonBlockingGRPCServer()
 
 	s.Start(d.config.Endpoint, d.ids, d.cs, d.ns)
+
+	// Send Event only after starting controller.
+	// ControllerServer(cs) will be non-empty only if driver is running as controller service
+	if d.cs != nil && env.Truthy(env.OpenEBSEnableAnalytics) {
+		analytics.New().Build().InstallBuilder(true).Send()
+		go analytics.PingCheck()
+	}
+
 	s.Wait()
 
 	return nil
