@@ -18,6 +18,7 @@ package driver
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,9 +40,8 @@ import (
 )
 
 func getTargetIP(url string) string {
-	s := strings.Split(url, ":")
-	//ip, port := s[0], s[1]
-	return s[0]
+	ip := net.ParseIP(url)
+	return ip.String()
 }
 
 func (ns *node) attachDisk(vol *apis.CStorVolumeAttachment) (string, error) {
