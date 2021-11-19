@@ -131,14 +131,6 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# github.com/openebs/api/v2 v2.4.0
-## explicit
-github.com/openebs/api/v2/pkg/apis/cstor
-github.com/openebs/api/v2/pkg/apis/cstor/v1
-github.com/openebs/api/v2/pkg/apis/openebs.io
-github.com/openebs/api/v2/pkg/apis/openebs.io/v1alpha1
-github.com/openebs/api/v2/pkg/apis/types
-github.com/openebs/api/v2/pkg/util
 # github.com/openebs/api/v3 v3.0.0-20211116062351-ecd9a8a61d3e
 ## explicit
 github.com/openebs/api/v3/pkg/apis/cstor
@@ -656,7 +648,6 @@ k8s.io/gengo/namer
 k8s.io/gengo/parser
 k8s.io/gengo/types
 # k8s.io/klog v1.0.0
-## explicit
 k8s.io/klog
 # k8s.io/klog/v2 v2.4.0
 k8s.io/klog/v2
