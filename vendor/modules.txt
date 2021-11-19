@@ -138,12 +138,20 @@ github.com/openebs/api/v2/pkg/apis/cstor/v1
 github.com/openebs/api/v2/pkg/apis/openebs.io
 github.com/openebs/api/v2/pkg/apis/openebs.io/v1alpha1
 github.com/openebs/api/v2/pkg/apis/types
-github.com/openebs/api/v2/pkg/client/clientset/versioned
-github.com/openebs/api/v2/pkg/client/clientset/versioned/scheme
-github.com/openebs/api/v2/pkg/client/clientset/versioned/typed/cstor/v1
-github.com/openebs/api/v2/pkg/client/clientset/versioned/typed/openebs.io/v1alpha1
-github.com/openebs/api/v2/pkg/proto
 github.com/openebs/api/v2/pkg/util
+# github.com/openebs/api/v3 v3.0.0-20211116062351-ecd9a8a61d3e
+## explicit
+github.com/openebs/api/v3/pkg/apis/cstor
+github.com/openebs/api/v3/pkg/apis/cstor/v1
+github.com/openebs/api/v3/pkg/apis/openebs.io
+github.com/openebs/api/v3/pkg/apis/openebs.io/v1alpha1
+github.com/openebs/api/v3/pkg/apis/types
+github.com/openebs/api/v3/pkg/client/clientset/versioned
+github.com/openebs/api/v3/pkg/client/clientset/versioned/scheme
+github.com/openebs/api/v3/pkg/client/clientset/versioned/typed/cstor/v1
+github.com/openebs/api/v3/pkg/client/clientset/versioned/typed/openebs.io/v1alpha1
+github.com/openebs/api/v3/pkg/proto
+github.com/openebs/api/v3/pkg/util
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors

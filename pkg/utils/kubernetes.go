@@ -15,7 +15,7 @@
 package utils
 
 import (
-	apis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
+	apis "github.com/openebs/api/v3/pkg/apis/cstor/v1"
 	csv "github.com/openebs/cstor-csi/pkg/cstor/volume"
 	csivolume "github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	node "github.com/openebs/cstor-csi/pkg/kubernetes/node"

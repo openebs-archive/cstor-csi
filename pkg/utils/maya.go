@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	cstorapis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
+	cstorapis "github.com/openebs/api/v3/pkg/apis/cstor/v1"
 	cv "github.com/openebs/cstor-csi/pkg/cstor/volume"
 	csivol "github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	cvc "github.com/openebs/cstor-csi/pkg/cstor/volumeconfig"

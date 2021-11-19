@@ -18,8 +18,8 @@ import (
 	"context"
 	"encoding/json"
 
-	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
-	clientset "github.com/openebs/api/v2/pkg/client/clientset/versioned"
+	apisv1 "github.com/openebs/api/v3/pkg/apis/cstor/v1"
+	clientset "github.com/openebs/api/v3/pkg/client/clientset/versioned"
 	client "github.com/openebs/cstor-csi/pkg/kubernetes/client"
 
 	"github.com/pkg/errors"

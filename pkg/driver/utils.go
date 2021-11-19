@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
+	apisv1 "github.com/openebs/api/v3/pkg/apis/cstor/v1"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
 	"golang.org/x/sys/unix"
 	corev1 "k8s.io/api/core/v1"
