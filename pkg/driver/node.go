@@ -183,7 +183,9 @@ func (ns *node) NodeStageVolume(
 		// automatically changed to allow Reads and writes.
 		// And as soon as it is unmounted permissions change
 		// back to what we are setting over here.
+		utils.TransitionVolListLock.Lock()
 		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusMountUnderProgress
+		utils.TransitionVolListLock.Unlock()
 		// Login to the volume and attempt mount operation on the requested path
 		devicePath, err := ns.attachDisk(vol)
 		if err != nil {
@@ -218,7 +220,9 @@ func (ns *node) NodeStageVolume(
 			return nil, status.Error(codes.Internal, err.Error())
 		}
 
+		utils.TransitionVolListLock.Lock()
 		utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusMounted
+		utils.TransitionVolListLock.Unlock()
 	}
 
 	return &csi.NodeStageVolumeResponse{}, nil
@@ -275,13 +279,16 @@ func (ns *node) NodeUnstageVolume(
 	// immediately other node deleted this node's CR, in that case iSCSI
 	// target(istgt) will pick up the new one and allow only that node to login,
 	// so all the cases are handled
+	utils.TransitionVolListLock.Lock()
 	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
 	if err = iscsiutils.UnmountAndDetachDisk(vol, stagingTargetPath); err != nil {
+		utils.TransitionVolListLock.Unlock()
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmounted
 	// It is safe to delete the CStorVolumeAttachment CR now since the volume has already
 	// been unmounted and logged out
+	utils.TransitionVolListLock.Unlock()
 
 	vol.Finalizers = nil
 	vol.Spec.Volume.StagingTargetPath = ""
