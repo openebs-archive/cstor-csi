@@ -27,7 +27,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
-	apis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
+	apis "github.com/openebs/api/v3/pkg/apis/cstor/v1"
 	"github.com/openebs/cstor-csi/pkg/cstor/snapshot"
 	iscsiutils "github.com/openebs/cstor-csi/pkg/iscsi"
 	"github.com/sirupsen/logrus"

@@ -1,6 +1,6 @@
 module github.com/openebs/cstor-csi
 
-go 1.15
+go 1.16
 
 require (
 	github.com/container-storage-interface/spec v1.4.0
@@ -14,7 +14,7 @@ require (
 	github.com/kubernetes-csi/csi-lib-utils v0.7.0
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.7.1
-	github.com/openebs/api/v2 v2.4.0
+	github.com/openebs/api/v3 v3.0.0-20211116062351-ecd9a8a61d3e
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v1.1.1
@@ -26,7 +26,6 @@ require (
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2
 	k8s.io/code-generator v0.20.2
-	k8s.io/klog v1.0.0
 	k8s.io/kubernetes v1.20.2
 	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
 )

@@ -15,7 +15,7 @@
 package v1alpha1
 
 import (
-	apismaya "github.com/openebs/api/v2/pkg/apis/cstor/v1"
+	apismaya "github.com/openebs/api/v3/pkg/apis/cstor/v1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 )

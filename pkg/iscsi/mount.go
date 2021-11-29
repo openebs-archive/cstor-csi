@@ -17,7 +17,7 @@
 package iscsi
 
 import (
-	apis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
+	apis "github.com/openebs/api/v3/pkg/apis/cstor/v1"
 	utilexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 )

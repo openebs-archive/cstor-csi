@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	apisv1 "github.com/openebs/api/v2/pkg/apis/cstor/v1"
+	apisv1 "github.com/openebs/api/v3/pkg/apis/cstor/v1"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 

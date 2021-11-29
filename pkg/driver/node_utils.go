@@ -26,7 +26,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/kubernetes-csi/csi-lib-iscsi/iscsi"
-	apis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
+	apis "github.com/openebs/api/v3/pkg/apis/cstor/v1"
 	"github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	iscsiutils "github.com/openebs/cstor-csi/pkg/iscsi"
 	k8snode "github.com/openebs/cstor-csi/pkg/kubernetes/node"

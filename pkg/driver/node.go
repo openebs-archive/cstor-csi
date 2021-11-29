@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	apis "github.com/openebs/api/v2/pkg/apis/cstor/v1"
+	apis "github.com/openebs/api/v3/pkg/apis/cstor/v1"
 	iscsiutils "github.com/openebs/cstor-csi/pkg/iscsi"
 	k8snode "github.com/openebs/cstor-csi/pkg/kubernetes/node"
 	utils "github.com/openebs/cstor-csi/pkg/utils"

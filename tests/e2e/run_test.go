@@ -28,7 +28,7 @@ import (
 	//. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	apis "github.com/openebs/api/v2/pkg/apis/openebs.io/v1alpha1"
+	apis "github.com/openebs/api/v3/pkg/apis/openebs.io/v1alpha1"
 )
 
 func execAtLocal(cmd string, input []byte, args ...string) ([]byte, []byte, error) {
