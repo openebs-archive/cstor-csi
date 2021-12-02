@@ -281,13 +281,14 @@ func (ns *node) NodeUnstageVolume(
 	// so all the cases are handled
 	utils.TransitionVolListLock.Lock()
 	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
+	utils.TransitionVolListLock.Unlock()
+
 	if err = iscsiutils.UnmountAndDetachDisk(vol, stagingTargetPath); err != nil {
-		utils.TransitionVolListLock.Unlock()
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	utils.TransitionVolListLock.Lock()
 	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmounted
-	// It is safe to delete the CStorVolumeAttachment CR now since the volume has already
-	// been unmounted and logged out
 	utils.TransitionVolListLock.Unlock()
 
 	vol.Finalizers = nil
@@ -298,6 +299,8 @@ func (ns *node) NodeUnstageVolume(
 	logrus.Infof("cstor-csi: volume %s path: %s has been unmounted.",
 		volumeID, stagingTargetPath)
 
+	// It is safe to delete the CStorVolumeAttachment CR now since the volume has already
+	// been unmounted and logged out
 	if err := utils.DeleteCStorVolumeAttachmentCR(req.GetVolumeId() + "-" + ns.driver.config.NodeID); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
