@@ -203,7 +203,9 @@ checkVolumeStatus:
 			volumeID,
 		)
 	} else {
+		TransitionVolListLock.Lock()
 		TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusWaitingForVolumeToBeReady
+		TransitionVolListLock.Unlock()
 		time.Sleep(VolumeWaitTimeout * time.Second)
 		retries++
 		goto checkVolumeStatus
