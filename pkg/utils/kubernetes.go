@@ -165,7 +165,8 @@ func DeleteOldCStorVolumeAttachmentCRs(volumeID string) error {
 	}
 
 	// In Staging request we are making create call immediately after deleting the resource
-	// so to avoid creating resource when the same named resource is deleting stage we are adding sleep
+	// so to avoid creation of resource when the same named resource is under deleting stage
+	// we are adding sleep for 2secs
 	if isResourceDeleted {
 		time.Sleep(time.Second * 2)
 	}
