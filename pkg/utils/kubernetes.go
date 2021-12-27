@@ -15,6 +15,8 @@
 package utils
 
 import (
+	"time"
+
 	apis "github.com/openebs/api/v3/pkg/apis/cstor/v1"
 	csv "github.com/openebs/cstor-csi/pkg/cstor/volume"
 	csivolume "github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
@@ -146,6 +148,7 @@ func UpdateCStorVolumeAttachmentCR(csivol *apis.CStorVolumeAttachment) (*apis.CS
 
 // DeleteOldCStorVolumeAttachmentCRs removes the CStorVolumeAttachmentCR for the specified path
 func DeleteOldCStorVolumeAttachmentCRs(volumeID string) error {
+	var isResourceDeleted bool
 	csivols, err := GetVolList(volumeID)
 	if err != nil {
 		return err
@@ -158,6 +161,13 @@ func DeleteOldCStorVolumeAttachmentCRs(volumeID string) error {
 		if err != nil {
 			return err
 		}
+		isResourceDeleted = true
+	}
+
+	// In Staging request we are making create call immediately after deleting the resource
+	// so to avoid creating resource when the same named resource is deleting stage we are adding sleep
+	if isResourceDeleted {
+		time.Sleep(time.Second * 2)
 	}
 	return nil
 }
