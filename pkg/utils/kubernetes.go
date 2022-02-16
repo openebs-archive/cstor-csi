@@ -174,7 +174,7 @@ func DeleteOldCStorVolumeAttachmentCRs(volumeID, nodeID string) error {
 		}
 
 		// Extract only the CVA which belongs to the current node
-		if strings.Contains(csivol.Name, nodeID) {
+		if strings.HasSuffix(csivol.Name, nodeID) {
 			nodeCVA = csivol.Name
 		}
 	}
