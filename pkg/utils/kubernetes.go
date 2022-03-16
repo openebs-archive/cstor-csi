@@ -15,15 +15,20 @@
 package utils
 
 import (
+	"strings"
+	"time"
+
 	apis "github.com/openebs/api/v3/pkg/apis/cstor/v1"
+	errors "github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	csv "github.com/openebs/cstor-csi/pkg/cstor/volume"
 	csivolume "github.com/openebs/cstor-csi/pkg/cstor/volumeattachment"
 	node "github.com/openebs/cstor-csi/pkg/kubernetes/node"
 	pv "github.com/openebs/cstor-csi/pkg/kubernetes/persistentvolume"
-	errors "github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -35,6 +40,12 @@ const (
 
 	// VOLNAME is the name of the provisioned volume
 	VOLNAME = "Volname"
+)
+
+var (
+	// loopCount is the no of times cStor volume attachment's successful deletion check
+	// will be performed
+	loopCount = 5
 )
 
 // getNodeDetails fetches the nodeInfo for the current node
@@ -145,7 +156,10 @@ func UpdateCStorVolumeAttachmentCR(csivol *apis.CStorVolumeAttachment) (*apis.CS
 // gets deleted or replaced or updated
 
 // DeleteOldCStorVolumeAttachmentCRs removes the CStorVolumeAttachmentCR for the specified path
-func DeleteOldCStorVolumeAttachmentCRs(volumeID string) error {
+func DeleteOldCStorVolumeAttachmentCRs(volumeID, nodeID string) error {
+	// nodeCVA contains the name of the cStor volume attachment for the current node
+	var nodeCVA string
+
 	csivols, err := GetVolList(volumeID)
 	if err != nil {
 		return err
@@ -158,7 +172,35 @@ func DeleteOldCStorVolumeAttachmentCRs(volumeID string) error {
 		if err != nil {
 			return err
 		}
+
+		// Extract only the CVA which belongs to the current node
+		if strings.HasSuffix(csivol.Name, nodeID) {
+			nodeCVA = csivol.Name
+		}
 	}
+
+	if nodeCVA != "" {
+		var err error
+		for i := 1; i <= loopCount; i++ {
+			_, err = csivolume.NewKubeclient().
+				WithNamespace(OpenEBSNamespace).Get(nodeCVA, metav1.GetOptions{})
+			if err != nil {
+				// If the error is an error of type "not found" then break out
+				// of the loop since the deletion is succeeded
+				if k8serrors.IsNotFound(err) {
+					err = nil
+					break
+				}
+			}
+			time.Sleep(1 * time.Second)
+		}
+		// If error still exists, simply log that here. Since the deletion of CVA
+		// will be taken care of its corresponding create request when it happens
+		if err != nil {
+			logrus.Infof("cStor volume attachment: {%v} not deleted. Error: {%v}", nodeCVA, err)
+		}
+	}
+
 	return nil
 }
 
