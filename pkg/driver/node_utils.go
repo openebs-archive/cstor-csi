@@ -409,7 +409,7 @@ func (ns *node) prepareVolumeForNode(
 		return err
 	}
 
-	if err = utils.DeleteOldCStorVolumeAttachmentCRs(volumeID); err != nil {
+	if err = utils.DeleteOldCStorVolumeAttachmentCRs(volumeID, nodeID); err != nil {
 		return status.Error(codes.Internal, err.Error())
 	}
 	if err = utils.CreateCStorVolumeAttachmentCR(vol, nodeID); err != nil {
