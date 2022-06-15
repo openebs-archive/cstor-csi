@@ -302,6 +302,8 @@ func (ns *node) NodeUnstageVolume(
 	if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	logrus.Infof("cstor-csi: volume %s path: %s has been unmounted.",
+		volumeID, stagingTargetPath)
 
 	// It is safe to delete the CStorVolumeAttachment CR now since the volume has already
 	// been unmounted and logged out
