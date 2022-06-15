@@ -254,6 +254,8 @@ func (ns *node) NodeUnstageVolume(
 	}
 	defer removeVolumeFromTransitionList(volumeID)
 
+	logrus.Infof("Volume with ID: %v after uninitialising is in '%v' state", volumeID, utils.TransitionVolList[volumeID])
+
 	if vol, err = utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV); err != nil {
 		if k8serror.IsNotFound(err) {
 			logrus.Infof("cva for %s has already been deleted", volumeID)
@@ -283,6 +285,8 @@ func (ns *node) NodeUnstageVolume(
 	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
 	utils.TransitionVolListLock.Unlock()
 
+	logrus.Infof("Volume with ID: %v after starting unmount is in '%v' state", volumeID, utils.TransitionVolList[volumeID])
+
 	if err = iscsiutils.UnmountAndDetachDisk(vol, stagingTargetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -291,13 +295,13 @@ func (ns *node) NodeUnstageVolume(
 	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmounted
 	utils.TransitionVolListLock.Unlock()
 
+	logrus.Infof("Volume with ID: %v after successful unmount is in '%v' state", volumeID, utils.TransitionVolList[volumeID])
+
 	vol.Finalizers = nil
 	vol.Spec.Volume.StagingTargetPath = ""
 	if _, err = utils.UpdateCStorVolumeAttachmentCR(vol); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	logrus.Infof("cstor-csi: volume %s path: %s has been unmounted.",
-		volumeID, stagingTargetPath)
 
 	// It is safe to delete the CStorVolumeAttachment CR now since the volume has already
 	// been unmounted and logged out

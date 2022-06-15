@@ -18,6 +18,7 @@ package driver
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	apisv1 "github.com/openebs/api/v3/pkg/apis/cstor/v1"
@@ -88,6 +89,7 @@ func removeVolumeFromTransitionList(volumeID string) {
 	utils.TransitionVolListLock.Lock()
 	defer utils.TransitionVolListLock.Unlock()
 	delete(utils.TransitionVolList, volumeID)
+	logrus.Infof("Volume with ID: %v has been successfully removed from the transition volume list: %v", volumeID, utils.TransitionVolList)
 }
 
 func addVolumeToTransitionList(volumeID string, status apisv1.CStorVolumeAttachmentStatus) error {
