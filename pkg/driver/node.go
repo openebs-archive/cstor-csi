@@ -283,9 +283,8 @@ func (ns *node) NodeUnstageVolume(
 	// so all the cases are handled
 	utils.TransitionVolListLock.Lock()
 	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
-	utils.TransitionVolListLock.Unlock()
-
 	logrus.Infof("Volume with ID: %v after starting unmount is in '%v' state", volumeID, utils.TransitionVolList[volumeID])
+	utils.TransitionVolListLock.Unlock()
 
 	if err = iscsiutils.UnmountAndDetachDisk(vol, stagingTargetPath); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
@@ -293,9 +292,8 @@ func (ns *node) NodeUnstageVolume(
 
 	utils.TransitionVolListLock.Lock()
 	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmounted
-	utils.TransitionVolListLock.Unlock()
-
 	logrus.Infof("Volume with ID: %v after successful unmount is in '%v' state", volumeID, utils.TransitionVolList[volumeID])
+	utils.TransitionVolListLock.Unlock()
 
 	vol.Finalizers = nil
 	vol.Spec.Volume.StagingTargetPath = ""

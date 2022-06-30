@@ -272,7 +272,7 @@ func MonitorMounts() {
 			for _, vol := range csivolList.Items {
 				// ignore monitoring for volumes with deletion timestamp set
 				if vol.DeletionTimestamp != nil {
-					logrus.Infof("CVA: %v for volume: %v has been marked for deletion", vol.Name, vol.Spec.Volume.Name)
+					logrus.Infof("CVA: %v for volume: %v has been marked for cleanup activity", vol.Name, vol.Spec.Volume.Name)
 					cleanupRequired = true
 					continue
 				}
@@ -374,7 +374,7 @@ func Cleanup() (err error) {
 		vol := Vol
 		TransitionVolList[vol.Spec.Volume.Name] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
 
-		logrus.Infof("Volume: %v during cleanup is in %v state", vol.Spec.Volume.Name, TransitionVolList[vol.Spec.Volume.Name])
+		logrus.Infof("Volume: %v marked as %v as part of cleanup activity", vol.Spec.Volume.Name, TransitionVolList[vol.Spec.Volume.Name])
 		// This is being run in a go routine so that if unmount and detach
 		// commands take time, the startup is not delayed
 		go func(vol *apis.CStorVolumeAttachment) {
@@ -391,9 +391,8 @@ func Cleanup() (err error) {
 
 			TransitionVolListLock.Lock()
 			delete(TransitionVolList, vol.Spec.Volume.Name)
-			TransitionVolListLock.Unlock()
-
 			logrus.Infof("Volume: %v has been successfully removed from the transition volume list after cleanup: %v", vol.Spec.Volume.Name, TransitionVolList)
+			TransitionVolListLock.Unlock()
 		}(&vol)
 	}
 	return
