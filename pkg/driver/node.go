@@ -254,6 +254,8 @@ func (ns *node) NodeUnstageVolume(
 	}
 	defer removeVolumeFromTransitionList(volumeID)
 
+	logrus.Infof("Volume with ID: %v after uninitialising is in '%v' state", volumeID, utils.TransitionVolList[volumeID])
+
 	if vol, err = utils.GetCStorVolumeAttachment(volumeID + "-" + utils.NodeIDENV); err != nil {
 		if k8serror.IsNotFound(err) {
 			logrus.Infof("cva for %s has already been deleted", volumeID)
@@ -281,6 +283,7 @@ func (ns *node) NodeUnstageVolume(
 	// so all the cases are handled
 	utils.TransitionVolListLock.Lock()
 	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmountUnderProgress
+	logrus.Infof("Volume with ID: %v after starting unmount is in '%v' state", volumeID, utils.TransitionVolList[volumeID])
 	utils.TransitionVolListLock.Unlock()
 
 	if err = iscsiutils.UnmountAndDetachDisk(vol, stagingTargetPath); err != nil {
@@ -289,6 +292,7 @@ func (ns *node) NodeUnstageVolume(
 
 	utils.TransitionVolListLock.Lock()
 	utils.TransitionVolList[volumeID] = apis.CStorVolumeAttachmentStatusUnmounted
+	logrus.Infof("Volume with ID: %v after successful unmount is in '%v' state", volumeID, utils.TransitionVolList[volumeID])
 	utils.TransitionVolListLock.Unlock()
 
 	vol.Finalizers = nil
