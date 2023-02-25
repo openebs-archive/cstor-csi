@@ -18,9 +18,8 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/cobra v1.1.1
-	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
-	golang.org/x/sys v0.0.0-20201112073958-5cba982894dd
-	golang.org/x/tools v0.0.0-20200828013309-97019fc2e64b // indirect
+	golang.org/x/net v0.7.0
+	golang.org/x/sys v0.5.0
 	google.golang.org/grpc v1.27.1
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2
