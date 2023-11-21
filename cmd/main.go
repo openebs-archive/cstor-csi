@@ -29,6 +29,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Test
+
 func main() {
 	_ = flag.CommandLine.Parse([]string{})
 	var config = config.Default()
