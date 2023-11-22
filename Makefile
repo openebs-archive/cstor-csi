@@ -22,11 +22,10 @@ VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
 # Tools required for different make
 # targets or for development purposes
 EXTERNAL_TOOLS=\
-	golang.org/x/tools/cmd/cover \
-	github.com/axw/gocov/gocov \
-	gopkg.in/matm/v1/gocov-html \
-	github.com/onsi/ginkgo/ginkgo \
-	github.com/onsi/gomega/...
+    golang.org/x/tools/cmd/cover@latest \
+    github.com/axw/gocov/gocov@latest \
+    github.com/matm/gocov-html/cmd/gocov-html@latest \
+    github.com/onsi/ginkgo/ginkgo@v1.16.4
 
 # The images can be pushed to any docker/image registeries
 # like docker hub, quay. The registries are specified in
