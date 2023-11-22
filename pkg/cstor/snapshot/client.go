@@ -31,12 +31,12 @@ const (
 	ProtocolVersion      = 1
 )
 
-//CommandStatus is the response from istgt for control commands
+// CommandStatus is the response from istgt for control commands
 type CommandStatus struct {
 	Response string `json:"response"`
 }
 
-//CreateSnapshot creates snapshots
+// CreateSnapshot creates snapshots
 func CreateSnapshot(ip, volName, snapName string) (*v1proto.VolumeSnapCreateResponse, error) {
 	var conn *grpc.ClientConn
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", ip, VolumeGrpcListenPort), grpc.WithInsecure())
@@ -68,7 +68,7 @@ func CreateSnapshot(ip, volName, snapName string) (*v1proto.VolumeSnapCreateResp
 	return response, nil
 }
 
-//DestroySnapshot destroys snapshots
+// DestroySnapshot destroys snapshots
 func DestroySnapshot(ip, volName, snapName string) (*v1proto.VolumeSnapDeleteResponse, error) {
 	var conn *grpc.ClientConn
 	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", ip, VolumeGrpcListenPort), grpc.WithInsecure())

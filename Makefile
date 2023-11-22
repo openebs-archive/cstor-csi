@@ -13,7 +13,7 @@
 # limitations under the License.
 # list only csi source code directories
 #
-PACKAGES = $(shell go list ./... | grep -v 'vendor\|pkg/client\|tests')
+PACKAGES = $(shell go list ./... | grep -v 'pkg/client\|tests')
 
 # Lint our code. Reference: https://golang.org/cmd/vet/
 VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
@@ -22,10 +22,10 @@ VETARGS?=-asmdecl -atomic -bool -buildtags -copylocks -methods \
 # Tools required for different make
 # targets or for development purposes
 EXTERNAL_TOOLS=\
-    golang.org/x/tools/cmd/cover@latest \
-    github.com/axw/gocov/gocov@latest \
-    github.com/matm/gocov-html/cmd/gocov-html@latest \
-    github.com/onsi/ginkgo/ginkgo@v1.16.4
+	golang.org/x/tools/cmd/cover@latest \
+	github.com/axw/gocov/gocov@latest \
+	github.com/matm/gocov-html/cmd/gocov-html@latest \
+	github.com/onsi/ginkgo/ginkgo@v1.16.4
 
 # The images can be pushed to any docker/image registeries
 # like docker hub, quay. The registries are specified in
@@ -127,7 +127,7 @@ test: format
 bootstrap:
 	@for tool in  $(EXTERNAL_TOOLS) ; do \
 		echo "+ Installing $$tool" ; \
-		cd && GO111MODULE=on go get $$tool; \
+		go install $$tool; \
 	done
 
 .PHONY: csi-driver
@@ -153,7 +153,7 @@ deploy-images:
 .PHONY: license-check
 license-check:
 	@echo "--> Checking license header..."
-	@licRes=$$(for file in $$(find . -type f -regex '.*\.sh\|.*\.go\|.*Docker.*\|.*\Makefile*' ! -path './vendor/*' ) ; do \
+	@licRes=$$(for file in $$(find . -type f -regex '.*\.sh\|.*\.go\|.*Docker.*\|.*\Makefile*') ; do \
                awk 'NR<=5' $$file | grep -Eq "(Copyright|generated|GENERATED)" || echo $$file; \
        done); \
        if [ -n "$${licRes}" ]; then \
