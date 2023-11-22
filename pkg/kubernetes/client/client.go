@@ -19,40 +19,45 @@ package client
 import (
 	"strings"
 
-	"github.com/openebs/cstor-csi/pkg/env"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/openebs/cstor-csi/pkg/env"
 )
 
 // getInClusterConfigFunc abstracts the logic to get
 // kubernetes incluster config
 //
 // NOTE:
-//  typed function makes it simple to mock
+//
+//	typed function makes it simple to mock
 type getInClusterConfigFunc func() (*rest.Config, error)
 
 // buildConfigFromFlagsFunc provides the abstraction to get
 // kubernetes config from provided flags
 //
 // NOTE:
-//  typed function makes it simple to mock
+//
+//	typed function makes it simple to mock
 type buildConfigFromFlagsFunc func(string, string) (*rest.Config, error)
 
 // GetConfigFunc provides the abstraction to get
 // kubernetes config from provided client instance
 //
 // NOTE:
-//  typed function makes it simple to mock
+//
+//	typed function makes it simple to mock
 type GetConfigFunc func(*Client) (*rest.Config, error)
 
 // GetConfig returns kubernetes config instance
 //
 // NOTE:
-//  This is an implementation of GetConfigFunc
+//
+//	This is an implementation of GetConfigFunc
 func GetConfig(c *Client) (*rest.Config, error) {
 	if c == nil {
 		return nil, errors.New("failed to get kubernetes config: nil client was provided")
@@ -64,28 +69,32 @@ func GetConfig(c *Client) (*rest.Config, error) {
 // kubernetes master IP address
 //
 // NOTE:
-//  typed function makes it simple to mock
+//
+//	typed function makes it simple to mock
 type getKubeMasterIPFunc func(env.ENVKey) string
 
 // getKubeConfigPathFunc provides the abstraction to get
 // kubernetes config path
 //
 // NOTE:
-//  typed function makes it simple to mock
+//
+//	typed function makes it simple to mock
 type getKubeConfigPathFunc func(env.ENVKey) string
 
 // getKubernetesDynamicClientFunc provides the abstraction to get
 // dynamic kubernetes clientset
 //
 // NOTE:
-//  typed function makes it simple to mock
-type getKubernetesDynamicClientFunc func(*rest.Config) (dynamic.Interface, error)
+//
+//	typed function makes it simple to mock
+type getKubernetesDynamicClientFunc func(*rest.Config) (*dynamic.DynamicClient, error)
 
 // getKubernetesClientsetFunc provides the abstraction to get
 // kubernetes clientset
 //
 // NOTE:
-//  typed function makes it simple to mock
+//
+//	typed function makes it simple to mock
 type getKubernetesClientsetFunc func(*rest.Config) (*kubernetes.Clientset, error)
 
 // Client provides common kuberenetes client operations

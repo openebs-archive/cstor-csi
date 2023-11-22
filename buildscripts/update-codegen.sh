@@ -42,7 +42,8 @@ set -o pipefail
   # To support running this script from anywhere, we have to first cd into this directory
   # so we can install the tools.
   #cd $(dirname "${0}")
-  cd vendor/k8s.io/code-generator/ 
+  go get k8s.io/code-generator@v0.27.2
+  cd "$(go env GOPATH)/pkg/mod/k8s.io/code-generator@v0.27.2"
   go install ./cmd/{defaulter-gen,client-gen,lister-gen,informer-gen,deepcopy-gen,conversion-gen,defaulter-gen}
 )
 
