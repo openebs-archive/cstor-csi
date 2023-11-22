@@ -15,10 +15,24 @@
 # shellcheck disable=SC1128
 #!/usr/bin/env bash
 
-CSTOR_OPERATOR="https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/cstor-operator.yaml"
+#OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/HEAD/k8s/openebs-operator.yaml
+NDM_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/ndm-operator.yaml
+CSTOR_RBAC=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/rbac.yaml
+CSTOR_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/cstor-operator.yaml
+ALL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/crds/all_cstor_crds.yaml
 
-kubectl apply -f "$CSTOR_OPERATOR"
-kubectl apply -f ./deploy/csi-operator.yaml
+CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
+SNAPSHOT_CLASS="$GOPATH/src/github.com/openebs/cstor-csi/deploy/snapshot-class.yaml"
+
+#DST_PATH="$GOPATH/src/github.com/openebs"
+
+# Prepare env for runnging BDD tests
+# Minikube is already running
+kubectl apply -f $CSTOR_RBAC
+kubectl apply -f $NDM_OPERATOR
+kubectl apply -f $ALL_CRD
+kubectl apply -f $CSTOR_OPERATOR
+kubectl apply -f ./deploy/csi-operator.yaml	
 kubectl apply -f ./deploy/snapshot-class.yaml
 
 function dumpCSINodeLogs() {
