@@ -175,7 +175,7 @@ func IsCVCBound(volumeID string) (bool, error) {
 	return true, nil
 }
 
-//PatchCVCNodeID patches the NodeID of CVC
+// PatchCVCNodeID patches the NodeID of CVC
 func PatchCVCNodeID(volumeID, nodeID string) error {
 	oldCVCObj, err := cvc.NewKubeclient().
 		WithNamespace(OpenEBSNamespace).
@@ -204,8 +204,8 @@ func GetVolumeSourceDetails(snapshotID string) (string, string, error) {
 	return volSrc[0], volSrc[1], nil
 }
 
-//FetchAndUpdateISCSIDetails fetches the iSCSI details from cstor volume
-//resource and updates the corresponding csivolume resource
+// FetchAndUpdateISCSIDetails fetches the iSCSI details from cstor volume
+// resource and updates the corresponding csivolume resource
 func FetchAndUpdateISCSIDetails(volumeID string, vol *cstorapis.CStorVolumeAttachment) error {
 	getOptions := metav1.GetOptions{}
 	cstorVolume, err := cv.NewKubeclient().

@@ -26,8 +26,8 @@ import (
 	"github.com/openebs/cstor-csi/pkg/env"
 	k8snode "github.com/openebs/cstor-csi/pkg/kubernetes/node"
 	csipayload "github.com/openebs/cstor-csi/pkg/payload"
-	analytics "github.com/openebs/cstor-csi/pkg/usage"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
+	analytics "github.com/openebs/google-analytics-4/usage"
 	errors "github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -354,12 +354,11 @@ func getAccessibilityRequirements(requirement *csi.TopologyRequirement) (string,
 // sendEventOrIgnore sends anonymous cstor provision/delete events
 func sendEventOrIgnore(pvcName, pvName, capacity, replicaCount, stgType, method string) {
 	if env.Truthy(env.OpenEBSEnableAnalytics) {
-		analytics.New().Build().ApplicationBuilder().
-			SetVolumeType(stgType, method).
-			SetDocumentTitle(pvName).
-			SetCampaignName(pvcName).
+		analytics.New().CommonBuild("cstor").ApplicationBuilder().
+			SetVolumeName(pvName).
+			SetVolumeClaimName(pvcName).
 			SetLabel(analytics.EventLabelCapacity).
-			SetReplicaCount(replicaCount, method).
+			SetReplicaCount("replica", method).
 			SetCategory(method).
 			SetVolumeCapacity(capacity).Send()
 	}

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-GOFLAGS=-mod=vendor
+GOFLAGS=-mod=mod
 GINKGO=$(shell which ginkgo)
 export GOFLAGS
 KUBECTL=/usr/local/bin/kubectl
