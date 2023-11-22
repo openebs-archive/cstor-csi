@@ -26,8 +26,8 @@ import (
 	"github.com/openebs/cstor-csi/pkg/env"
 	k8snode "github.com/openebs/cstor-csi/pkg/kubernetes/node"
 	csipayload "github.com/openebs/cstor-csi/pkg/payload"
-	analytics "github.com/openebs/cstor-csi/pkg/usage"
 	utils "github.com/openebs/cstor-csi/pkg/utils"
+	analytics "github.com/openebs/google-analytics-4/usage"
 	errors "github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
@@ -35,6 +35,17 @@ import (
 	"google.golang.org/grpc/status"
 	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	// Ping event is sent periodically
+	Ping string = "ping"
+	// DefaultCASType Event application name constant for volume event
+	DefaultCASType string = "cstor"
+	// Replica Event replication
+	Replica string = "replica:"
+	// DefaultReplicaCount holds the replica count string
+	DefaultReplicaCount string = "replica:3"
 )
 
 // controller is the server implementation
@@ -354,12 +365,11 @@ func getAccessibilityRequirements(requirement *csi.TopologyRequirement) (string,
 // sendEventOrIgnore sends anonymous cstor provision/delete events
 func sendEventOrIgnore(pvcName, pvName, capacity, replicaCount, stgType, method string) {
 	if env.Truthy(env.OpenEBSEnableAnalytics) {
-		analytics.New().Build().ApplicationBuilder().
-			SetVolumeType(stgType, method).
-			SetDocumentTitle(pvName).
-			SetCampaignName(pvcName).
+		analytics.New().CommonBuild(GetVolumeType(stgType, method)).ApplicationBuilder().
+			SetVolumeName(pvName).
+			SetVolumeClaimName(pvcName).
 			SetLabel(analytics.EventLabelCapacity).
-			SetReplicaCount(replicaCount, method).
+			SetAction(GetReplicaCount(stgType, method)).
 			SetCategory(method).
 			SetVolumeCapacity(capacity).Send()
 	}
@@ -407,4 +417,27 @@ func (cs *controller) ControllerGetVolume(ctx context.Context, req *csi.Controll
 			VolumeCondition: getVolumeCondition(volume),
 		},
 	}, nil
+}
+
+// SetVolumeType Wrapper for setting the default storage-engine for volume-provision event
+func GetVolumeType(volType, method string) string {
+	if method == analytics.VolumeProvision && volType == "" {
+		// Set the default storage engine, if not specified in the request
+		return DefaultCASType
+	} else {
+		return volType
+	}
+}
+
+// GetReplicaCount Wrapper for setting replica count for volume events
+func GetReplicaCount(count, method string) string {
+	if method == analytics.VolumeProvision && count == "" {
+		// Case: When volume-provision the replica count isn't specified
+		// it is set to three by default by the cstor-operators
+		return DefaultReplicaCount
+	} else {
+		// Catch all case for volume-deprovision event and
+		// volume-provision event with an overridden replica-count
+		return Replica + count
+	}
 }
