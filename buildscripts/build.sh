@@ -120,7 +120,8 @@ fi
 env GOOS=$GOOS GOARCH=$GOARCH go build -ldflags \
     "-X github.com/openebs/cstor-csi/pkg/version.GitCommit=${GIT_COMMIT} \
     -X main.CtlName='${CTLNAME}' \
-    -X github.com/openebs/cstor-csi/pkg/version.Version=${VERSION}" \
+    -X github.com/openebs/cstor-csi/pkg/version.Version=${VERSION} \
+    -X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=warn" \
     -o $output_name\
     ./cmd
 
