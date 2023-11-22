@@ -12,43 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# shellcheck disable=SC1128
 #!/usr/bin/env bash
 
-#OPENEBS_OPERATOR=https://raw.githubusercontent.com/openebs/openebs/HEAD/k8s/openebs-operator.yaml
-# NDM_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/ndm-operator.yaml
-# CSTOR_RBAC=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/rbac.yaml
-CSTOR_OPERATOR=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/cstor-operator.yaml
-# ALL_CRD=https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/crds/all_cstor_crds.yaml
+CSTOR_OPERATOR="https://raw.githubusercontent.com/openebs/cstor-operators/HEAD/deploy/cstor-operator.yaml"
 
-CSI_OPERATOR="$GOPATH/src/github.com/openebs/cstor-csi/deploy/csi-operator.yaml"
-SNAPSHOT_CLASS="$GOPATH/src/github.com/openebs/cstor-csi/deploy/snapshot-class.yaml"
-
-#DST_PATH="$GOPATH/src/github.com/openebs"
-
-# Prepare env for runnging BDD tests
-# Minikube is already running
-# kubectl apply -f $CSTOR_RBAC
-# kubectl apply -f $NDM_OPERATOR
-# kubectl apply -f $ALL_CRD
-kubectl apply -f $CSTOR_OPERATOR
+kubectl apply -f "$CSTOR_OPERATOR"
 kubectl apply -f ./deploy/csi-operator.yaml
 kubectl apply -f ./deploy/snapshot-class.yaml
 
 function dumpCSINodeLogs() {
   LC=$1
   CSINodePOD=$(kubectl get pods -l app=openebs-csi-node -o jsonpath='{.items[0].metadata.name}' -n kube-system)
-  kubectl describe po $CSINodePOD -n openebs
+  kubectl describe po "$CSINodePOD" -n openebs
   printf "\n\n"
-  kubectl logs --tail=${LC} $CSINodePOD -n openebs -c openebs-csi-plugin
+  kubectl logs --tail="${LC}" "$CSINodePOD" -n openebs -c openebs-csi-plugin
   printf "\n\n"
 }
 
 function dumpCSIControllerLogs() {
   LC=$1
   CSIControllerPOD=$(kubectl get pods -l app=openebs-csi-controller -o jsonpath='{.items[0].metadata.name}' -n kube-system)
-  kubectl describe po $CSIControllerPOD -n openebs
+  kubectl describe po "$CSIControllerPOD" -n openebs
   printf "\n\n"
-  kubectl logs --tail=${LC} $CSIControllerPOD -n openebs -c openebs-csi-plugin
+  kubectl logs --tail="${LC}" "$CSIControllerPOD" -n openebs -c openebs-csi-plugin
   printf "\n\n"
 }
 
@@ -57,17 +44,13 @@ kubectl wait --for=condition=Ready --timeout=300s pods/openebs-cstor-csi-control
 
 # Run e2e tests for csi volumes
 cd ./tests/e2e
-make e2e-test
 
-if [ $? -ne 0 ]; then
+if ! make e2e-test; then
 echo "******************** CSI Controller logs***************************** "
 dumpCSIControllerLogs 1000
 
 echo "********************* CSI Node logs *********************************"
 dumpCSINodeLogs 1000
-
-#echo "******************CSI Maya-apiserver logs ********************"
-#dumpMayaAPIServerLogs 1000
 
 echo "get all the pods"
 kubectl get pods --all-namespaces
