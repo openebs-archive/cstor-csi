@@ -887,8 +887,8 @@ github.com/onsi/gomega v1.27.7/go.mod h1:1p8OOlwo2iUUDsHnOrjE5UKYJ+e3W8eQ3qSlRah
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/selinux v1.10.0 h1:rAiKF8hTcgLI3w0DHm6i0ylVVcOrlgR1kK99DRLDhyU=
 github.com/opencontainers/selinux v1.10.0/go.mod h1:2i0OySw99QjzBBQByd1Gr9gSjvuho1lHsJxIJ3gGbJI=
-github.com/openebs/api/v3 v3.0.2 h1:pHSMJATl9ETdw0AZ75e5UcgeN/ERmGZbdU9gdzWfMu0=
-github.com/openebs/api/v3 v3.0.2/go.mod h1:cED/PzY/8Jr9pWVl90qHnuQk2hSG9NLCawrNsqEDWkA=
+github.com/openebs/api/v3 v3.0.3 h1:hHOrco7zizND2ulwnfthDaPIf6JDoKncoOWUwOTOPW4=
+github.com/openebs/api/v3 v3.0.3/go.mod h1:cED/PzY/8Jr9pWVl90qHnuQk2hSG9NLCawrNsqEDWkA=
 github.com/openebs/google-analytics-4 v0.1.0 h1:6aUDbQoh1ezb+NU/MkapFKffogW4QK3WYt8g2UmENe8=
 github.com/openebs/google-analytics-4 v0.1.0/go.mod h1:3DkQfGCo79pZhL76Xtg0/R7LNLMttW6Bm/uP0yiZQHU=
 github.com/openebs/lib-csi v0.8.2 h1:HmoiZX3VXFPglwqnRPnRus7K58ixDWBa19OpPZGk2Ws=
