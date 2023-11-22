@@ -1,5 +1,5 @@
 kind: VolumeSnapshotClass
-apiVersion: snapshot.storage.k8s.io/v1beta1
+apiVersion: snapshot.storage.k8s.io/v1
 metadata:
   name: csi-cstor-snapshotclass
   namespace: openebs
@@ -8,4 +8,3 @@ metadata:
 driver: cstor.csi.openebs.io
 deletionPolicy: Delete
 ---
-
