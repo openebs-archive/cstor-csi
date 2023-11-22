@@ -19,11 +19,11 @@ KUBECTL=/usr/local/bin/kubectl
 
 
 # If you want to change the Kubernetes version for e2e test, specify this variable from command line.
-# e.g. $ make TEST_KUBERNETES_VERSION=1.17 test
-TEST_KUBERNETES_VERSION=1.17
+# e.g. $ make TEST_KUBERNETES_VERSION=1.25.16 test
+TEST_KUBERNETES_VERSION=1.25.16
 
-ifeq ($(TEST_KUBERNETES_VERSION),1.17)
-KUBERNETES_VERSION=1.17.2
+ifeq ($(TEST_KUBERNETES_VERSION),1.25.16)
+KUBERNETES_VERSION=1.25.16.2
 endif
 
 
