@@ -369,7 +369,7 @@ func sendEventOrIgnore(pvcName, pvName, capacity, replicaCount, stgType, method 
 			SetVolumeName(pvName).
 			SetVolumeClaimName(pvcName).
 			SetLabel(analytics.EventLabelCapacity).
-			SetAction(GetReplicaCount(stgType, method)).
+			SetAction(GetReplicaCount(replicaCount, method)).
 			SetCategory(method).
 			SetVolumeCapacity(capacity).Send()
 	}
