@@ -46,16 +46,16 @@ jobs:
 
       - name: Docker meta
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v1
+        uses: docker/metadata-action@v4
         with:
           # add each registry to which the image needs to be pushed here
           images: |
             ${{ env.IMAGE_ORG }}/cstor-csi-driver
             quay.io/${{ env.IMAGE_ORG }}/cstor-csi-driver
             ghcr.io/${{ env.IMAGE_ORG }}/cstor-csi-driver
-          tag-latest: true
-          tag-semver: |
-            {{version}}
+          tags: |
+            type=raw,value=latest,enable=true
+            type=raw,value={{version}}
 
       - name: Print Tag info
         run: |
