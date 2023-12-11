@@ -1,5 +1,8 @@
 # Changelog
 
+## [v3.6.0](https://github.com/openebs/cstor-csi/tree/v3.6.0) (2023-12-12)
+- feat\(event\): update ua to ga4 analytics [\#183](https://github.com/openebs/cstor-csi/pull/183) ([Abhinandan-Purkait](https://github.com/Abhinandan-Purkait))
+
 ## [v2.11.0](https://github.com/openebs/cstor-csi/tree/v2.11.0) (2021-07-14)
 
 **Merged pull requests:**
